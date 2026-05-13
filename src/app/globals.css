@@ -1,26 +1,257 @@
 @import "tailwindcss";
 
+/* ──────────────────────────────────────────────────────────────────────
+   Sam Ahhee Portfolio — design tokens
+   Editorial publication aesthetic: complementary pastel pairs per page,
+   layered type, halftone texture, Wes-Anderson framing.
+   ────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Plus Jakarta Sans does both display + body — see .font-display rules */
+  --font-display: var(--font-jakarta);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-mono-sometype);
+
+  /* Editorial spacing scale (multiples of 4) */
+  --spacing-page: clamp(1.5rem, 4vw, 4rem);
+  --spacing-gutter: clamp(1rem, 2.5vw, 2rem);
+
+  /* Display type scale — fluid. Slightly tightened now that Jakarta
+     is doing display work (it's a humanist sans, less compact than Palmore). */
+  --text-d1: clamp(3rem, 10vw, 9.5rem);
+  --text-d2: clamp(2.5rem, 6.5vw, 5.75rem);
+  --text-d3: clamp(1.75rem, 4.5vw, 4rem);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base ink (light) */
+  --ink: #1c1612;
+  --ink-soft: #4a3f37;
+  --ink-muted: #847a72;
+
+  /* Base paper (light) — warm, slightly off */
+  --paper: #f5efe6;
+  --paper-soft: #ede5d8;
+
+  /* Page-pair tokens — overridden per route */
+  --pair-a: #f1e3a8;   /* primary pastel */
+  --pair-b: #5a6470;   /* complementary */
+  --pair-a-ink: #2a2418;
+  --pair-b-ink: #f5efe6;
+
+  /* Rules + meta */
+  --rule: rgba(28, 22, 18, 0.16);
+  --meta: #6b5e54;
+
+  /* Halftone dot color (uses page pair-b) */
+  --dot: var(--pair-b);
+  /* Unified warm dot — used on neutral surfaces like the archive copy plate.
+     Warmer than --ink, less optical weight than a pure dark dot. */
+  --dot-warm: #8c6f55;
+
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --ink: #f3ece2;
+  --ink-soft: #d7cdbe;
+  --ink-muted: #948a7e;
+
+  --paper: #1a1612;
+  --paper-soft: #221d18;
+
+  --rule: rgba(245, 239, 230, 0.14);
+  --meta: #a89d8f;
+  --dot-warm: #a89078;
+
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ──────────────────────────────────────────────────────────────────────
+   Page-pair themes
+   Applied via <PageTheme palette="..."> wrapper. Swaps accent colors
+   for buttons, rules, halftone dots, and case-study chrome.
+   ────────────────────────────────────────────────────────────────────── */
+
+[data-pair="butter-slate"] {
+  --pair-a: #f1e3a8;
+  --pair-b: #5a6470;
+  --pair-a-ink: #2a2418;
+  --pair-b-ink: #f5efe6;
+}
+[data-pair="coral-sage"] {
+  --pair-a: #e89478;
+  --pair-b: #7c8a6c;
+  --pair-a-ink: #2a1812;
+  --pair-b-ink: #f5efe6;
+}
+[data-pair="lavender-ochre"] {
+  --pair-a: #c8b8d8;
+  --pair-b: #b88a4a;
+  --pair-a-ink: #1a1626;
+  --pair-b-ink: #2a1f12;
+}
+[data-pair="moss-butter"] {
+  --pair-a: #6b7c5a;
+  --pair-b: #f1e3a8;
+  --pair-a-ink: #f5efe6;
+  --pair-b-ink: #2a2418;
+}
+[data-pair="forest-amber"] {
+  --pair-a: #1f3d30;
+  --pair-b: #e8a04b;
+  --pair-a-ink: #f5efe6;
+  --pair-b-ink: #1f3d30;
+}
+[data-pair="mint-clay"] {
+  --pair-a: #b8d4c0;
+  --pair-b: #c08068;
+  --pair-a-ink: #14201a;
+  --pair-b-ink: #2a1612;
+}
+[data-pair="dustypink-ink"] {
+  --pair-a: #e8b8b8;
+  --pair-b: #2a1f1a;
+  --pair-a-ink: #2a1418;
+  --pair-b-ink: #f5efe6;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Base
+   ────────────────────────────────────────────────────────────────────── */
+
+* {
+  border-color: var(--rule);
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--pair-a);
+  color: var(--pair-a-ink);
+}
+
+/* Display type — Plus Jakarta Sans @ 800, tight tracking, tight leading.
+   Gives Jakarta presence at large sizes without losing legibility. */
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  font-feature-settings: "ss01", "cv11";
+}
+
+/* Mono — labels, page numbers, captions */
+.font-mono {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Halftone — printed dot pattern. Used as section backgrounds,
+   image overlays, and the "ink" verb of the site.
+   ────────────────────────────────────────────────────────────────────── */
+
+.halftone {
+  background-image: radial-gradient(
+    circle at center,
+    var(--dot) 0,
+    var(--dot) 28%,
+    transparent 30%
+  );
+  background-size: 6px 6px;
+}
+
+.halftone-fine {
+  background-image: radial-gradient(
+    circle at center,
+    var(--dot) 0,
+    var(--dot) 22%,
+    transparent 24%
+  );
+  background-size: 4px 4px;
+}
+
+.halftone-mini {
+  background-image: radial-gradient(
+    circle at center,
+    var(--dot) 0,
+    var(--dot) 28%,
+    transparent 30%
+  );
+  background-size: 3px 3px;
+}
+
+/* Halftone reveal on images: overlay that fades out on load */
+.halftone-overlay {
+  position: relative;
+  isolation: isolate;
+}
+.halftone-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    circle at center,
+    var(--pair-b) 0,
+    var(--pair-b) 32%,
+    transparent 34%
+  );
+  background-size: 5px 5px;
+  mix-blend-mode: multiply;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Editorial rule */
+.rule {
+  height: 1px;
+  background: var(--rule);
+  width: 100%;
+}
+
+/* Outline-display: mid-century "drop shadow" type accent */
+.type-outline {
+  -webkit-text-stroke: 1.5px currentColor;
+  color: transparent;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Motion: reduced-motion fallback
+   ────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Focus — keyboard a11y, editorial */
+:focus-visible {
+  outline: 2px solid var(--pair-b);
+  outline-offset: 3px;
+  border-radius: 2px;
 }

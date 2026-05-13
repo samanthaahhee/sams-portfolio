@@ -1,65 +1,115 @@
-import Image from "next/image";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
+import { WorkCard } from "@/components/work-card";
+import { ArchiveSection } from "@/components/archive-section";
+import { PosterCollage } from "@/components/poster-collage";
+import { FloatingConfetti } from "@/components/floating-confetti";
+import { ContactButton } from "@/components/contact-button";
+import { MobileConfettiButton } from "@/components/mobile-confetti-button";
+import { getProjects, getCaseStudies } from "@/lib/db";
 
-export default function Home() {
+export default async function Home() {
+  const [caseStudies, projects] = await Promise.all([
+    getCaseStudies(),
+    getProjects(),
+  ]);
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div data-pair="butter-slate">
+      <SiteHeader pageNo="01" />
+
+      <main>
+        {/* ── Editorial masthead ─────────────────────────────────────── */}
+        <section className="relative px-[var(--spacing-page)] pt-12 md:pt-20 pb-20 md:pb-32">
+          {/* Halftone wash behind masthead */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 h-[60%] halftone opacity-[0.10] pointer-events-none"
+            style={{ ["--dot" as string]: "var(--pair-b)" }}
+          />
+
+
+          <div className="col-span-12 flex items-center justify-between font-mono text-[color:var(--meta)] mb-12 md:mb-20">
+            <span>Volume 01</span>
+            <span className="hidden sm:inline">A portfolio in print form</span>
+            <span>Est. 2026</span>
+          </div>
+
+          <div className="relative grid grid-cols-12 gap-4 items-center">
+            <h1
+              className="col-span-12 md:col-span-7 font-display relative z-10"
+              style={{
+                fontSize: "var(--text-d1)",
+                lineHeight: 0.86,
+              }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Sam
+              <br />
+              Ahhee.
+            </h1>
+
+            {/* Portrait + paper confetti falling onto + around it */}
+            <div className="hidden md:flex md:col-span-5 md:col-start-8 justify-end items-center">
+              <div className="relative w-[60%] -translate-x-[40%]">
+                <PosterCollage />
+                <FloatingConfetti />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative grid grid-cols-12 gap-4 mt-12 md:mt-16">
+            <div className="col-span-12 md:col-span-8 md:col-start-2">
+              <p
+                className="text-xl md:text-2xl leading-snug"
+                style={{ color: "var(--ink)" }}
+              >
+                Hey, I'm Sam — a swiss-army-knife full-stack designer working
+                across brand, product, and editorial. I make things that are
+                beautiful first and useful always, for teams that want both.
+              </p>
+              <div className="mt-6 md:mt-8 flex flex-wrap items-center gap-3">
+                <ContactButton />
+                <MobileConfettiButton className="md:hidden" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Rule + section heading ─────────────────────────────────── */}
+        <div className="rule mx-[var(--spacing-page)]" />
+        <section className="px-[var(--spacing-page)] pt-12 md:pt-16">
+          <div className="flex items-baseline justify-between font-mono text-[color:var(--meta)] mb-10">
+            <span>Selected Work</span>
+            <span>{String(caseStudies.length).padStart(2, "0")} pieces</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
+            {caseStudies.map((study, i) => (
+              <WorkCard key={study.slug} study={study} index={i} />
+            ))}
+          </div>
+        </section>
+
+        {/* ── Also from the Archive — supporting work ────────────────── */}
+        <div className="rule mx-[var(--spacing-page)] mt-32 md:mt-40" />
+        <ArchiveSection projects={projects} />
+
+        {/* ── Closing editorial note ─────────────────────────────────── */}
+        <section className="px-[var(--spacing-page)] pt-32 md:pt-48 pb-12">
+          <div className="grid grid-cols-12 gap-4">
+            <p
+              className="col-span-12 md:col-span-8 md:col-start-3 font-display text-center"
+              style={{
+                fontSize: "var(--text-d3)",
+                lineHeight: 1.05,
+              }}
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              Design that holds the room and does the work.
+            </p>
+          </div>
+        </section>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

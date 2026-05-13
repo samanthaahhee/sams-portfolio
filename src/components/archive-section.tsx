@@ -1,0 +1,121 @@
+"use client";
+
+import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { ProjectCard } from "./project-card";
+import { projectCategories, type Project } from "@/lib/projects";
+
+type Filter = "All" | (typeof projectCategories)[number];
+
+const FILTERS: Filter[] = ["All", ...projectCategories];
+
+export function ArchiveSection({ projects }: { projects: Project[] }) {
+  const [active, setActive] = useState<Filter>("All");
+
+  const filtered =
+    active === "All"
+      ? projects
+      : projects.filter((p) => p.tags.includes(active));
+
+  return (
+    <section className="px-[var(--spacing-page)] pt-12 md:pt-16">
+      {/* ── Section masthead ─────────────────────────────────────── */}
+      <div className="grid grid-cols-12 gap-4 items-baseline mb-10 md:mb-14">
+        <div className="col-span-12 md:col-span-7">
+          <div className="flex items-baseline justify-between md:justify-start gap-6 font-mono text-[color:var(--meta)] mb-4">
+            <span>Also from the Archive</span>
+            <span>
+              {String(filtered.length).padStart(2, "0")} of{" "}
+              {String(projects.length).padStart(2, "0")}
+            </span>
+          </div>
+          <p
+            className="font-display"
+            style={{
+              fontSize: "var(--text-d3)",
+              lineHeight: 1.0,
+            }}
+          >
+            Field notes,
+            <br className="hidden md:block" />
+            smaller pieces.
+          </p>
+        </div>
+        <div className="col-span-12 md:col-span-4 md:col-start-9">
+          <p className="text-[color:var(--ink-soft)] leading-relaxed">
+            Brand, packaging, illustration, campaign, editorial — the work
+            that piles up beside the big projects.
+          </p>
+          <a
+            href="https://www.behance.net/Samantha_ahhee"
+            target="_blank"
+            rel="noreferrer"
+            className="font-mono inline-block mt-4 underline underline-offset-4 hover:opacity-70 transition-opacity"
+          >
+            See all on Behance ↗
+          </a>
+        </div>
+      </div>
+
+      {/* ── Filter chips ─────────────────────────────────────────── */}
+      <div
+        role="tablist"
+        aria-label="Filter projects by discipline"
+        className="flex flex-wrap items-center gap-2 mb-8 md:mb-10 pb-6 border-b border-[color:var(--rule)]"
+      >
+        {FILTERS.map((f) => {
+          const isActive = active === f;
+          const count =
+            f === "All"
+              ? projects.length
+              : projects.filter((p) => p.tags.includes(f)).length;
+          return (
+            <button
+              key={f}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActive(f)}
+              className="font-mono px-3 py-1.5 rounded-full border transition-all duration-300"
+              style={{
+                borderColor: isActive
+                  ? "var(--ink)"
+                  : "var(--rule)",
+                background: isActive ? "var(--ink)" : "transparent",
+                color: isActive ? "var(--paper)" : "var(--ink-soft)",
+              }}
+            >
+              {f} <span style={{ opacity: 0.6 }}>· {count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Filtered grid ────────────────────────────────────────── */}
+      <motion.div
+        layout
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 md:gap-x-6 gap-y-8 md:gap-y-10"
+      >
+        <AnimatePresence mode="popLayout">
+          {filtered.map((p) => (
+            <motion.div
+              key={p.slug}
+              layout
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              <ProjectCard project={p} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+
+      {filtered.length === 0 && (
+        <p className="font-mono text-[color:var(--meta)] mt-8">
+          Nothing in this category yet.
+        </p>
+      )}
+    </section>
+  );
+}
