@@ -35,14 +35,11 @@ export function WorkCard({ study, index }: { study: CaseStudy; index: number }) 
       style={useCustom ? customColorsToStyle(study.customColors!) : undefined}
     >
       <Link href={`/work/${study.slug}`} className="group block">
-        <article
-          className="relative grid grid-rows-[58%_42%] overflow-hidden rounded-sm"
-          style={{ aspectRatio: "5 / 6.4" }}
-        >
+        <article className="relative">
           {/* ── Image plate (top) ─────────────────────────────────── */}
           <div
-            className="relative overflow-hidden"
-            style={{ background: "var(--pair-a)" }}
+            className="relative overflow-hidden rounded-sm"
+            style={{ background: "var(--pair-a)", aspectRatio: "5 / 4" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -72,48 +69,27 @@ export function WorkCard({ study, index }: { study: CaseStudy; index: number }) 
             </span>
           </div>
 
-          {/* ── Copy plate (bottom) ────────────────────────────────── */}
-          <div
-            className="relative overflow-hidden"
-            style={{
-              background: "var(--pair-a)",
-              color: "var(--pair-a-ink)",
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-0 halftone-fine opacity-15 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-25"
-              style={{ ["--dot" as string]: "#000" }}
-            />
-
-            <div className="relative h-full grid grid-rows-[auto_1fr_auto] p-5 md:p-6">
-              {/* Top: Client (left) · Year (right) */}
-              <div className="flex items-start justify-between font-mono">
-                <span>{study.client}</span>
-                <span>{study.year}</span>
-              </div>
-
-              {/* Center: title, left-aligned, vertically centered */}
-              <div className="flex items-center justify-start">
-                <h3
-                  className="font-display"
-                  style={{
-                    fontSize: "clamp(1.5rem, 3.2vw, 2.5rem)",
-                    lineHeight: 0.98,
-                    maxWidth: "14ch",
-                  }}
-                >
-                  {study.title}
-                </h3>
-              </div>
-
-              {/* Bottom: Category (left) · View work (right) */}
-              <div className="flex items-end justify-between gap-4 font-mono">
-                <span>{study.category}</span>
-                <span className="opacity-75 group-hover:opacity-100 transition-opacity">
-                  View work →
-                </span>
-              </div>
+          {/* ── Copy block — transparent, sits on page bg ───────────── */}
+          <div className="relative mt-4 md:mt-5" style={{ color: "var(--ink)" }}>
+            <div className="flex items-baseline justify-between font-mono text-[color:var(--meta)]">
+              <span>{study.client}</span>
+              <span>{study.year}</span>
+            </div>
+            <h3
+              className="font-display mt-2"
+              style={{
+                fontSize: "clamp(1.25rem, 2.4vw, 1.875rem)",
+                lineHeight: 1.02,
+                maxWidth: "14ch",
+              }}
+            >
+              {study.title}
+            </h3>
+            <div className="mt-3 flex items-baseline justify-between gap-4 font-mono text-[color:var(--meta)]">
+              <span>{study.category}</span>
+              <span className="opacity-75 group-hover:opacity-100 transition-opacity">
+                View work →
+              </span>
             </div>
           </div>
         </article>

@@ -85,44 +85,14 @@ export default async function ProjectPage({
           </div>
         </section>
 
-        {/* ── Hero image ─────────────────────────────────────────── */}
-        <section className="px-[var(--spacing-page)]">
-          <div
-            className="relative overflow-hidden rounded-sm"
-            style={{
-              background: "var(--pair-a)",
-              aspectRatio: "16 / 10",
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={project.gallery[0]}
-              alt={`${project.title} — hero placeholder`}
-              loading="eager"
-              decoding="async"
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0 mix-blend-multiply"
-              style={{ background: "var(--pair-a)", opacity: 0.18 }}
-            />
-            <div
-              aria-hidden
-              className="absolute inset-0 halftone-fine opacity-20 mix-blend-multiply"
-              style={{ ["--dot" as string]: "var(--pair-b)" }}
-            />
-          </div>
-        </section>
-
         {/* ── Descriptor ─────────────────────────────────────────── */}
-        <section className="px-[var(--spacing-page)] pt-16 md:pt-24">
+        <section className="px-[var(--spacing-page)] pt-4 md:pt-8">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-3 md:col-start-2">
               <p className="font-mono text-[color:var(--meta)]">About</p>
             </div>
             <div className="col-span-12 md:col-span-6 md:col-start-6">
-              <p className="text-lg md:text-xl leading-relaxed text-[color:var(--ink)]">
+              <p className="text-sm md:text-base leading-relaxed text-[color:var(--ink)]">
                 {project.description}
               </p>
             </div>
@@ -138,7 +108,7 @@ export default async function ProjectPage({
                 <span>{project.gallery.length} plates</span>
               </div>
               <div className="space-y-8 md:space-y-12">
-                {project.gallery.slice(1).map((src, i) => (
+                {project.gallery.map((src, i) => (
                   <figure key={src} className="space-y-2">
                     <div
                       className="relative overflow-hidden rounded-sm"
@@ -150,8 +120,8 @@ export default async function ProjectPage({
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={src}
-                        alt={`${project.title} plate ${i + 2}`}
-                        loading="lazy"
+                        alt={`${project.title} plate ${i + 1}`}
+                        loading={i === 0 ? "eager" : "lazy"}
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                       />
@@ -162,7 +132,7 @@ export default async function ProjectPage({
                       />
                     </div>
                     <figcaption className="font-mono text-[color:var(--meta)]">
-                      Fig. {String(i + 2).padStart(2, "0")} — placeholder
+                      Fig. {String(i + 1).padStart(2, "0")} — placeholder
                     </figcaption>
                   </figure>
                 ))}

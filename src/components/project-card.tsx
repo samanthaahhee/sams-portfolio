@@ -25,14 +25,11 @@ export function ProjectCard({ project }: { project: Project }) {
       style={useCustom ? customColorsToStyle(project.customColors!) : undefined}
     >
       <Link href={`/projects/${project.slug}`} className="block group">
-        <article
-          className="relative grid grid-rows-[58%_42%] md:grid-rows-[72%_28%] overflow-hidden rounded-sm"
-          style={{ aspectRatio: "4 / 5.4" }}
-        >
+        <article className="relative">
           {/* ── Image plate ─────────────────────────────────────────── */}
           <div
-            className="relative overflow-hidden"
-            style={{ background: "var(--pair-a)" }}
+            className="relative overflow-hidden rounded-sm"
+            style={{ background: "var(--pair-a)", aspectRatio: "4 / 3" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -68,45 +65,22 @@ export function ProjectCard({ project }: { project: Project }) {
             </div>
           </div>
 
-          {/* ── Copy plate ──────────────────────────────────────────── */}
-          <div
-            className="relative overflow-hidden"
-            style={{
-              background: "var(--pair-a)",
-              color: "var(--pair-a-ink)",
-            }}
-          >
-            <div
-              aria-hidden
-              className="absolute inset-0 halftone-fine opacity-15 mix-blend-multiply transition-opacity duration-500 group-hover:opacity-25"
-              style={{ ["--dot" as string]: "#000" }}
-            />
-
-            <div className="relative h-full grid grid-rows-[auto_1fr_auto] px-4 md:px-4 py-3 md:py-3">
-              {/* Top-left: Brand */}
-              <div className="font-mono">
-                <span>{project.brand}</span>
-              </div>
-
-              {/* Centre row: Title.
-                  Mobile → centred vertically + big.
-                  md+   → top-aligned, 10px below brand, slightly bigger. */}
-              <div className="flex items-center md:items-start md:mt-2.5 justify-start">
-                <h3
-                  className="font-display text-2xl md:text-lg"
-                  style={{
-                    lineHeight: 0.98,
-                    maxWidth: "16ch",
-                  }}
-                >
-                  {project.title}
-                </h3>
-              </div>
-
-              {/* Bottom-left: View project */}
-              <div className="font-mono opacity-75 group-hover:opacity-100 transition-opacity">
-                View project →
-              </div>
+          {/* ── Copy block — transparent, sits on page bg ─────────────── */}
+          <div className="relative mt-3 space-y-1.5" style={{ color: "var(--ink)" }}>
+            <div className="font-mono text-[color:var(--meta)]">
+              {project.brand}
+            </div>
+            <h3
+              className="font-display text-base md:text-lg"
+              style={{
+                lineHeight: 1.05,
+                maxWidth: "16ch",
+              }}
+            >
+              {project.title}
+            </h3>
+            <div className="font-mono text-[color:var(--meta)] opacity-75 group-hover:opacity-100 transition-opacity">
+              View project →
             </div>
           </div>
         </article>
