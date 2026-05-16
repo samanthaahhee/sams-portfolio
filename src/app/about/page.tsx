@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { AboutHero } from "@/components/about-hero";
 import { AboutNav } from "@/components/about-nav";
 import { MenuCard } from "@/components/menu-card";
-import { ExperienceMenu } from "@/components/experience-menu";
+import { CareerRoadmap } from "@/components/career-roadmap";
 import { TestimonialTile } from "@/components/testimonial-tile";
 import {
   profile,
@@ -120,33 +120,64 @@ export default function AboutPage() {
           </div>
         </MenuCard>
 
-        {/* ── 02 / Experience ────────────────────────────────────── */}
-        <MenuCard
+        {/* ── 02 / Experience — coral-sage palette wrapper so the
+            roadmap's --pair-a resolves to coral. ─────────────────── */}
+        <div
           id="experience"
-          eyebrow="02 / Experience"
-          title="The work."
-          tagline="Click any role to expand. ★ marks the current role."
-          variant="paper-soft"
+          data-pair="coral-sage"
+          className="scroll-mt-20"
+          style={{ background: "var(--paper-soft)" }}
         >
-          <ExperienceMenu items={experience} />
-
-          {/* Download row */}
-          <div
-            className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-2 gap-4"
-            aria-label="Download CV"
+          {/* Intro band — sets up the section before the sticky scroll
+              trap kicks in. */}
+          <section
+            className="px-[var(--spacing-page)] pt-20 md:pt-28 pb-10 md:pb-14"
+            aria-labelledby="experience-heading"
           >
-            <DownloadCard
-              href={downloads.pdf.href}
-              label={downloads.pdf.label}
-              meta="PDF · A4 · single page"
-            />
-            <DownloadCard
-              href={downloads.docx.href}
-              label={downloads.docx.label}
-              meta="DOCX · for Workday / Greenhouse / Lever"
-            />
-          </div>
-        </MenuCard>
+            <div className="grid grid-cols-12 gap-4">
+              <p className="col-span-12 font-mono text-[color:var(--meta)] mb-4">
+                02 / Experience
+              </p>
+              <h2
+                id="experience-heading"
+                className="col-span-12 md:col-span-10 font-display text-[color:var(--ink)]"
+                style={{
+                  fontSize: "var(--text-d3)",
+                  lineHeight: 0.98,
+                  letterSpacing: "-0.015em",
+                }}
+              >
+                The work.
+              </h2>
+              <p className="col-span-12 md:col-span-7 mt-6 md:mt-8 text-base md:text-xl leading-relaxed text-[color:var(--ink-soft)]">
+                Scroll to advance through the timeline, or click any year
+                pill to jump straight to a role.
+              </p>
+            </div>
+          </section>
+
+          {/* The sticky scroll-driven roadmap card */}
+          <CareerRoadmap items={experience} />
+
+          {/* Download row — sits beneath the timeline */}
+          <section className="px-[var(--spacing-page)] pt-10 md:pt-14 pb-20 md:pb-28">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              aria-label="Download CV"
+            >
+              <DownloadCard
+                href={downloads.pdf.href}
+                label={downloads.pdf.label}
+                meta="PDF · A4 · single page"
+              />
+              <DownloadCard
+                href={downloads.docx.href}
+                label={downloads.docx.label}
+                meta="DOCX · for Workday / Greenhouse / Lever"
+              />
+            </div>
+          </section>
+        </div>
 
         {/* ── 03 / Personal ──────────────────────────────────────── */}
         <MenuCard
