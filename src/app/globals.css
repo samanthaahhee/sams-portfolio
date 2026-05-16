@@ -164,15 +164,6 @@ body {
   line-height: 1.2;
 }
 
-/* Script accent — Caveat. Lives next to display + mono; never used
-   for body copy. Keep applied weights in the 500–700 band so it
-   reads with confidence rather than looking pencilled-in. */
-.font-script {
-  font-family: var(--font-script);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  line-height: 0.95;
-}
 
 /* ──────────────────────────────────────────────────────────────────────
    Halftone — printed dot pattern. Used as section backgrounds,

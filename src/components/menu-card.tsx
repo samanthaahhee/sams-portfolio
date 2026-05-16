@@ -5,26 +5,25 @@ import { motion } from "motion/react";
 type Variant = "paper" | "paper-soft";
 
 /**
- * Editorial menu-card frame. Lays out a script eyebrow ("starters —"),
- * a tagline, and a body slot. Used for each section of /about. Backed
- * by either `--paper` or `--paper-soft` for visual rhythm — never a
- * hard shadow.
+ * Editorial section frame for /about. Mono eyebrow + display title +
+ * tagline + body slot. Backed by either `--paper` or `--paper-soft`
+ * for visual rhythm — no card shadows, no script labels.
  */
 export function MenuCard({
   id,
   eyebrow,
-  scriptLabel,
+  title,
   tagline,
   variant = "paper",
   children,
 }: {
   /** Anchor id used by the sticky nav. */
   id: string;
-  /** Mono uppercase label, "01 / Overview". */
+  /** Mono uppercase label, e.g. "01 / Overview". */
   eyebrow: string;
-  /** Script label, e.g. "starters —" — rendered in Caveat. */
-  scriptLabel: string;
-  /** Short editorial line under the script label. */
+  /** Display-weight section title, e.g. "About". */
+  title: string;
+  /** Short editorial line under the title. */
   tagline: string;
   variant?: Variant;
   children: React.ReactNode;
@@ -45,22 +44,18 @@ export function MenuCard({
           {eyebrow}
         </p>
 
-        {/* Script label — rotated, oversized. Visually the loudest
-            thing on the card, never used for navigation. */}
         <h2
-          aria-label={eyebrow}
-          className="col-span-12 font-script text-[color:var(--ink)]"
+          className="col-span-12 md:col-span-10 font-display text-[color:var(--ink)]"
           style={{
-            fontSize: "clamp(3rem, 9vw, 7rem)",
-            transform: "rotate(-2deg)",
-            transformOrigin: "left bottom",
-            marginBottom: "1.25rem",
+            fontSize: "var(--text-d3)",
+            lineHeight: 0.98,
+            letterSpacing: "-0.015em",
           }}
         >
-          {scriptLabel}
+          {title}
         </h2>
 
-        <p className="col-span-12 md:col-span-7 text-base md:text-xl leading-relaxed text-[color:var(--ink-soft)] mb-10 md:mb-14">
+        <p className="col-span-12 md:col-span-7 mt-6 md:mt-8 text-base md:text-xl leading-relaxed text-[color:var(--ink-soft)] mb-10 md:mb-14">
           {tagline}
         </p>
 

@@ -18,16 +18,17 @@ export function TestimonialTile({ t }: { t: Testimonial }) {
         borderColor: isPlaceholder ? "var(--pair-b)" : "var(--rule)",
       }}
     >
-      {/* Decorative open-quote in script. Half-opacity so it sits
-          behind the copy, not on top of it. */}
+      {/* Decorative open-quote — display weight, low opacity so it
+          reads as background mark not body copy. */}
       <span
         aria-hidden
-        className="font-script absolute top-2 left-4 select-none"
+        className="font-display absolute top-2 left-4 select-none"
         style={{
           fontSize: "clamp(3rem, 6vw, 4.5rem)",
           color: "var(--pair-b)",
-          opacity: 0.5,
+          opacity: 0.4,
           lineHeight: 1,
+          fontWeight: 700,
         }}
       >
         &ldquo;

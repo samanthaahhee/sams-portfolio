@@ -1,4 +1,4 @@
-import { Plus_Jakarta_Sans, Sometype_Mono, Caveat } from "next/font/google";
+import { Plus_Jakarta_Sans, Sometype_Mono } from "next/font/google";
 
 /**
  * Plus Jakarta Sans does double duty — body and display.
@@ -16,16 +16,5 @@ export const sometype = Sometype_Mono({
   subsets: ["latin"],
   variable: "--font-mono-sometype",
   weight: ["400", "500"],
-  display: "swap",
-});
-
-/**
- * Caveat — script accent. Used for editorial section labels
- * ("starters —", "mains —", "sides & sweet —") on /about.
- */
-export const caveat = Caveat({
-  subsets: ["latin"],
-  variable: "--font-script",
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });

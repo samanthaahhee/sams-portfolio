@@ -18,20 +18,19 @@ import {
 } from "@/lib/about";
 
 export const metadata = {
-  title: "About — A CV in menu form",
+  title: "About",
   description:
     "Sam Ahhee Schneider is a senior product & visual designer in Amsterdam. 13+ years across digital products, brand systems, and integrated campaigns — currently building HeyOtis at Ten 8 City.",
 };
 
 /**
- * /about — long-form scrolling CV in editorial-menu framing.
- *
- * Structure: hero → sticky nav → three MenuCards (Overview, Experience,
- * Personal & Testimonials) → inverted footer with "work together?" CTA.
+ * /about — long-form scrolling CV in editorial framing. Three sections
+ * (Overview, Experience, Personal) with a sticky in-page nav and an
+ * inverted footer CTA.
  *
  * All copy lives in `src/lib/about.ts`. All visuals resolve to existing
- * design tokens — `data-pair="butter-slate"` is the only swap surface
- * needed to flip the whole page to another palette.
+ * design tokens — `data-pair="butter-slate"` is the only surface needed
+ * to flip the whole page to another palette.
  */
 export default function AboutPage() {
   return (
@@ -46,56 +45,44 @@ export default function AboutPage() {
         <MenuCard
           id="overview"
           eyebrow="01 / Overview"
-          scriptLabel="starters —"
-          tagline="The basics. Who I am, what I do, where I've been."
+          title="The basics."
+          tagline="Who I am, what I do, where I've been."
         >
-          {/* Featured "about" cell */}
+          {/* Featured intro */}
           <div
-            className="relative grid grid-cols-12 gap-4 py-8 md:py-10 px-1"
+            className="grid grid-cols-12 gap-4 py-8 md:py-10"
             style={{ borderTop: "1px solid var(--rule)" }}
           >
             <div className="col-span-12 md:col-span-9">
               <p className="font-display text-2xl md:text-3xl mb-3 text-[color:var(--ink)]">
                 Senior Product &amp; Visual Designer{" "}
-                <span className="italic text-[color:var(--ink-soft)]">
-                  / est. 2012
+                <span className="font-mono text-[color:var(--meta)] align-middle ml-2">
+                  · est. 2012
                 </span>
               </p>
               <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
                 {profile.paragraph}
               </p>
             </div>
-            <span
-              aria-hidden
-              className="font-script absolute top-4 right-2 md:right-6 select-none"
-              style={{
-                fontSize: "clamp(2rem, 4vw, 3.5rem)",
-                color: "var(--pair-b)",
-                transform: "rotate(8deg)",
-                lineHeight: 1,
-              }}
-            >
-              about
-            </span>
           </div>
 
           {/* Two specialty tiles */}
           <div
-            className="grid grid-cols-1 md:grid-cols-2 gap-0 py-2"
+            className="grid grid-cols-1 md:grid-cols-2 gap-0"
             style={{ borderTop: "1px solid var(--rule)" }}
           >
             <SpecialtyTile
+              label="Specialty"
               title="Design Systems"
-              kicker="/ specialty"
               body="Component libraries, design tokens, brand-to-product translation. Recently certified in Design Systems by Memorisely (2024)."
             />
             <div
-              className="md:border-l"
+              className="md:border-l border-t md:border-t-0"
               style={{ borderColor: "var(--rule)" }}
             >
               <SpecialtyTile
+                label="Currently"
                 title="AI-Native Product"
-                kicker="/ currently"
                 body="Building shipping AI products with the Anthropic Claude API, Supabase, and Claude Code — including HeyOtis and smallstitch.club."
               />
             </div>
@@ -121,10 +108,7 @@ export default function AboutPage() {
               >
                 <p
                   className="font-display text-4xl md:text-5xl"
-                  style={{
-                    lineHeight: 1,
-                    color: "var(--ink)",
-                  }}
+                  style={{ lineHeight: 1, color: "var(--ink)" }}
                 >
                   {s.value}
                 </p>
@@ -140,14 +124,13 @@ export default function AboutPage() {
         <MenuCard
           id="experience"
           eyebrow="02 / Experience"
-          scriptLabel="mains —"
-          tagline="The work. Click any role to expand. ★ marked items are featured."
+          title="The work."
+          tagline="Click any role to expand. ★ marks the current role."
           variant="paper-soft"
         >
           <ExperienceMenu items={experience} />
 
-          {/* Download row — surfaces both CV artefacts beneath the
-              experience menu. */}
+          {/* Download row */}
           <div
             className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-2 gap-4"
             aria-label="Download CV"
@@ -165,11 +148,11 @@ export default function AboutPage() {
           </div>
         </MenuCard>
 
-        {/* ── 03 / Personal & Testimonials ───────────────────────── */}
+        {/* ── 03 / Personal ──────────────────────────────────────── */}
         <MenuCard
           id="personal"
           eyebrow="03 / Personal"
-          scriptLabel="sides & sweet —"
+          title="Personal &amp; testimonials."
           tagline="What people say. Where I trained. What I'm good at."
         >
           {/* Testimonials 2×2 */}
@@ -187,17 +170,17 @@ export default function AboutPage() {
               borderBottom: "1px solid var(--rule)",
             }}
           >
-            <InfoCell title="skills">
+            <InfoCell title="Skills">
               <p className="leading-relaxed text-[color:var(--ink-soft)]">
                 {skills.join(" · ")}
               </p>
             </InfoCell>
-            <InfoCell title="tools" withBorder>
+            <InfoCell title="Tools" withBorder>
               <p className="leading-relaxed text-[color:var(--ink-soft)]">
                 {tools.join(" · ")}
               </p>
             </InfoCell>
-            <InfoCell title="education" withBorder>
+            <InfoCell title="Education" withBorder>
               <ul className="space-y-3 text-[color:var(--ink-soft)]">
                 {education.map((e) => (
                   <li key={e.title}>
@@ -209,7 +192,7 @@ export default function AboutPage() {
                 ))}
               </ul>
             </InfoCell>
-            <InfoCell title="languages" withBorder>
+            <InfoCell title="Languages" withBorder>
               <ul className="space-y-3 text-[color:var(--ink-soft)]">
                 {languages.map((l) => (
                   <li key={l.name}>
@@ -259,8 +242,7 @@ export default function AboutPage() {
               />
             </div>
             <p className="col-span-12 mt-12 md:mt-16 font-mono opacity-70 max-w-3xl">
-              Set in Plus Jakarta Sans, Caveat &amp; Sometype Mono · Made by
-              Sam Ahhee Schneider in Amsterdam · Volume 01 · MMXXVI · ©{" "}
+              Made by Sam Ahhee Schneider in Amsterdam · ©{" "}
               {new Date().getFullYear()} Sam Ahhee, all rights reserved.
             </p>
           </div>
@@ -275,19 +257,19 @@ export default function AboutPage() {
 /* ── Local helpers ─────────────────────────────────────────────────── */
 
 function SpecialtyTile({
+  label,
   title,
-  kicker,
   body,
 }: {
+  label: string;
   title: string;
-  kicker: string;
   body: string;
 }) {
   return (
     <div className="p-5 md:p-7 hover:bg-[color:var(--paper-soft)] transition-colors">
+      <p className="font-mono text-[color:var(--meta)] mb-3">{label}</p>
       <p className="font-display text-xl md:text-2xl mb-2 text-[color:var(--ink)]">
-        {title}{" "}
-        <span className="italic text-[color:var(--ink-soft)]">{kicker}</span>
+        {title}
       </p>
       <p className="text-[color:var(--ink-soft)] leading-relaxed">{body}</p>
     </div>
@@ -308,15 +290,7 @@ function InfoCell({
       className={`p-5 md:p-7 ${withBorder ? "md:border-l border-t md:border-t-0" : ""}`}
       style={{ borderColor: "var(--rule)" }}
     >
-      <p
-        className="font-script mb-3"
-        style={{
-          fontSize: "clamp(1.5rem, 2.4vw, 2rem)",
-          color: "var(--ink)",
-        }}
-      >
-        {title}
-      </p>
+      <p className="font-mono text-[color:var(--meta)] mb-3">{title}</p>
       {children}
     </div>
   );
