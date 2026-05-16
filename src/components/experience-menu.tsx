@@ -25,7 +25,7 @@ export function ExperienceMenu({ items }: { items: ExperienceEntry[] }) {
         const isOpen = open === i;
         const isLast = i === items.length - 1;
         return (
-          <li
+          <motion.li
             key={`${item.title}-${item.company}`}
             className="relative"
             style={{
@@ -33,6 +33,17 @@ export function ExperienceMenu({ items }: { items: ExperienceEntry[] }) {
               background: item.featured ? "var(--paper)" : undefined,
               borderLeft: item.featured ? "3px solid var(--pair-b)" : undefined,
               paddingLeft: item.featured ? "1rem" : undefined,
+            }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{
+              duration: 0.55,
+              /* Cascade — when multiple rows are in view at once
+                 (top of the section) they reveal one after another.
+                 Cap so later rows don't wait too long. */
+              delay: Math.min(i, 5) * 0.08,
+              ease: [0.16, 1, 0.3, 1],
             }}
           >
             <button
@@ -118,7 +129,7 @@ export function ExperienceMenu({ items }: { items: ExperienceEntry[] }) {
                 </motion.div>
               )}
             </AnimatePresence>
-          </li>
+          </motion.li>
         );
       })}
     </ul>
