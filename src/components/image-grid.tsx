@@ -20,7 +20,7 @@ export function ImageGrid({
             className="relative overflow-hidden rounded-sm"
             style={{
               aspectRatio: "1 / 1",
-              background: "var(--pair-a)",
+              background: "transparent",
             }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}

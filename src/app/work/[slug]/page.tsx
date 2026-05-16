@@ -178,7 +178,7 @@ export default async function CaseStudyPage({
                       <div
                         className="relative overflow-hidden rounded-sm"
                         style={{
-                          background: "var(--pair-a)",
+                          background: "transparent",
                           aspectRatio: "16 / 10",
                         }}
                       >

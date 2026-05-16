@@ -55,7 +55,7 @@ export function ImageStack({
                 opacity: offset > 2 ? 0 : 1 - offset * 0.05,
               }}
               transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
-              style={{ background: "var(--pair-a)" }}
+              style={{ background: "transparent" }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
