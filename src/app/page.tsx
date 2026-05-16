@@ -76,7 +76,10 @@ export default async function Home() {
 
         {/* ── Rule + section heading ─────────────────────────────────── */}
         <div className="rule mx-[var(--spacing-page)]" />
-        <section className="px-[var(--spacing-page)] pt-12 md:pt-16">
+        <section
+          id="selected-work"
+          className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20"
+        >
           <div className="flex items-baseline justify-between font-mono text-[color:var(--meta)] mb-10">
             <span>Selected Work</span>
             <span>{String(caseStudies.length).padStart(2, "0")} pieces</span>

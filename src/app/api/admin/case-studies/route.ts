@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { sql } from "@vercel/postgres";
 import { upsertCaseStudy, deleteCaseStudy } from "@/lib/db";
 import type { CaseStudy } from "@/lib/case-studies";
+
+/** Invalidate every public surface that lists or renders case studies. */
+function revalidateCaseStudySurfaces(slug?: string) {
+  revalidatePath("/", "layout");
+  revalidatePath("/work/[slug]", "page");
+  if (slug) revalidatePath(`/work/${slug}`);
+  revalidatePath("/admin", "layout");
+}
 
 type Body = CaseStudy & {
   _mode: "create" | "edit";
@@ -67,11 +76,19 @@ export async function POST(req: Request) {
       decisions: body.decisions ?? [],
       outcome: body.outcome ?? "",
       reflection: body.reflection ?? "",
+      gallery: body.gallery,
+      comparisons: body.comparisons,
+      visuals: body.visuals,
       link: body.link,
+      published: body.published !== false,
     },
     position,
   );
 
+  revalidateCaseStudySurfaces(body.slug);
+  if (body._originalSlug && body._originalSlug !== body.slug) {
+    revalidateCaseStudySurfaces(body._originalSlug);
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -80,5 +97,6 @@ export async function DELETE(req: Request) {
   const slug = url.searchParams.get("slug");
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   await deleteCaseStudy(slug);
+  revalidateCaseStudySurfaces(slug);
   return NextResponse.json({ ok: true });
 }

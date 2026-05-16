@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProject } from "@/lib/db";
+import { getProjectAdmin } from "@/lib/db";
 import { ProjectForm } from "../_form";
 
 export default async function EditProjectPage({
@@ -8,7 +8,7 @@ export default async function EditProjectPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = await getProject(slug);
+  const project = await getProjectAdmin(slug);
   if (!project) notFound();
 
   return (

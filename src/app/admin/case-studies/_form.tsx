@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CaseStudy } from "@/lib/case-studies";
 import { NAMED_PALETTES, PALETTE_HEX, paletteFromBg } from "@/lib/palette";
+import { ImageUploadBox } from "@/app/admin/_components/image-uploads";
+import { VisualsEditor } from "@/app/admin/_components/visuals-editor";
 
-const TAGS = ["Brand", "Product", "Campaign", "Packaging", "Print", "Email"];
-const CATEGORIES = ["Brand", "Product", "Campaign", "Packaging", "Print", "Email"];
+const TAGS = ["Brand", "Packaging", "Illustration", "Campaign", "Product"];
+const CATEGORIES = ["Brand", "Packaging", "Illustration", "Campaign", "Product"];
 
 type Props = {
   study?: CaseStudy;
@@ -32,6 +34,7 @@ const EMPTY: CaseStudy = {
   decisions: [],
   outcome: "",
   reflection: "",
+  published: true,
 };
 
 export function CaseStudyForm({ study, mode }: Props) {
@@ -73,17 +76,7 @@ export function CaseStudyForm({ study, mode }: Props) {
       decisions: prev.decisions.filter((_, j) => j !== i),
     }));
 
-  async function uploadCover(file: File) {
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    if (!res.ok) {
-      setError("Cover upload failed");
-      return;
-    }
-    const { url } = (await res.json()) as { url: string };
-    set("cover", url);
-  }
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,8 +99,12 @@ export function CaseStudyForm({ study, mode }: Props) {
       setError(json.error ?? "Save failed");
       return;
     }
-    router.push("/admin/case-studies");
-    router.refresh();
+    setSavedAt(new Date());
+    if (mode === "create") {
+      router.push(`/admin/case-studies/${form.slug}`);
+    } else {
+      router.refresh();
+    }
   }
 
   async function remove() {
@@ -127,6 +124,28 @@ export function CaseStudyForm({ study, mode }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-6">
+      {/* Sticky save bar — keeps Save in reach on long forms */}
+      <div className="sticky top-14 z-10 -mx-6 px-6 py-3 bg-[color:var(--paper)] border-b border-[color:var(--rule)] flex items-center justify-end gap-3 flex-wrap">
+        <PublishToggle
+          published={form.published !== false}
+          onChange={(v) => set("published", v)}
+        />
+        {savedAt && (
+          <span className="font-mono text-[color:var(--meta)] text-[11px]">
+            ✓ Saved at{" "}
+            {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="font-mono uppercase tracking-[0.14em] px-5 py-2.5 rounded-full text-[10px] disabled:opacity-50"
+          style={{ background: "var(--ink)", color: "var(--paper)" }}
+        >
+          {saving ? "Saving…" : mode === "edit" ? "Save changes" : "Create"}
+        </button>
+      </div>
+
       <div className="grid grid-cols-3 gap-4">
         <Field label="No.">
           <input
@@ -252,10 +271,17 @@ export function CaseStudyForm({ study, mode }: Props) {
         }
       />
 
-      <CoverField
+      <ImageUploadBox
+        label="Cover image"
+        helper="Portrait, 4:5. Recommended ≥ 800 × 1000 px. JPG, PNG or WebP."
+        aspect="4 / 5"
         value={form.cover}
-        onUpload={uploadCover}
-        onClear={() => set("cover", "")}
+        onChange={(url) => set("cover", url ?? "")}
+      />
+
+      <VisualsEditor
+        visuals={form.visuals ?? []}
+        onChange={(v) => set("visuals", v)}
       />
 
       <Field label="Context">
@@ -368,7 +394,11 @@ export function CaseStudyForm({ study, mode }: Props) {
         <p className="font-mono text-red-700 bg-red-50 px-3 py-2 rounded">{error}</p>
       )}
 
-      <div className="flex items-center gap-3 pt-4 border-t border-[color:var(--rule)]">
+      <div className="flex items-center gap-3 pt-4 border-t border-[color:var(--rule)] flex-wrap">
+        <PublishToggle
+          published={form.published !== false}
+          onChange={(v) => set("published", v)}
+        />
         <button
           type="submit"
           disabled={saving}
@@ -386,8 +416,54 @@ export function CaseStudyForm({ study, mode }: Props) {
             Delete
           </button>
         )}
+        {savedAt && (
+          <span className="font-mono text-[color:var(--meta)] text-[11px]">
+            ✓ Saved at {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
       </div>
     </form>
+  );
+}
+
+/** Pill toggle for the published / draft state. Drafts are hidden from
+ *  public pages but stay in the admin list. */
+function PublishToggle({
+  published,
+  onChange,
+}: {
+  published: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 mr-auto">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        aria-pressed={published}
+        className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
+        style={{
+          background: published ? "var(--ink)" : "transparent",
+          color: published ? "var(--paper)" : "var(--ink-soft)",
+          borderColor: published ? "var(--ink)" : "var(--rule)",
+        }}
+      >
+        Published
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        aria-pressed={!published}
+        className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
+        style={{
+          background: !published ? "var(--ink)" : "transparent",
+          color: !published ? "var(--paper)" : "var(--ink-soft)",
+          borderColor: !published ? "var(--ink)" : "var(--rule)",
+        }}
+      >
+        Draft
+      </button>
+    </div>
   );
 }
 

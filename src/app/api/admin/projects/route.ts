@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { sql } from "@vercel/postgres";
 import { upsertProject, deleteProject } from "@/lib/db";
 import type { Project } from "@/lib/projects";
+
+/** Invalidate every public surface that lists or renders projects. */
+function revalidateProjectSurfaces(slug?: string) {
+  revalidatePath("/", "layout");
+  revalidatePath("/projects/[slug]", "page");
+  if (slug) revalidatePath(`/projects/${slug}`);
+  revalidatePath("/admin", "layout");
+}
 
 type Body = Project & {
   _mode: "create" | "edit";
@@ -54,11 +63,31 @@ export async function POST(req: Request) {
       cover: body.cover,
       description: body.description,
       gallery: body.gallery ?? [],
+      comparisons: body.comparisons,
+      visuals: body.visuals,
       href: body.href,
+      published: body.published !== false,
+      no: body.no,
+      client: body.client,
+      role: body.role,
+      primaryRole: body.primaryRole,
+      category: body.category,
+      summary: body.summary,
+      context: body.context,
+      problem: body.problem,
+      approach: body.approach,
+      decisions: body.decisions,
+      outcome: body.outcome,
+      reflection: body.reflection,
+      link: body.link,
     },
     position,
   );
 
+  revalidateProjectSurfaces(body.slug);
+  if (body._originalSlug && body._originalSlug !== body.slug) {
+    revalidateProjectSurfaces(body._originalSlug);
+  }
   return NextResponse.json({ ok: true });
 }
 
@@ -67,5 +96,6 @@ export async function DELETE(req: Request) {
   const slug = url.searchParams.get("slug");
   if (!slug) return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   await deleteProject(slug);
+  revalidateProjectSurfaces(slug);
   return NextResponse.json({ ok: true });
 }

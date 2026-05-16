@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCaseStudyBySlug } from "@/lib/db";
+import { getCaseStudyBySlugAdmin } from "@/lib/db";
 import { CaseStudyForm } from "../_form";
 
 export default async function EditCaseStudyPage({
@@ -8,7 +8,7 @@ export default async function EditCaseStudyPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const study = await getCaseStudyBySlug(slug);
+  const study = await getCaseStudyBySlugAdmin(slug);
   if (!study) notFound();
 
   return (

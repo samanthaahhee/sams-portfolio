@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProjects, getCaseStudies } from "@/lib/db";
+import { ReorderControls } from "@/app/admin/_components/reorder-controls";
 
 export default async function AdminHome() {
   const [projects, caseStudies] = await Promise.all([
@@ -29,19 +30,27 @@ export default async function AdminHome() {
           </Link>
         </div>
         <ul className="border-t border-[color:var(--rule)]">
-          {projects.map((p) => (
+          {projects.map((p, i) => (
             <li
               key={p.slug}
-              className="border-b border-[color:var(--rule)] py-3 flex items-baseline justify-between gap-4"
+              className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
             >
               <Link
                 href={`/admin/projects/${p.slug}`}
-                className="flex items-baseline gap-4 hover:text-[color:var(--ink)]"
+                className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
               >
-                <span className="font-mono text-[color:var(--meta)] w-24">{p.brand}</span>
-                <span>{p.title}</span>
+                <span className="font-mono text-[color:var(--meta)] w-24 shrink-0 truncate">{p.brand}</span>
+                <span className="truncate">{p.title}</span>
               </Link>
-              <span className="font-mono text-[color:var(--meta)]">{p.tags.join(" · ")}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono text-[color:var(--meta)] hidden md:inline">{p.tags.join(" · ")}</span>
+                <ReorderControls
+                  slug={p.slug}
+                  kind="project"
+                  isFirst={i === 0}
+                  isLast={i === projects.length - 1}
+                />
+              </div>
             </li>
           ))}
         </ul>
@@ -60,19 +69,27 @@ export default async function AdminHome() {
           </Link>
         </div>
         <ul className="border-t border-[color:var(--rule)]">
-          {caseStudies.map((c) => (
+          {caseStudies.map((c, i) => (
             <li
               key={c.slug}
-              className="border-b border-[color:var(--rule)] py-3 flex items-baseline justify-between gap-4"
+              className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
             >
               <Link
                 href={`/admin/case-studies/${c.slug}`}
-                className="flex items-baseline gap-4 hover:text-[color:var(--ink)]"
+                className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
               >
-                <span className="font-mono text-[color:var(--meta)] w-12">No. {c.no}</span>
-                <span>{c.title}</span>
+                <span className="font-mono text-[color:var(--meta)] w-12 shrink-0">No. {c.no}</span>
+                <span className="truncate">{c.title}</span>
               </Link>
-              <span className="font-mono text-[color:var(--meta)]">{c.client}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-mono text-[color:var(--meta)] hidden md:inline">{c.client}</span>
+                <ReorderControls
+                  slug={c.slug}
+                  kind="case-study"
+                  isFirst={i === 0}
+                  isLast={i === caseStudies.length - 1}
+                />
+              </div>
             </li>
           ))}
         </ul>

@@ -44,7 +44,16 @@ export type CaseStudy = {
   decisions: { title: string; body: string }[];
   outcome: string;
   reflection: string;
+  /** Visual gallery for the detail page. */
+  gallery?: { url: string; caption?: string }[];
+  /** Before/after slider pairs. */
+  comparisons?: { before: string; after: string; caption?: string }[];
+  /** Unified visuals list (replaces gallery + comparisons going forward). */
+  visuals?: import("./projects").VisualItem[];
   link?: { label: string; href: string };
+  /** When false, the case study is a draft — hidden from public views,
+   *  still visible in the admin list. Defaults to true. */
+  published?: boolean;
 };
 
 const cs = (seed: string) => `https://picsum.photos/seed/${seed}/900/1080`;
@@ -59,7 +68,7 @@ export const caseStudies: CaseStudy[] = [
     role: ["Brand", "Visual Design", "Illustration Direction"],
     primaryRole: "Brand Designer",
     category: "Brand",
-    tags: ["Brand Uplift", "Illustration System", "Tone of Voice", "Website"],
+    tags: ["Brand", "Campaign", "Product"],
     palette: "coral-sage",
     cover: cs("recharge-brand-uplift"),
     summary:
@@ -98,7 +107,7 @@ export const caseStudies: CaseStudy[] = [
     role: ["Visual Comms Design", "App Redesign", "Visual System"],
     primaryRole: "Visual Comms Design",
     category: "Product",
-    tags: ["Visual Rebrand", "Dual-Model App", "Legal Reskin"],
+    tags: ["Brand", "Product"],
     palette: "forest-amber",
     cover: cs("temper-app-green"),
     summary:
@@ -137,7 +146,7 @@ export const caseStudies: CaseStudy[] = [
     role: ["Full-stack Design", "Brand", "Product"],
     primaryRole: "Full-stack Designer",
     category: "Product",
-    tags: ["Product", "Brand", "Side Project"],
+    tags: ["Brand"],
     palette: "mint-clay",
     cover: cs("heyotis-couples-calm"),
     summary:

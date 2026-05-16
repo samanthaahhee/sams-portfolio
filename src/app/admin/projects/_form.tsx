@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Project } from "@/lib/projects";
 import { NAMED_PALETTES, PALETTE_HEX, paletteFromBg } from "@/lib/palette";
+import { ImageUploadBox } from "@/app/admin/_components/image-uploads";
+import { VisualsEditor } from "@/app/admin/_components/visuals-editor";
 
-const TAGS = ["Brand", "Product", "Campaign", "Packaging", "Print", "Email"];
+const TAGS = ["Brand", "Packaging", "Illustration", "Campaign", "Product"];
+const CATEGORIES = ["Brand", "Packaging", "Illustration", "Campaign", "Product"];
 
 type Props = {
   project?: Project;
@@ -29,8 +32,33 @@ export function ProjectForm({ project, mode }: Props) {
       description: "",
       gallery: [],
       href: undefined,
+      published: true,
     },
   );
+
+  /* Link is stored as a {label, href} object; the form treats label /
+   * href as separate inputs for easier editing. Kept in local state and
+   * flattened on submit. */
+  const [linkLabel, setLinkLabel] = useState(project?.link?.label ?? "");
+  const [linkHref, setLinkHref] = useState(project?.link?.href ?? "");
+
+  const addDecision = () =>
+    setForm((prev) => ({
+      ...prev,
+      decisions: [...(prev.decisions ?? []), { title: "", body: "" }],
+    }));
+  const updateDecision = (i: number, key: "title" | "body", v: string) =>
+    setForm((prev) => ({
+      ...prev,
+      decisions: (prev.decisions ?? []).map((d, j) =>
+        j === i ? { ...d, [key]: v } : d,
+      ),
+    }));
+  const removeDecision = (i: number) =>
+    setForm((prev) => ({
+      ...prev,
+      decisions: (prev.decisions ?? []).filter((_, j) => j !== i),
+    }));
 
   const toggleTag = (t: string) => {
     setForm((prev) => {
@@ -44,14 +72,25 @@ export function ProjectForm({ project, mode }: Props) {
   const set = <K extends keyof Project>(k: K, v: Project[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const link =
+      linkLabel.trim() && linkHref.trim()
+        ? { label: linkLabel.trim(), href: linkHref.trim() }
+        : undefined;
     const res = await fetch("/api/admin/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, _mode: mode, _originalSlug: project?.slug }),
+      body: JSON.stringify({
+        ...form,
+        link,
+        _mode: mode,
+        _originalSlug: project?.slug,
+      }),
     });
     setSaving(false);
     if (!res.ok) {
@@ -59,8 +98,14 @@ export function ProjectForm({ project, mode }: Props) {
       setError(json.error ?? "Save failed");
       return;
     }
-    router.push("/admin/projects");
-    router.refresh();
+    setSavedAt(new Date());
+    if (mode === "create") {
+      // Redirect to edit URL of the just-created entity
+      router.push(`/admin/projects/${form.slug}`);
+    } else {
+      // Stay on page; refresh data so server state is in sync
+      router.refresh();
+    }
   }
 
   async function remove() {
@@ -80,6 +125,28 @@ export function ProjectForm({ project, mode }: Props) {
 
   return (
     <form onSubmit={submit} className="space-y-6">
+      {/* Sticky save bar — keeps Save in reach on long forms */}
+      <div className="sticky top-14 z-10 -mx-6 px-6 py-3 bg-[color:var(--paper)] border-b border-[color:var(--rule)] flex items-center justify-end gap-3 flex-wrap">
+        <PublishToggle
+          published={form.published !== false}
+          onChange={(v) => set("published", v)}
+        />
+        {savedAt && (
+          <span className="font-mono text-[color:var(--meta)] text-[11px]">
+            ✓ Saved at{" "}
+            {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
+        <button
+          type="submit"
+          disabled={saving}
+          className="font-mono uppercase tracking-[0.14em] px-5 py-2.5 rounded-full text-[10px] disabled:opacity-50"
+          style={{ background: "var(--ink)", color: "var(--paper)" }}
+        >
+          {saving ? "Saving…" : mode === "edit" ? "Save changes" : "Create"}
+        </button>
+      </div>
+
       <Field label="Slug (URL path)">
         <input
           required
@@ -171,9 +238,9 @@ export function ProjectForm({ project, mode }: Props) {
         onChange={(url) => set("cover", url ?? "")}
       />
 
-      <GalleryUploadGrid
-        gallery={form.gallery}
-        onChange={(g) => set("gallery", g)}
+      <VisualsEditor
+        visuals={form.visuals ?? []}
+        onChange={(v) => set("visuals", v)}
       />
 
       <Field label="External link (optional)">
@@ -185,11 +252,207 @@ export function ProjectForm({ project, mode }: Props) {
         />
       </Field>
 
+      {/* ── Editorial fields — same shape as case studies. All optional;
+          empty sections are skipped on the public detail page. ──── */}
+      <div className="pt-6 border-t border-[color:var(--rule)] space-y-6">
+        <div>
+          <p className="font-mono text-[color:var(--meta)] mb-1">
+            Editorial detail
+          </p>
+          <p className="font-mono text-[color:var(--meta)] text-[10px]">
+            Optional. Fill any of these to turn the project page into a
+            longer-form case study layout. Empty fields are skipped.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <Field label="No. (optional)">
+            <input
+              value={form.no ?? ""}
+              onChange={(e) => set("no", e.target.value || undefined)}
+              className={fieldInput}
+              placeholder="01"
+            />
+          </Field>
+          <Field label="Client (optional)">
+            <input
+              value={form.client ?? ""}
+              onChange={(e) => set("client", e.target.value || undefined)}
+              className={`${fieldInput} col-span-2`}
+              placeholder="Defaults to Brand"
+            />
+          </Field>
+          <Field label="Category (optional)">
+            <select
+              value={form.category ?? ""}
+              onChange={(e) => set("category", e.target.value || undefined)}
+              className={fieldInput}
+            >
+              <option value="">—</option>
+              {CATEGORIES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Primary role (optional)">
+          <input
+            value={form.primaryRole ?? ""}
+            onChange={(e) =>
+              set("primaryRole", e.target.value || undefined)
+            }
+            className={fieldInput}
+            placeholder="Brand Designer"
+          />
+        </Field>
+
+        <Field label="Roles (comma-separated, optional)">
+          <input
+            value={(form.role ?? []).join(", ")}
+            onChange={(e) =>
+              set(
+                "role",
+                e.target.value
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean),
+              )
+            }
+            className={fieldInput}
+            placeholder="Brand, Visual Design, Illustration Direction"
+          />
+        </Field>
+
+        <Field label="Summary (bold pullquote on detail page)">
+          <textarea
+            value={form.summary ?? ""}
+            onChange={(e) => set("summary", e.target.value || undefined)}
+            rows={3}
+            className={fieldInput}
+          />
+        </Field>
+
+        <Field label="Context">
+          <textarea
+            value={form.context ?? ""}
+            onChange={(e) => set("context", e.target.value || undefined)}
+            rows={4}
+            className={fieldInput}
+          />
+        </Field>
+        <Field label="Problem">
+          <textarea
+            value={form.problem ?? ""}
+            onChange={(e) => set("problem", e.target.value || undefined)}
+            rows={4}
+            className={fieldInput}
+          />
+        </Field>
+        <Field label="Approach">
+          <textarea
+            value={form.approach ?? ""}
+            onChange={(e) => set("approach", e.target.value || undefined)}
+            rows={4}
+            className={fieldInput}
+          />
+        </Field>
+
+        <div className="space-y-3">
+          <div className="flex items-baseline justify-between">
+            <p className="font-mono text-[color:var(--meta)]">Decisions</p>
+            <button
+              type="button"
+              onClick={addDecision}
+              className="font-mono text-[color:var(--ink-soft)] hover:text-[color:var(--ink)]"
+            >
+              + Add decision
+            </button>
+          </div>
+          {(form.decisions ?? []).map((d, i) => (
+            <div
+              key={i}
+              className="border border-[color:var(--rule)] rounded-sm p-3 space-y-2"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[color:var(--meta)]">
+                  Decision {String(i + 1).padStart(2, "0")}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => removeDecision(i)}
+                  className="font-mono text-[color:var(--meta)] hover:text-red-700"
+                >
+                  Remove
+                </button>
+              </div>
+              <input
+                value={d.title}
+                onChange={(e) =>
+                  updateDecision(i, "title", e.target.value)
+                }
+                placeholder="Title"
+                className={fieldInput}
+              />
+              <textarea
+                value={d.body}
+                onChange={(e) =>
+                  updateDecision(i, "body", e.target.value)
+                }
+                placeholder="Body"
+                rows={3}
+                className={fieldInput}
+              />
+            </div>
+          ))}
+        </div>
+
+        <Field label="Outcome">
+          <textarea
+            value={form.outcome ?? ""}
+            onChange={(e) => set("outcome", e.target.value || undefined)}
+            rows={3}
+            className={fieldInput}
+          />
+        </Field>
+        <Field label="Reflection">
+          <textarea
+            value={form.reflection ?? ""}
+            onChange={(e) => set("reflection", e.target.value || undefined)}
+            rows={3}
+            className={fieldInput}
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Live link label (optional)">
+            <input
+              value={linkLabel}
+              onChange={(e) => setLinkLabel(e.target.value)}
+              className={fieldInput}
+              placeholder="brand.com"
+            />
+          </Field>
+          <Field label="Live link URL (optional)">
+            <input
+              value={linkHref}
+              onChange={(e) => setLinkHref(e.target.value)}
+              className={fieldInput}
+              placeholder="https://…"
+            />
+          </Field>
+        </div>
+      </div>
+
       {error && (
         <p className="font-mono text-red-700 bg-red-50 px-3 py-2 rounded">{error}</p>
       )}
 
-      <div className="flex items-center gap-3 pt-4 border-t border-[color:var(--rule)]">
+      <div className="flex items-center gap-3 pt-4 border-t border-[color:var(--rule)] flex-wrap">
+        <PublishToggle
+          published={form.published !== false}
+          onChange={(v) => set("published", v)}
+        />
         <button
           type="submit"
           disabled={saving}
@@ -207,251 +470,19 @@ export function ProjectForm({ project, mode }: Props) {
             Delete
           </button>
         )}
+        {savedAt && (
+          <span className="font-mono text-[color:var(--meta)] text-[11px]">
+            ✓ Saved at {savedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
+        )}
       </div>
     </form>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────────── */
-/* Image upload box — single image                                     */
-/* ─────────────────────────────────────────────────────────────────── */
-
-function ImageUploadBox({
-  label,
-  helper,
-  aspect,
-  value,
-  onChange,
-}: {
-  label: string;
-  helper: string;
-  aspect: string;
-  value: string;
-  onChange: (url: string | null) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function upload(file: File) {
-    setUploading(true);
-    setError(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? "Upload failed");
-      }
-      const { url } = (await res.json()) as { url: string };
-      onChange(url);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <p className="font-mono text-[color:var(--meta)]">{label}</p>
-      {!value ? (
-        <label
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) upload(f);
-          }}
-          className={`relative block cursor-pointer rounded-sm border-2 border-dashed transition-colors ${
-            dragOver
-              ? "border-[color:var(--ink)] bg-[color:var(--paper-soft)]"
-              : "border-[color:var(--rule)] hover:border-[color:var(--ink-soft)]"
-          }`}
-          style={{ aspectRatio: aspect, maxWidth: 320 }}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) upload(f);
-            }}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 gap-2">
-            <p className="font-mono text-[color:var(--ink-soft)]">
-              {uploading ? "Uploading…" : "Drop image or click"}
-            </p>
-            <p className="font-mono text-[color:var(--meta)] text-[10px] leading-relaxed max-w-[28ch]">
-              {helper}
-            </p>
-          </div>
-        </label>
-      ) : (
-        <div
-          className="relative rounded-sm overflow-hidden"
-          style={{ aspectRatio: aspect, maxWidth: 320 }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt="Cover preview"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          <div className="absolute top-2 right-2 flex gap-2">
-            <label className="cursor-pointer font-mono uppercase tracking-[0.12em] text-[9px] px-3 py-1.5 rounded-full bg-[color:var(--ink)] text-[color:var(--paper)] hover:scale-[1.03] transition-transform">
-              Replace
-              <input
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) upload(f);
-                }}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="font-mono uppercase tracking-[0.12em] text-[9px] px-3 py-1.5 rounded-full bg-white text-[color:var(--ink)] hover:scale-[1.03] transition-transform"
-            >
-              Remove
-            </button>
-          </div>
-        </div>
-      )}
-      {error && <p className="text-xs text-red-700 font-mono">{error}</p>}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────────── */
-/* Gallery upload — multiple images                                    */
-/* ─────────────────────────────────────────────────────────────────── */
-
-function GalleryUploadGrid({
-  gallery,
-  onChange,
-}: {
-  gallery: string[];
-  onChange: (g: string[]) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function uploadMany(files: FileList | File[]) {
-    setUploading(true);
-    setError(null);
-    const next: string[] = [...gallery];
-    try {
-      for (const file of Array.from(files)) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error("Upload failed");
-        const { url } = (await res.json()) as { url: string };
-        next.push(url);
-      }
-      onChange(next);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Upload failed");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-baseline justify-between">
-        <p className="font-mono text-[color:var(--meta)]">Gallery images</p>
-        <p className="font-mono text-[color:var(--meta)] text-[10px]">
-          Landscape, 16:10. Recommended ≥ 1600 × 1000 px.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {gallery.map((src, i) => (
-          <div
-            key={src + i}
-            className="relative rounded-sm overflow-hidden"
-            style={{ aspectRatio: "16 / 10" }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={src}
-              alt={`Gallery ${i + 1}`}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute top-1.5 right-1.5 flex gap-1.5">
-              <button
-                type="button"
-                onClick={() =>
-                  onChange(gallery.filter((_, j) => j !== i))
-                }
-                className="font-mono uppercase tracking-[0.12em] text-[9px] px-2.5 py-1 rounded-full bg-white text-[color:var(--ink)] hover:scale-[1.03] transition-transform"
-              >
-                Remove
-              </button>
-            </div>
-            <span className="absolute bottom-1.5 left-2 font-mono text-[10px] tracking-[0.12em] text-white drop-shadow">
-              Fig. {String(i + 1).padStart(2, "0")}
-            </span>
-          </div>
-        ))}
-
-        {/* Upload tile */}
-        <label
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const files = e.dataTransfer.files;
-            if (files?.length) uploadMany(files);
-          }}
-          className={`relative block cursor-pointer rounded-sm border-2 border-dashed transition-colors ${
-            dragOver
-              ? "border-[color:var(--ink)] bg-[color:var(--paper-soft)]"
-              : "border-[color:var(--rule)] hover:border-[color:var(--ink-soft)]"
-          }`}
-          style={{ aspectRatio: "16 / 10" }}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="sr-only"
-            onChange={(e) => {
-              if (e.target.files?.length) uploadMany(e.target.files);
-            }}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3 gap-1">
-            <p className="font-mono text-[color:var(--ink-soft)]">
-              {uploading ? "Uploading…" : "+ Add images"}
-            </p>
-            <p className="font-mono text-[color:var(--meta)] text-[9px]">
-              Drop here or click
-            </p>
-          </div>
-        </label>
-      </div>
-
-      {error && <p className="text-xs text-red-700 font-mono">{error}</p>}
-    </div>
-  );
-}
+/* (ImageUploadBox + GalleryUploadGrid now imported from
+   @/app/admin/_components/image-uploads — they use Vercel Blob's
+   direct client upload to bypass the 4.5 MB serverless body limit.) */
 
 /* ─────────────────────────────────────────────────────────────────── */
 /* Palette picker — preset row + custom 2-colour input                 */
@@ -583,5 +614,46 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="font-mono text-[color:var(--meta)] block">{label}</span>
       {children}
     </label>
+  );
+}
+
+/** Pill toggle for the published / draft state. Drafts are hidden from
+ *  public pages but stay in the admin list. */
+function PublishToggle({
+  published,
+  onChange,
+}: {
+  published: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 mr-auto">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        aria-pressed={published}
+        className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
+        style={{
+          background: published ? "var(--ink)" : "transparent",
+          color: published ? "var(--paper)" : "var(--ink-soft)",
+          borderColor: published ? "var(--ink)" : "var(--rule)",
+        }}
+      >
+        Published
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        aria-pressed={!published}
+        className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
+        style={{
+          background: !published ? "var(--ink)" : "transparent",
+          color: !published ? "var(--paper)" : "var(--ink-soft)",
+          borderColor: !published ? "var(--ink)" : "var(--rule)",
+        }}
+      >
+        Draft
+      </button>
+    </div>
   );
 }

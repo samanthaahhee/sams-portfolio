@@ -1,24 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ProjectCard } from "./project-card";
-import { projectCategories, type Project } from "@/lib/projects";
-
-type Filter = "All" | (typeof projectCategories)[number];
-
-const FILTERS: Filter[] = ["All", ...projectCategories];
+import { type Project } from "@/lib/projects";
 
 export function ArchiveSection({ projects }: { projects: Project[] }) {
-  const [active, setActive] = useState<Filter>("All");
+  /* Build the filter list from the tags actually set on projects. Any tag
+   * present on at least one project becomes a filter chip; tags removed
+   * from every project disappear automatically. Order: first-seen order
+   * across the project list (predictable + author-controllable via the
+   * editor). */
+  const filters = useMemo(() => {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+    for (const p of projects) {
+      for (const t of p.tags) {
+        const trimmed = t.trim();
+        if (!trimmed || seen.has(trimmed)) continue;
+        seen.add(trimmed);
+        ordered.push(trimmed);
+      }
+    }
+    return ["All", ...ordered];
+  }, [projects]);
+
+  const [active, setActive] = useState<string>("All");
+
+  // If the active filter disappears (e.g. last project with that tag
+  // removed), fall back to "All" rather than rendering an empty state.
+  const safeActive = filters.includes(active) ? active : "All";
 
   const filtered =
-    active === "All"
+    safeActive === "All"
       ? projects
-      : projects.filter((p) => p.tags.includes(active));
+      : projects.filter((p) => p.tags.includes(safeActive));
 
   return (
-    <section className="px-[var(--spacing-page)] pt-12 md:pt-16">
+    <section id="archive" className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20">
       {/* ── Section masthead ─────────────────────────────────────── */}
       <div className="grid grid-cols-12 gap-4 items-baseline mb-10 md:mb-14">
         <div className="col-span-12 md:col-span-7">
@@ -63,8 +82,8 @@ export function ArchiveSection({ projects }: { projects: Project[] }) {
         aria-label="Filter projects by discipline"
         className="flex flex-wrap items-center gap-2 mb-8 md:mb-10 pb-6 border-b border-[color:var(--rule)]"
       >
-        {FILTERS.map((f) => {
-          const isActive = active === f;
+        {filters.map((f) => {
+          const isActive = safeActive === f;
           const count =
             f === "All"
               ? projects.length

@@ -32,19 +32,106 @@ type ProjectRow = {
   cover: string;
   description: string;
   gallery: string[] | string;
+  comparisons: Project["comparisons"] | string | null;
+  visuals: VisualItem[] | string | null;
   href: string | null;
   position: number;
+  published: boolean;
+  no: string | null;
+  client: string | null;
+  role: string[] | string | null;
+  primary_role: string | null;
+  category: string | null;
+  summary: string | null;
+  context: string | null;
+  problem: string | null;
+  approach: string | null;
+  decisions: { title: string; body: string }[] | string | null;
+  outcome: string | null;
+  reflection: string | null;
+  link_label: string | null;
+  link_href: string | null;
 };
+
+/** Normalise gallery: old data may be a string[] of URLs; new data is
+ *  an array of { url, caption? } objects. */
+function normalizeGallery(raw: unknown): { url: string; caption?: string }[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (typeof item === "string") return { url: item };
+      if (item && typeof item === "object" && "url" in item) {
+        return item as { url: string; caption?: string };
+      }
+      return null;
+    })
+    .filter((x): x is { url: string; caption?: string } => x !== null);
+}
+
+type VisualItem =
+  | { kind: "image"; url: string; caption?: string }
+  | { kind: "compare"; before: string; after: string; caption?: string }
+  | { kind: "grid"; images: string[]; caption?: string }
+  | { kind: "stack"; images: string[]; caption?: string }
+  | {
+      kind: "media";
+      images: string[];
+      layout: "vertical" | "horizontal";
+      caption?: string;
+    };
+
+/** Build a unified visuals array from possibly-legacy data:
+ *  - If `visuals` is populated, parse and use it directly.
+ *  - Otherwise merge gallery (as image items) + comparisons (as
+ *    compare items) so the public pages keep rendering older rows. */
+function buildVisuals(
+  rawVisuals: unknown,
+  gallery: { url: string; caption?: string }[],
+  comparisons: { before: string; after: string; caption?: string }[] | undefined,
+): VisualItem[] {
+  const arr = Array.isArray(rawVisuals) ? rawVisuals : [];
+  const parsed = arr
+    .filter(
+      (x): x is VisualItem =>
+        Boolean(x) &&
+        typeof x === "object" &&
+        "kind" in (x as object) &&
+        ["image", "compare", "grid", "stack", "media"].includes(
+          (x as { kind: string }).kind,
+        ),
+    )
+    .map((x) => x as VisualItem);
+
+  if (parsed.length > 0) return parsed;
+
+  // Legacy merge — gallery items first, then comparisons.
+  const fromGallery: VisualItem[] = gallery.map((g) => ({
+    kind: "image",
+    url: g.url,
+    caption: g.caption,
+  }));
+  const fromCompare: VisualItem[] = (comparisons ?? []).map((c) => ({
+    kind: "compare",
+    before: c.before,
+    after: c.after,
+    caption: c.caption,
+  }));
+  return [...fromGallery, ...fromCompare];
+}
 
 function projectFromRow(r: ProjectRow): Project {
   const parse = <T,>(v: T | string): T =>
     typeof v === "string" ? (JSON.parse(v) as T) : v;
-  const gallery = parse(r.gallery) as string[];
+  const gallery = normalizeGallery(parse(r.gallery));
   let tags = parse(r.tags) as string[];
   if ((!tags || tags.length === 0) && r.tag) tags = [r.tag];
   const customColors = r.custom_colors
     ? (parse(r.custom_colors) as Project["customColors"])
     : undefined;
+  const comparisons = r.comparisons
+    ? (parse(r.comparisons) as Project["comparisons"])
+    : undefined;
+  const visuals = buildVisuals(parse(r.visuals), gallery, comparisons);
   return {
     slug: r.slug,
     brand: r.brand,
@@ -56,16 +143,47 @@ function projectFromRow(r: ProjectRow): Project {
     cover: r.cover,
     description: r.description,
     gallery,
+    comparisons: comparisons && comparisons.length > 0 ? comparisons : undefined,
+    visuals: visuals.length > 0 ? visuals : undefined,
     href: r.href ?? undefined,
+    published: r.published ?? true,
+    no: r.no ?? undefined,
+    client: r.client ?? undefined,
+    role: r.role
+      ? Array.isArray(r.role)
+        ? r.role
+        : (JSON.parse(r.role) as string[])
+      : undefined,
+    primaryRole: r.primary_role ?? undefined,
+    category: r.category ?? undefined,
+    summary: r.summary ?? undefined,
+    context: r.context ?? undefined,
+    problem: r.problem ?? undefined,
+    approach: r.approach ?? undefined,
+    decisions: r.decisions
+      ? (Array.isArray(r.decisions)
+          ? r.decisions
+          : (JSON.parse(r.decisions) as { title: string; body: string }[]))
+      : undefined,
+    outcome: r.outcome ?? undefined,
+    reflection: r.reflection ?? undefined,
+    link:
+      r.link_label && r.link_href
+        ? { label: r.link_label, href: r.link_href }
+        : undefined,
   };
 }
 
-export async function getProjects(): Promise<Project[]> {
+/** All projects including drafts — for admin views. */
+export async function getAllProjects(): Promise<Project[]> {
   if (!dbConfigured()) return staticProjects;
   try {
     const { rows } = await sql<ProjectRow>`
       SELECT slug, brand, title, tag, tags, year, palette, custom_colors,
-             cover, description, gallery, href, position
+             cover, description, gallery, comparisons, visuals, href, position,
+             published, no, client, role, primary_role, category, summary,
+             context, problem, approach, decisions, outcome, reflection,
+             link_label, link_href
       FROM projects
       ORDER BY position ASC, id ASC
     `;
@@ -75,6 +193,20 @@ export async function getProjects(): Promise<Project[]> {
     console.warn("[db] Falling back to static projects:", err);
     return staticProjects;
   }
+}
+
+/** Published projects only — for public-facing pages. */
+export async function getProjects(): Promise<Project[]> {
+  const all = await getAllProjects();
+  return all.filter((p) => p.published !== false);
+}
+
+/** Admin lookup — returns drafts too. */
+export async function getProjectAdmin(
+  slug: string,
+): Promise<Project | undefined> {
+  const list = await getAllProjects();
+  return list.find((p) => p.slug === slug);
 }
 
 export async function getProject(slug: string): Promise<Project | undefined> {
@@ -104,9 +236,13 @@ type CaseStudyRow = {
   decisions: { title: string; body: string }[] | string;
   outcome: string;
   reflection: string;
+  gallery: string[] | string;
+  comparisons: CaseStudy["comparisons"] | string | null;
+  visuals: VisualItem[] | string | null;
   link_label: string | null;
   link_href: string | null;
   position: number;
+  published: boolean;
 };
 
 function caseStudyFromRow(r: CaseStudyRow): CaseStudy {
@@ -115,6 +251,11 @@ function caseStudyFromRow(r: CaseStudyRow): CaseStudy {
   const customColors = r.custom_colors
     ? (parse(r.custom_colors) as CaseStudy["customColors"])
     : undefined;
+  const gallery = normalizeGallery(parse(r.gallery));
+  const comparisons = r.comparisons
+    ? (parse(r.comparisons) as CaseStudy["comparisons"])
+    : undefined;
+  const visuals = buildVisuals(parse(r.visuals), gallery, comparisons);
   return {
     slug: r.slug,
     no: r.no,
@@ -135,21 +276,26 @@ function caseStudyFromRow(r: CaseStudyRow): CaseStudy {
     decisions: parse(r.decisions) as { title: string; body: string }[],
     outcome: r.outcome,
     reflection: r.reflection,
+    gallery: gallery.length > 0 ? gallery : undefined,
+    comparisons: comparisons && comparisons.length > 0 ? comparisons : undefined,
+    visuals: visuals.length > 0 ? visuals : undefined,
     link:
       r.link_label && r.link_href
         ? { label: r.link_label, href: r.link_href }
         : undefined,
+    published: r.published ?? true,
   };
 }
 
-export async function getCaseStudies(): Promise<CaseStudy[]> {
+/** All case studies including drafts — for admin views. */
+export async function getAllCaseStudies(): Promise<CaseStudy[]> {
   if (!dbConfigured()) return staticCaseStudies;
   try {
     const { rows } = await sql<CaseStudyRow>`
       SELECT slug, no, title, client, year, role, primary_role, category,
              tags, summary, palette, custom_colors, cover, context, problem,
-             approach, decisions, outcome, reflection, link_label, link_href,
-             position
+             approach, decisions, outcome, reflection, gallery, comparisons,
+             visuals, link_label, link_href, position, published
       FROM case_studies
       ORDER BY position ASC, id ASC
     `;
@@ -159,6 +305,20 @@ export async function getCaseStudies(): Promise<CaseStudy[]> {
     console.warn("[db] Falling back to static case studies:", err);
     return staticCaseStudies;
   }
+}
+
+/** Published case studies only — for public-facing pages. */
+export async function getCaseStudies(): Promise<CaseStudy[]> {
+  const all = await getAllCaseStudies();
+  return all.filter((c) => c.published !== false);
+}
+
+/** Admin lookup — returns drafts too. */
+export async function getCaseStudyBySlugAdmin(
+  slug: string,
+): Promise<CaseStudy | undefined> {
+  const list = await getAllCaseStudies();
+  return list.find((c) => c.slug === slug);
 }
 
 export async function getCaseStudyBySlug(
@@ -173,23 +333,50 @@ export async function getCaseStudyBySlug(
 export async function upsertProject(p: Project, position?: number) {
   const primary = p.tags[0] ?? "";
   const customColorsJson = p.customColors ? JSON.stringify(p.customColors) : null;
+  const comparisonsJson = JSON.stringify(p.comparisons ?? []);
+  const visualsJson = JSON.stringify(p.visuals ?? []);
+  const published = p.published !== false;
+  const roleJson = JSON.stringify(p.role ?? []);
+  const decisionsJson = JSON.stringify(p.decisions ?? []);
   await sql`
     INSERT INTO projects
       (slug, brand, title, tag, tags, year, palette, custom_colors,
-       cover, description, gallery, href, position)
+       cover, description, gallery, comparisons, visuals, href, position,
+       published, no, client, role, primary_role, category, summary,
+       context, problem, approach, decisions, outcome, reflection,
+       link_label, link_href)
     VALUES
       (${p.slug}, ${p.brand}, ${p.title}, ${primary},
        ${JSON.stringify(p.tags)}::jsonb, ${p.year ?? null},
        ${p.palette}, ${customColorsJson}::jsonb,
        ${p.cover}, ${p.description},
-       ${JSON.stringify(p.gallery)}::jsonb, ${p.href ?? null},
-       ${position ?? 0})
+       ${JSON.stringify(p.gallery)}::jsonb,
+       ${comparisonsJson}::jsonb,
+       ${visualsJson}::jsonb,
+       ${p.href ?? null}, ${position ?? 0},
+       ${published},
+       ${p.no ?? null}, ${p.client ?? null},
+       ${roleJson}::jsonb, ${p.primaryRole ?? null}, ${p.category ?? null},
+       ${p.summary ?? null}, ${p.context ?? null}, ${p.problem ?? null},
+       ${p.approach ?? null}, ${decisionsJson}::jsonb,
+       ${p.outcome ?? null}, ${p.reflection ?? null},
+       ${p.link?.label ?? null}, ${p.link?.href ?? null})
     ON CONFLICT (slug) DO UPDATE SET
       brand=EXCLUDED.brand, title=EXCLUDED.title, tag=EXCLUDED.tag,
       tags=EXCLUDED.tags, year=EXCLUDED.year, palette=EXCLUDED.palette,
       custom_colors=EXCLUDED.custom_colors,
       cover=EXCLUDED.cover, description=EXCLUDED.description,
-      gallery=EXCLUDED.gallery, href=EXCLUDED.href, updated_at=NOW()
+      gallery=EXCLUDED.gallery, comparisons=EXCLUDED.comparisons,
+      visuals=EXCLUDED.visuals,
+      href=EXCLUDED.href, published=EXCLUDED.published,
+      no=EXCLUDED.no, client=EXCLUDED.client, role=EXCLUDED.role,
+      primary_role=EXCLUDED.primary_role, category=EXCLUDED.category,
+      summary=EXCLUDED.summary, context=EXCLUDED.context,
+      problem=EXCLUDED.problem, approach=EXCLUDED.approach,
+      decisions=EXCLUDED.decisions, outcome=EXCLUDED.outcome,
+      reflection=EXCLUDED.reflection, link_label=EXCLUDED.link_label,
+      link_href=EXCLUDED.link_href,
+      updated_at=NOW()
   `;
 }
 
@@ -201,11 +388,16 @@ export async function deleteProject(slug: string) {
 
 export async function upsertCaseStudy(c: CaseStudy, position?: number) {
   const customColorsJson = c.customColors ? JSON.stringify(c.customColors) : null;
+  const galleryJson = JSON.stringify(c.gallery ?? []);
+  const comparisonsJson = JSON.stringify(c.comparisons ?? []);
+  const visualsJson = JSON.stringify(c.visuals ?? []);
+  const published = c.published !== false;
   await sql`
     INSERT INTO case_studies
       (slug, no, title, client, year, role, primary_role, category, tags,
        summary, palette, custom_colors, cover, context, problem, approach,
-       decisions, outcome, reflection, link_label, link_href, position)
+       decisions, outcome, reflection, gallery, comparisons, visuals,
+       link_label, link_href, position, published)
     VALUES
       (${c.slug}, ${c.no}, ${c.title}, ${c.client}, ${c.year},
        ${JSON.stringify(c.role)}::jsonb, ${c.primaryRole}, ${c.category},
@@ -213,7 +405,10 @@ export async function upsertCaseStudy(c: CaseStudy, position?: number) {
        ${customColorsJson}::jsonb,
        ${c.cover}, ${c.context}, ${c.problem}, ${c.approach},
        ${JSON.stringify(c.decisions)}::jsonb, ${c.outcome}, ${c.reflection},
-       ${c.link?.label ?? null}, ${c.link?.href ?? null}, ${position ?? 0})
+       ${galleryJson}::jsonb, ${comparisonsJson}::jsonb,
+       ${visualsJson}::jsonb,
+       ${c.link?.label ?? null}, ${c.link?.href ?? null}, ${position ?? 0},
+       ${published})
     ON CONFLICT (slug) DO UPDATE SET
       no           = EXCLUDED.no,
       title        = EXCLUDED.title,
@@ -233,12 +428,82 @@ export async function upsertCaseStudy(c: CaseStudy, position?: number) {
       decisions    = EXCLUDED.decisions,
       outcome      = EXCLUDED.outcome,
       reflection   = EXCLUDED.reflection,
+      gallery      = EXCLUDED.gallery,
+      comparisons  = EXCLUDED.comparisons,
+      visuals      = EXCLUDED.visuals,
       link_label   = EXCLUDED.link_label,
       link_href    = EXCLUDED.link_href,
+      published    = EXCLUDED.published,
       updated_at   = NOW()
   `;
 }
 
 export async function deleteCaseStudy(slug: string) {
   await sql`DELETE FROM case_studies WHERE slug = ${slug}`;
+}
+
+/* ── Reorder ─────────────────────────────────────────────────────── */
+
+/** Swap the `position` of two rows in the same table — used by the
+ *  admin ↑ ↓ reorder buttons. */
+/** Bulk-set positions for a kind based on an ordered slugs array.
+ *  Index in the array becomes the new `position` value. Items not in
+ *  the array are left untouched (e.g. drafts excluded from the
+ *  published reorder list). */
+export async function setOrder(
+  kind: "projects" | "case_studies",
+  slugs: string[],
+) {
+  for (let i = 0; i < slugs.length; i++) {
+    if (kind === "projects") {
+      await sql`UPDATE projects SET position = ${i}, updated_at = NOW()
+                WHERE slug = ${slugs[i]}`;
+    } else {
+      await sql`UPDATE case_studies SET position = ${i}, updated_at = NOW()
+                WHERE slug = ${slugs[i]}`;
+    }
+  }
+}
+
+export async function swapProjectPositions(slugA: string, slugB: string) {
+  const { rows } = await sql<{ slug: string; position: number }>`
+    SELECT slug, position FROM projects WHERE slug IN (${slugA}, ${slugB})
+  `;
+  const a = rows.find((r) => r.slug === slugA);
+  const b = rows.find((r) => r.slug === slugB);
+  if (!a || !b) return;
+  await sql`UPDATE projects SET position = ${b.position}, updated_at = NOW() WHERE slug = ${slugA}`;
+  await sql`UPDATE projects SET position = ${a.position}, updated_at = NOW() WHERE slug = ${slugB}`;
+}
+
+export async function swapCaseStudyPositions(slugA: string, slugB: string) {
+  const { rows } = await sql<{ slug: string; position: number }>`
+    SELECT slug, position FROM case_studies WHERE slug IN (${slugA}, ${slugB})
+  `;
+  const a = rows.find((r) => r.slug === slugA);
+  const b = rows.find((r) => r.slug === slugB);
+  if (!a || !b) return;
+  await sql`UPDATE case_studies SET position = ${b.position}, updated_at = NOW() WHERE slug = ${slugA}`;
+  await sql`UPDATE case_studies SET position = ${a.position}, updated_at = NOW() WHERE slug = ${slugB}`;
+}
+
+/** Find the slug immediately above or below a given slug in the
+ *  ordered list. Returns null if at the edge.
+ *
+ *  Uses the full (admin) list — drafts included — so the indices match
+ *  the admin reorder UI, not the public-facing filtered list. */
+export async function neighborSlug(
+  kind: "projects" | "case_studies",
+  slug: string,
+  dir: -1 | 1,
+): Promise<string | null> {
+  const ordered =
+    kind === "projects"
+      ? (await getAllProjects()).map((p) => p.slug)
+      : (await getAllCaseStudies()).map((c) => c.slug);
+  const idx = ordered.indexOf(slug);
+  if (idx === -1) return null;
+  const j = idx + dir;
+  if (j < 0 || j >= ordered.length) return null;
+  return ordered[j];
 }

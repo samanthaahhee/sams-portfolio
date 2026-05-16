@@ -29,17 +29,78 @@ export type Project = {
   cover: string;
   /** Short project descriptor for the condensed detail page. */
   description: string;
-  /** Visual gallery for the detail page — placeholder picsum URLs for now. */
-  gallery: string[];
+  /** Visual gallery for the detail page. Each item has a URL and an
+   *  optional caption shown beneath it. (Legacy — new code should use
+   *  `visuals` instead, which can mix images and before/after sliders.) */
+  gallery: GalleryItem[];
+  /** Before/after slider pairs. (Legacy — see `visuals`.) */
+  comparisons?: Comparison[];
+  /** Unified visuals list (image + compare items, reorderable together).
+   *  When present, takes precedence over `gallery` + `comparisons`. */
+  visuals?: VisualItem[];
   /** Optional external link (e.g., Behance project URL). */
   href?: string;
+  /** When false, the project is a draft — hidden from public views,
+   *  still visible in the admin list. Defaults to true. */
+  published?: boolean;
+
+  /* ── Optional case-study-style fields. Allow a smaller project to
+   * grow into a full editorial piece without changing form. All
+   * undefined → the project renders its compact layout. ─────────── */
+  /** Number badge ("01", "02") — only shown if set. */
+  no?: string;
+  /** Client name. Falls back to `brand` when empty. */
+  client?: string;
+  /** Roles list. */
+  role?: string[];
+  /** Primary role label. */
+  primaryRole?: string;
+  /** Free-form category label. */
+  category?: string;
+  /** Short editorial summary (bold pullquote on the detail page). */
+  summary?: string;
+  /** Long-form narrative sections — each optional, omitted if empty. */
+  context?: string;
+  problem?: string;
+  approach?: string;
+  decisions?: { title: string; body: string }[];
+  outcome?: string;
+  reflection?: string;
+  /** Optional live link (label + URL). */
+  link?: { label: string; href: string };
 };
 
-const gal = (slug: string): string[] => [
-  `https://picsum.photos/seed/${slug}-a/1600/1000`,
-  `https://picsum.photos/seed/${slug}-b/1200/1500`,
-  `https://picsum.photos/seed/${slug}-c/1600/1000`,
-  `https://picsum.photos/seed/${slug}-d/1200/1500`,
+export type Comparison = {
+  before: string;
+  after: string;
+  caption?: string;
+};
+
+export type GalleryItem = {
+  url: string;
+  caption?: string;
+};
+
+/** Unified visual item — image / before-after slider / 3-up grid /
+ *  cycling image stack / natural-aspect media (gif-friendly). */
+export type VisualItem =
+  | { kind: "image"; url: string; caption?: string }
+  | { kind: "compare"; before: string; after: string; caption?: string }
+  | { kind: "grid"; images: string[]; caption?: string }
+  | { kind: "stack"; images: string[]; caption?: string }
+  | {
+      kind: "media";
+      images: string[];
+      /** vertical = stack top-to-bottom, horizontal = side by side */
+      layout: "vertical" | "horizontal";
+      caption?: string;
+    };
+
+const galObjs = (slug: string): { url: string }[] => [
+  { url: `https://picsum.photos/seed/${slug}-a/1600/1000` },
+  { url: `https://picsum.photos/seed/${slug}-b/1200/1500` },
+  { url: `https://picsum.photos/seed/${slug}-c/1600/1000` },
+  { url: `https://picsum.photos/seed/${slug}-d/1200/1500` },
 ];
 
 /** Picsum gives a stable image per seed — using the slug keeps placeholders
@@ -59,7 +120,7 @@ export const projects: Project[] = [
     palette: "coral-sage",
     cover: ph("global-marketplace"),
     description: "A brand identity for a global online marketplace — logo, palette, and visual system tuned for international trust signals. Placeholder description; full writeup to come.",
-    gallery: gal("global-marketplace"),
+    gallery: galObjs("global-marketplace"),
   },
   {
     slug: "walkrr",
@@ -69,7 +130,7 @@ export const projects: Project[] = [
     palette: "lavender-ochre",
     cover: ph("walkrr-platform"),
     description: "Visual guide for the Walkrr platform — typography, components, and UI patterns documented for the product team. Placeholder description.",
-    gallery: gal("walkrr"),
+    gallery: galObjs("walkrr"),
   },
   {
     slug: "money-2020",
@@ -79,7 +140,7 @@ export const projects: Project[] = [
     palette: "butter-slate",
     cover: ph("money-2020-invite"),
     description: "Print + digital invite system for Recharge's appearance at Money 2020. A focused exercise in editorial pace at conference-grade detail.",
-    gallery: gal("money-2020"),
+    gallery: galObjs("money-2020"),
   },
   {
     slug: "dig-for-days",
@@ -89,7 +150,7 @@ export const projects: Project[] = [
     palette: "moss-butter",
     cover: ph("dig-for-days"),
     description: "Twelve-month wall calendar designed for the mining industry — equal parts utility and brand object.",
-    gallery: gal("dig-for-days"),
+    gallery: galObjs("dig-for-days"),
   },
   {
     slug: "perfect-serve",
@@ -99,7 +160,7 @@ export const projects: Project[] = [
     palette: "dustypink-ink",
     cover: ph("perfect-serve"),
     description: "Campaign work for BOS — print, social, and OOH built around the ritual of pouring the perfect serve.",
-    gallery: gal("perfect-serve"),
+    gallery: galObjs("perfect-serve"),
   },
   {
     slug: "win-a-bmw",
@@ -109,7 +170,7 @@ export const projects: Project[] = [
     palette: "forest-amber",
     cover: ph("win-a-bmw-campaign"),
     description: "Digital campaign creative for a high-stakes consumer giveaway. Built to convert at scale while still feeling brand-considered.",
-    gallery: gal("win-a-bmw"),
+    gallery: galObjs("win-a-bmw"),
   },
   {
     slug: "bos-shots",
@@ -119,7 +180,7 @@ export const projects: Project[] = [
     palette: "coral-sage",
     cover: ph("bos-shots-pack"),
     description: "Packaging design for BOS Shots — small format, big shelf presence. A study in restraint at point-of-sale.",
-    gallery: gal("bos-shots"),
+    gallery: galObjs("bos-shots"),
   },
   {
     slug: "appstore-screenshots",
@@ -129,7 +190,7 @@ export const projects: Project[] = [
     palette: "mint-clay",
     cover: ph("appstore-google"),
     description: "Store screenshots for Recharge — a tightly designed visual narrative built to convert in the half-second a user scrolls past the listing.",
-    gallery: gal("appstore-screens"),
+    gallery: galObjs("appstore-screens"),
   },
   {
     slug: "small-stitch-emailers",
@@ -139,7 +200,7 @@ export const projects: Project[] = [
     palette: "dustypink-ink",
     cover: ph("small-stitch-email"),
     description: "Email design system for Small Stitch — a clothing brand with a community-first voice. Templates designed to feel hand-stitched, not transactional.",
-    gallery: gal("small-stitch"),
+    gallery: galObjs("small-stitch"),
   },
   {
     slug: "krover",
@@ -149,7 +210,7 @@ export const projects: Project[] = [
     palette: "butter-slate",
     cover: ph("krover-brand"),
     description: "Brand strategy and identity work for Krover — from positioning through to a starter visual system.",
-    gallery: gal("krover"),
+    gallery: galObjs("krover"),
   },
   {
     slug: "skinny-bostails",
@@ -159,7 +220,7 @@ export const projects: Project[] = [
     palette: "lavender-ochre",
     cover: ph("skinny-bostails"),
     description: "Limited-format packaging for the Skinny BOStails range. Quick read at a glance; brand DNA on closer inspection.",
-    gallery: gal("skinny-bostails"),
+    gallery: galObjs("skinny-bostails"),
   },
   {
     slug: "bring-your-human",
@@ -169,7 +230,7 @@ export const projects: Project[] = [
     palette: "mint-clay",
     cover: ph("bring-your-human"),
     description: "Brand identity for Bring Your Human — a programme about leadership and humanity at work. Warm, considered, never corporate.",
-    gallery: gal("bring-your-human"),
+    gallery: galObjs("bring-your-human"),
   },
 ];
 
@@ -181,10 +242,9 @@ export function getProject(slug: string) {
  *  added by the UI; this is the source of truth for category order. */
 export const projectCategories = [
   "Brand",
-  "Product",
-  "Campaign",
   "Packaging",
-  "Print",
-  "Email",
+  "Illustration",
+  "Campaign",
+  "Product",
 ] as const;
 export type ProjectCategory = (typeof projectCategories)[number];
