@@ -8,7 +8,7 @@ import { TestimonialTile } from "@/components/testimonial-tile";
 import {
   profile,
   stats,
-  experience,
+  experience as staticExperience,
   testimonials,
   skills,
   tools,
@@ -16,6 +16,7 @@ import {
   languages,
   downloads,
 } from "@/lib/about";
+import { getExperience } from "@/lib/db";
 
 export const metadata = {
   title: "About",
@@ -32,7 +33,13 @@ export const metadata = {
  * design tokens — `data-pair="butter-slate"` is the only surface needed
  * to flip the whole page to another palette.
  */
-export default function AboutPage() {
+export default async function AboutPage() {
+  /* Prefer DB content; fall back to the static src/lib/about.ts seed
+   * if no rows are present (or the DB isn't configured at build time). */
+  const dbExperience = await getExperience();
+  const experience =
+    dbExperience.length > 0 ? dbExperience : staticExperience;
+
   return (
     <div data-pair="butter-slate">
       <SiteHeader pageNo="A" />

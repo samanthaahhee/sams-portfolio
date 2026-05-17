@@ -68,6 +68,31 @@ ALTER TABLE projects ADD COLUMN IF NOT EXISTS reflection    TEXT;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS link_label    TEXT;
 ALTER TABLE projects ADD COLUMN IF NOT EXISTS link_href     TEXT;
 
+-- CV experience entries — drives the timeline on /about. One row per
+-- role. Ordered by `position` (current role first by convention).
+CREATE TABLE IF NOT EXISTS experience_entries (
+  id            SERIAL PRIMARY KEY,
+  slug          TEXT UNIQUE NOT NULL,
+  title         TEXT NOT NULL,
+  short_title   TEXT NOT NULL,
+  company       TEXT NOT NULL,
+  year_pill     TEXT NOT NULL,
+  dates         TEXT NOT NULL,
+  location      TEXT NOT NULL DEFAULT '',
+  context       TEXT NOT NULL DEFAULT '',
+  featured      BOOLEAN NOT NULL DEFAULT FALSE,
+  description   TEXT NOT NULL DEFAULT '',
+  bullets       JSONB NOT NULL DEFAULT '[]',
+  image_src     TEXT NOT NULL DEFAULT '',
+  image_alt     TEXT NOT NULL DEFAULT '',
+  position      INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS experience_entries_position_idx
+  ON experience_entries (position);
+
 CREATE TABLE IF NOT EXISTS case_studies (
   id            SERIAL PRIMARY KEY,
   slug          TEXT UNIQUE NOT NULL,

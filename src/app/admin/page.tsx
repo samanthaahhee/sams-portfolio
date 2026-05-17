@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { getProjects, getCaseStudies } from "@/lib/db";
+import { getProjects, getCaseStudies, getExperience } from "@/lib/db";
 import { ReorderControls } from "@/app/admin/_components/reorder-controls";
 
 export default async function AdminHome() {
-  const [projects, caseStudies] = await Promise.all([
+  const [projects, caseStudies, experience] = await Promise.all([
     getProjects(),
     getCaseStudies(),
+    getExperience(),
   ]);
 
   return (
@@ -54,6 +55,55 @@ export default async function AdminHome() {
             </li>
           ))}
         </ul>
+      </section>
+
+      {/* Experience — drives the /about timeline */}
+      <section>
+        <div className="flex items-baseline justify-between mb-4">
+          <h2 className="font-display text-2xl">
+            CV experience · {experience.length}
+          </h2>
+          <Link
+            href="/admin/experience/new"
+            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
+            style={{ background: "var(--ink)", color: "var(--paper)" }}
+          >
+            + New role
+          </Link>
+        </div>
+        <ul className="border-t border-[color:var(--rule)]">
+          {experience.map((e) => (
+            <li
+              key={e.slug}
+              className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
+            >
+              <Link
+                href={`/admin/experience/${e.slug}`}
+                className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
+              >
+                <span className="font-mono text-[color:var(--meta)] w-24 shrink-0 truncate">
+                  {e.yearPill}
+                </span>
+                <span className="truncate">
+                  {e.title} — {e.company}
+                </span>
+              </Link>
+              <span className="font-mono text-[color:var(--meta)] hidden md:inline shrink-0">
+                {e.dates}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="font-mono text-[color:var(--meta)] text-[10px] mt-3">
+          Reorder + edit individual roles at{" "}
+          <Link
+            href="/admin/experience"
+            className="underline hover:text-[color:var(--ink)]"
+          >
+            /admin/experience
+          </Link>
+          .
+        </p>
       </section>
 
       {/* Case studies */}

@@ -80,18 +80,10 @@ export function CareerRoadmap({ items }: { items: ExperienceEntry[] }) {
       </h2>
       <div className="roadmap-sticky">
         <article className="roadmap-card" style={cardStyle}>
-          {/* ── LEFT — arc + pills ─────────────────────────────── */}
+          {/* ── LEFT — vertical track + pills ──────────────────── */}
           <div className="arc-col">
-            <svg
-              className="arc-line"
-              viewBox="0 0 400 600"
-              preserveAspectRatio="xMidYMid meet"
-              aria-hidden
-            >
-              {/* Arc from top to bottom via the left side. Centre at
-                  right edge of the viewBox, radius 220. */}
-              <path d="M 352 80 A 220 220 0 0 0 352 520" />
-            </svg>
+            {/* The CSS draws the 1px line and the active marker. */}
+            <span aria-hidden className="arc-line" />
             {items.map((entry, i) => {
               const isActive = i === active;
               return (

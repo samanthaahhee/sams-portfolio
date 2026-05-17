@@ -263,10 +263,10 @@ body {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   Career roadmap — arc layout on /about.
-   Two-column card: SVG arc + polar-positioned year pills (left) and a
-   stacked image + role detail (right). Visuals route through tokens;
-   --pair-a resolves to dusty pink via the data-pair="dustypink-ink"
+   Career roadmap — straight vertical timeline on /about.
+   Two-column card: a vertical track + evenly-spaced year pills on the
+   left, stacked image + role detail on the right. Visuals route through
+   tokens; --pair-a resolves to dusty pink via the data-pair="dustypink-ink"
    wrapper around the section.
    ────────────────────────────────────────────────────────────────────── */
 
@@ -287,9 +287,8 @@ body {
 .roadmap-card {
   --active-i: 0;
   --total: 8;
-  --arc-radius: 220px;
-  --arc-center-x: 88%;
-  --arc-center-y: 50%;
+  /* The proportional vertical position of the active pill (0..1). */
+  --active-y: calc(var(--active-i) / (var(--total) - 1));
 
   position: relative;
   background: var(--paper);
@@ -323,50 +322,59 @@ body {
   z-index: 0;
 }
 
-/* ── LEFT — arc column ──────────────────────────────────────────── */
+/* ── LEFT — vertical timeline column ──────────────────────────── */
 .arc-col {
   position: relative;
   z-index: 2;
   overflow: visible;
+  /* The pills + line live in a vertical band that occupies the full
+     card height minus a top/bottom inset so the first / last pills
+     don't pin to the card edge. */
+  padding: 2.5rem 0;
 }
 
+/* Vertical track — a 1px line down the centre of the column. */
 .arc-line {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-.arc-line path {
-  fill: none;
-  stroke: var(--rule-strong);
-  stroke-width: 1;
+  top: 2.5rem;
+  bottom: 2.5rem;
+  left: 50%;
+  width: 1px;
+  background: var(--rule-strong);
   opacity: 0.5;
+  pointer-events: none;
+  transform: translateX(-0.5px);
 }
 
-/* Pills positioned via polar math.
-   - --i is the index (set inline per pill)
-   - --total comes from the card
-   - --angle interpolates from 270° (top) to 90° (bottom) via the
-     LEFT side of the circle
-   - --tilt is a deliberately-stylised lean: -(angle-180)*0.4 →
-     -36° at top, 0° in the middle, +36° at the bottom. */
+/* Sliding active marker — a coral dot that glides along the line as
+   the active pill changes. `--active-y` is a unit-less 0..1 fraction
+   set on the card, so `calc(var(--active-y) * 100%)` resolves to the
+   dot's position along the line's height. */
+.arc-line::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: calc(var(--active-y) * 100%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pair-a);
+  transform: translate(-50%, -50%);
+  transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pair-a) 22%, transparent);
+}
+
+/* Pills positioned evenly down the vertical line.
+   --i is set inline per pill (0..total-1).
+   --total comes from the card. */
 .arc-pill {
   --i: 0;
-  --start-deg: 270;
-  --end-deg: 90;
-  --angle: calc(
-    var(--start-deg)
-    + var(--i) * (var(--end-deg) - var(--start-deg)) / (var(--total) - 1)
-  );
-  --tilt: calc(-1 * (var(--angle) - 180) * 0.4);
-
   position: absolute;
-  left: var(--arc-center-x);
-  top: var(--arc-center-y);
+  left: 50%;
+  top: calc(2.5rem + (100% - 5rem) * var(--i) / (var(--total) - 1));
+  transform: translate(-50%, -50%);
 
-  background: transparent;
+  background: var(--paper);
   border: 1px solid var(--rule-strong);
   border-radius: 999px;
   padding: 7px 16px;
@@ -383,19 +391,6 @@ body {
     border-color 0.4s,
     color 0.4s,
     box-shadow 0.4s;
-
-  transform-origin: 0 0;
-  /* Pills sit on the SAME arc as the SVG arc-line.
-     `rotate(angle) translateX(+R)` places the element at SVG-math
-     angle `angle` from the rotation centre — top (270°), through
-     the LEFT side (180°), to the bottom (90°). The final
-     `rotate(tilt - angle)` cancels the radial rotation so the pill
-     ends up tilted by the stylised `tilt` value only. */
-  transform:
-    translate(-50%, -50%)
-    rotate(calc(var(--angle) * 1deg))
-    translateX(var(--arc-radius))
-    rotate(calc((var(--tilt) - var(--angle)) * 1deg));
 }
 
 .arc-pill:hover {
@@ -508,10 +503,10 @@ body {
   color: var(--ink-muted);
 }
 
-/* Mobile — stack to single column, shrink the arc radius. */
+/* Mobile — stack to single column. The vertical timeline becomes a
+   horizontal one above the content. */
 @media (max-width: 880px) {
   .roadmap-card {
-    --arc-radius: 140px;
     grid-template-columns: 1fr;
     height: min(94vh, 800px);
     padding: 1.25rem;
@@ -519,9 +514,27 @@ body {
     gap: 0.5rem;
   }
   .arc-col {
-    height: 220px;
+    height: 200px;
+    padding: 0;
+  }
+  .arc-line {
+    top: 50%;
+    bottom: auto;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    height: 1px;
+    transform: translateY(-0.5px);
+  }
+  .arc-line::after {
+    top: 50%;
+    left: calc(1rem + (100% - 2rem) * var(--active-y));
+    transform: translate(-50%, -50%);
+    transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .arc-pill {
+    top: 50%;
+    left: calc(1rem + (100% - 2rem) * var(--i) / (var(--total) - 1));
     padding: 4px 10px;
     font-size: 9px;
   }

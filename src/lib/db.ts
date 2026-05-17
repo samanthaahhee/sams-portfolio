@@ -488,6 +488,121 @@ export async function swapCaseStudyPositions(slugA: string, slugB: string) {
   await sql`UPDATE case_studies SET position = ${a.position}, updated_at = NOW() WHERE slug = ${slugB}`;
 }
 
+/* ── Experience entries (CV / /about timeline) ──────────────────── */
+
+import type { ExperienceEntry } from "./about";
+
+type ExperienceRow = {
+  slug: string;
+  title: string;
+  short_title: string;
+  company: string;
+  year_pill: string;
+  dates: string;
+  location: string;
+  context: string;
+  featured: boolean;
+  description: string;
+  bullets: string[] | string;
+  image_src: string;
+  image_alt: string;
+  position: number;
+};
+
+function experienceFromRow(r: ExperienceRow): ExperienceEntry & { slug: string } {
+  const bullets = Array.isArray(r.bullets)
+    ? r.bullets
+    : (JSON.parse(r.bullets) as string[]);
+  return {
+    slug: r.slug,
+    title: r.title,
+    shortTitle: r.short_title,
+    company: r.company,
+    yearPill: r.year_pill,
+    dates: r.dates,
+    location: r.location,
+    context: r.context,
+    featured: r.featured,
+    description: r.description,
+    bullets,
+    image: { src: r.image_src, alt: r.image_alt },
+  };
+}
+
+/** Read all experience entries in display order (current role first). */
+export async function getExperience(): Promise<
+  (ExperienceEntry & { slug: string })[]
+> {
+  if (!dbConfigured()) return [];
+  try {
+    const { rows } = await sql<ExperienceRow>`
+      SELECT slug, title, short_title, company, year_pill, dates, location,
+             context, featured, description, bullets, image_src, image_alt,
+             position
+      FROM experience_entries
+      ORDER BY position ASC, id ASC
+    `;
+    return rows.map(experienceFromRow);
+  } catch (err) {
+    console.warn("[db] getExperience failed:", err);
+    return [];
+  }
+}
+
+export async function getExperienceBySlug(
+  slug: string,
+): Promise<(ExperienceEntry & { slug: string }) | undefined> {
+  const all = await getExperience();
+  return all.find((e) => e.slug === slug);
+}
+
+/** Upsert a single experience entry — admin form target. */
+export async function upsertExperience(
+  e: ExperienceEntry & { slug: string },
+  position?: number,
+) {
+  await sql`
+    INSERT INTO experience_entries
+      (slug, title, short_title, company, year_pill, dates, location, context,
+       featured, description, bullets, image_src, image_alt, position)
+    VALUES
+      (${e.slug}, ${e.title}, ${e.shortTitle}, ${e.company}, ${e.yearPill},
+       ${e.dates}, ${e.location ?? ""}, ${e.context ?? ""},
+       ${e.featured ?? false}, ${e.description},
+       ${JSON.stringify(e.bullets ?? [])}::jsonb,
+       ${e.image?.src ?? ""}, ${e.image?.alt ?? ""},
+       ${position ?? 0})
+    ON CONFLICT (slug) DO UPDATE SET
+      title       = EXCLUDED.title,
+      short_title = EXCLUDED.short_title,
+      company     = EXCLUDED.company,
+      year_pill   = EXCLUDED.year_pill,
+      dates       = EXCLUDED.dates,
+      location    = EXCLUDED.location,
+      context     = EXCLUDED.context,
+      featured    = EXCLUDED.featured,
+      description = EXCLUDED.description,
+      bullets     = EXCLUDED.bullets,
+      image_src   = EXCLUDED.image_src,
+      image_alt   = EXCLUDED.image_alt,
+      updated_at  = NOW()
+  `;
+}
+
+export async function deleteExperience(slug: string) {
+  await sql`DELETE FROM experience_entries WHERE slug = ${slug}`;
+}
+
+/** Bulk reorder — accepts an ordered slugs list, sets `position` to
+ *  each slug's index. Out-of-list rows are left untouched. */
+export async function setExperienceOrder(slugs: string[]) {
+  for (let i = 0; i < slugs.length; i++) {
+    await sql`UPDATE experience_entries
+              SET position = ${i}, updated_at = NOW()
+              WHERE slug = ${slugs[i]}`;
+  }
+}
+
 /** Find the slug immediately above or below a given slug in the
  *  ordered list. Returns null if at the edge.
  *
