@@ -152,11 +152,11 @@ export function FloatingConfetti() {
       <button
         type="button"
         onClick={more}
-        className="absolute -bottom-20 right-0 font-mono uppercase tracking-[0.14em] px-10 py-5 rounded-full transition-all hover:scale-[1.04] active:scale-[0.98] z-20"
+        className="absolute -bottom-14 right-0 font-mono uppercase tracking-[0.14em] px-5 py-2.5 rounded-full transition-all hover:scale-[1.04] active:scale-[0.98] z-20"
         style={{
           background: "var(--ink)",
           color: "var(--paper)",
-          fontSize: "20px",
+          fontSize: "10px",
         }}
       >
         + More confetti

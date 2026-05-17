@@ -7,8 +7,8 @@ const EMAIL = "samantha.ahhee@gmail.com";
 function CopyIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -26,8 +26,8 @@ function CopyIcon() {
 function CheckIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -61,11 +61,11 @@ export function ContactButton({ className = "" }: { className?: string }) {
       type="button"
       onClick={handle}
       aria-label={revealed ? `Copy ${EMAIL}` : "Reveal email"}
-      className={`inline-flex items-center gap-3 font-mono uppercase tracking-[0.14em] px-10 py-6 rounded-full transition-all hover:scale-[1.03] active:scale-[0.98] ${className}`}
+      className={`inline-flex items-center gap-2 font-mono uppercase tracking-[0.14em] px-5 py-3 rounded-full transition-all hover:scale-[1.03] active:scale-[0.98] ${className}`}
       style={{
         background: "var(--ink)",
         color: "var(--paper)",
-        fontSize: "22px",
+        fontSize: "11px",
       }}
     >
       {!revealed ? (

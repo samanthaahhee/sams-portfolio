@@ -41,12 +41,12 @@ export function MobileConfettiButton({ className = "" }: { className?: string })
       ref={ref}
       type="button"
       onClick={fire}
-      className={`inline-flex items-center font-mono uppercase tracking-[0.14em] px-10 py-6 rounded-full border-2 transition-all hover:scale-[1.03] active:scale-[0.98] ${className}`}
+      className={`inline-flex items-center font-mono uppercase tracking-[0.14em] px-5 py-3 rounded-full border-2 transition-all hover:scale-[1.03] active:scale-[0.98] ${className}`}
       style={{
         background: "transparent",
         color: "var(--ink)",
         borderColor: "var(--ink)",
-        fontSize: "22px",
+        fontSize: "11px",
       }}
     >
       + Throw confetti
