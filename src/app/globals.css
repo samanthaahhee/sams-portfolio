@@ -385,10 +385,16 @@ body {
     box-shadow 0.4s;
 
   transform-origin: 0 0;
+  /* Pills sit on the SAME arc as the SVG arc-line.
+     `rotate(angle) translateX(+R)` places the element at SVG-math
+     angle `angle` from the rotation centre — top (270°), through
+     the LEFT side (180°), to the bottom (90°). The final
+     `rotate(tilt - angle)` cancels the radial rotation so the pill
+     ends up tilted by the stylised `tilt` value only. */
   transform:
     translate(-50%, -50%)
     rotate(calc(var(--angle) * 1deg))
-    translateX(calc(-1 * var(--arc-radius)))
+    translateX(var(--arc-radius))
     rotate(calc((var(--tilt) - var(--angle)) * 1deg));
 }
 
