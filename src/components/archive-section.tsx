@@ -42,7 +42,7 @@ export function ArchiveSection({ projects }: { projects: Project[] }) {
         className="font-display mb-10 md:mb-14"
         style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
       >
-        Other work.
+        Additional Projects.
       </p>
 
       {/* ── Filter chips ─────────────────────────────────────────── */}
