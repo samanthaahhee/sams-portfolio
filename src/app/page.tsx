@@ -18,15 +18,16 @@ export default async function Home() {
       <SiteHeader pageNo="01" />
 
       <main>
-        {/* ── Editorial masthead ─────────────────────────────────────── */}
-        <section className="relative px-[var(--spacing-page)] pt-12 md:pt-20 pb-20 md:pb-32">
-          {/* Halftone wash behind masthead */}
+        {/* ── Editorial masthead — heading + portrait sit on the
+            halftone wash. Bio copy lives in its own section below so
+            it falls in the clear paper area, not on the dots. ─── */}
+        <section className="relative px-[var(--spacing-page)] pt-12 md:pt-20 pb-12 md:pb-16">
+          {/* Halftone wash behind the heading only */}
           <div
             aria-hidden
-            className="absolute inset-x-0 top-0 h-[60%] halftone opacity-[0.10] pointer-events-none"
+            className="absolute inset-x-0 top-0 bottom-0 halftone opacity-[0.10] pointer-events-none"
             style={{ ["--dot" as string]: "var(--pair-b)" }}
           />
-
 
           <div className="relative grid grid-cols-12 gap-4 items-center pt-4 md:pt-8">
             <h1
@@ -49,8 +50,11 @@ export default async function Home() {
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="relative grid grid-cols-12 gap-4 mt-12 md:mt-16">
+        {/* ── Bio — sits below the halftone wash, on clear paper. ─── */}
+        <section className="px-[var(--spacing-page)] pt-16 md:pt-24 pb-20 md:pb-28">
+          <div className="grid grid-cols-12 gap-4">
             <div
               className="col-span-12 md:col-span-8 md:col-start-2 space-y-5 md:space-y-6"
               style={{ color: "var(--ink)" }}
