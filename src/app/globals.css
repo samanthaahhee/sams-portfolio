@@ -263,10 +263,11 @@ body {
 }
 
 /* ──────────────────────────────────────────────────────────────────────
-   Career roadmap — straight vertical timeline on /about.
-   Two-column card: a vertical track + evenly-spaced year pills on the
-   left, stacked image + role detail on the right. Visuals route through
-   tokens; --pair-a resolves to dusty pink via the data-pair="dustypink-ink"
+   Career roadmap — quiet vertical list on /about.
+   Two-column card: a narrow LEFT column with year-range pills stacked
+   along a thin track, and a wide RIGHT column with the active role's
+   detail (H3 + paragraph + bullets). Visuals route through tokens;
+   --pair-a resolves to dusty pink via the data-pair="dustypink-ink"
    wrapper around the section.
    ────────────────────────────────────────────────────────────────────── */
 
@@ -287,20 +288,21 @@ body {
 .roadmap-card {
   --active-i: 0;
   --total: 8;
-  /* The proportional vertical position of the active pill (0..1). */
-  --active-y: calc(var(--active-i) / (var(--total) - 1));
 
   position: relative;
   background: var(--paper);
   border-radius: 22px;
   width: 100%;
   max-width: 1280px;
-  height: min(88vh, 760px);
-  padding: clamp(2rem, 3vw, 3rem);
-  box-shadow: 0 28px 60px color-mix(in srgb, var(--ink) 10%, transparent);
+  height: min(80vh, 680px);
+  /* Tight vertical, comfortable horizontal — card hugs the content
+     vertically rather than spreading content into a tall card. */
+  padding: clamp(0.625rem, 1vw, 1rem) clamp(2.5rem, 4vw, 4rem);
+  box-shadow: 0 28px 60px rgba(28, 22, 18, 0.1);
 
   display: grid;
-  grid-template-columns: 0.42fr 0.58fr;
+  grid-template-columns: minmax(180px, 0.22fr) 1fr;
+  gap: clamp(1rem, 2vw, 2rem);
   overflow: hidden;
   isolation: isolate;
 }
@@ -317,65 +319,44 @@ body {
     transparent 30%
   );
   background-size: 4px 4px;
-  opacity: 0.55;
+  opacity: 0.45;
   pointer-events: none;
   z-index: 0;
 }
 
-/* ── LEFT — vertical timeline column ──────────────────────────── */
-.arc-col {
+/* ── LEFT — vertical list of year-range entries ─────────────────── */
+.timeline-col {
   position: relative;
   z-index: 2;
-  overflow: visible;
-  /* The pills + line live in a vertical band that occupies the full
-     card height minus a top/bottom inset so the first / last pills
-     don't pin to the card edge. */
-  padding: 2.5rem 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* Vertical track — a 1px line down the centre of the column. */
-.arc-line {
-  position: absolute;
-  top: 2.5rem;
-  bottom: 2.5rem;
-  left: 50%;
-  width: 1px;
-  background: var(--rule-strong);
-  opacity: 0.5;
-  pointer-events: none;
-  transform: translateX(-0.5px);
+.track {
+  position: relative;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-/* Sliding active marker — a coral dot that glides along the line as
-   the active pill changes. `--active-y` is a unit-less 0..1 fraction
-   set on the card, so `calc(var(--active-y) * 100%)` resolves to the
-   dot's position along the line's height. */
-.arc-line::after {
+/* The thin vertical line that connects entries */
+.track::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: calc(var(--active-y) * 100%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--pair-a);
-  transform: translate(-50%, -50%);
-  transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pair-a) 22%, transparent);
+  left: 0;
+  top: 0.35rem;
+  bottom: 0.35rem;
+  width: 1px;
+  background: var(--rule-strong);
 }
 
-/* Pills positioned evenly down the vertical line.
-   --i is set inline per pill (0..total-1).
-   --total comes from the card. */
-.arc-pill {
-  --i: 0;
-  position: absolute;
-  left: 50%;
-  top: calc(2.5rem + (100% - 5rem) * var(--i) / (var(--total) - 1));
-  transform: translate(-50%, -50%);
-
-  background: var(--paper);
-  border: 1px solid var(--rule-strong);
+.entry {
+  align-self: flex-start;
+  position: relative;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 999px;
   padding: 7px 16px;
   font-family: var(--font-mono);
@@ -386,76 +367,49 @@ body {
   color: var(--ink-muted);
   white-space: nowrap;
   cursor: pointer;
+  opacity: 0.55;
   transition:
-    background 0.4s,
-    border-color 0.4s,
-    color 0.4s,
-    box-shadow 0.4s;
+    border-color 0.35s ease,
+    color 0.35s ease,
+    opacity 0.35s ease;
 }
 
-.arc-pill:hover {
+.entry:hover {
   color: var(--ink);
-  border-color: var(--ink-soft);
+  opacity: 0.85;
 }
 
-.arc-pill.is-active {
-  background: var(--pair-a);
+.entry.is-active {
   border-color: var(--pair-a);
   color: var(--pair-a-ink);
-  box-shadow: 0 4px 14px rgba(232, 184, 184, 0.5);
+  opacity: 1;
 }
 
-/* ── RIGHT — image + detail column ──────────────────────────────── */
-.content-col {
+/* Tick mark on the vertical line for the active entry */
+.entry.is-active::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 1.5px;
+  background: var(--pair-a);
+}
+
+/* ── RIGHT — detail column ──────────────────────────────────────── */
+.detail-col {
   position: relative;
   z-index: 2;
-  padding: 1rem 1rem 1rem 2rem;
+  min-height: 320px;
+}
+
+.detail {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 1.75rem;
-}
-
-.image-stage {
-  position: relative;
-  width: clamp(220px, 28vw, 320px);
-  aspect-ratio: 1 / 1;
-}
-.role-image {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-.role-image.is-active {
-  opacity: 1;
-  pointer-events: auto;
-}
-.role-image .frame {
-  width: 100%;
-  height: 100%;
-  border-radius: 2px;
-  overflow: hidden;
-  box-shadow: 0 8px 24px rgba(28, 22, 18, 0.1);
-  background: var(--paper-soft);
-}
-.role-image .frame img,
-.role-image .frame svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.detail-stage {
-  position: relative;
-  min-height: 14rem;
-  max-width: 520px;
-}
-.role-detail {
-  position: absolute;
-  inset: 0;
+  justify-content: center; /* vertical centring; text stays left-aligned */
   opacity: 0;
   transform: translateY(8px);
   transition:
@@ -463,97 +417,76 @@ body {
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
-.role-detail.is-active {
+
+.detail.is-active {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
 }
-.role-detail h3 {
+
+.detail h3 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(1.5rem, 2.4vw, 2.125rem);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
   letter-spacing: -0.025em;
   line-height: 1.1;
   color: var(--ink);
-  margin-bottom: 0.85rem;
+  margin-bottom: 1.25rem;
 }
-.role-detail .body {
-  font-size: 14px;
+
+.detail .body {
+  font-size: 15px;
   line-height: 1.6;
   color: var(--ink-soft);
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  max-width: 56ch;
 }
-.role-detail ul {
+
+.detail ul {
   list-style: none;
   padding: 0;
   margin: 0;
+  max-width: 56ch;
 }
-.role-detail li {
-  font-size: 13.5px;
+
+.detail li {
+  font-size: 14px;
   line-height: 1.55;
   color: var(--ink-soft);
-  padding-left: 1rem;
+  padding-left: 1.1rem;
   position: relative;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.55rem;
 }
-.role-detail li::before {
+
+.detail li::before {
   content: "•";
   position: absolute;
   left: 0;
   color: var(--ink-muted);
 }
 
-/* Mobile — stack to single column. The vertical timeline becomes a
-   horizontal one above the content. */
+/* Mobile — stack to a single column. */
 @media (max-width: 880px) {
   .roadmap-card {
     grid-template-columns: 1fr;
     height: min(94vh, 800px);
     padding: 1.25rem;
     border-radius: 14px;
-    gap: 0.5rem;
+    gap: 1rem;
   }
-  .arc-col {
-    height: 200px;
-    padding: 0;
+  .detail-col {
+    min-height: 0;
   }
-  .arc-line {
-    top: 50%;
-    bottom: auto;
-    left: 1rem;
-    right: 1rem;
-    width: auto;
-    height: 1px;
-    transform: translateY(-0.5px);
-  }
-  .arc-line::after {
-    top: 50%;
-    left: calc(1rem + (100% - 2rem) * var(--active-y));
-    transform: translate(-50%, -50%);
-    transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .arc-pill {
-    top: 50%;
-    left: calc(1rem + (100% - 2rem) * var(--i) / (var(--total) - 1));
-    padding: 4px 10px;
-    font-size: 9px;
-  }
-  .content-col {
-    padding: 0;
-  }
-  .image-stage {
-    margin: 0 auto;
+  .detail h3 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    margin-bottom: 1rem;
   }
 }
 
-/* Reduced motion — drop transitions AND the pill glow shadow. */
+/* Reduced motion — drop transitions. */
 @media (prefers-reduced-motion: reduce) {
-  .arc-pill,
-  .role-image,
-  .role-detail {
+  .entry,
+  .detail {
     transition: none !important;
-  }
-  .arc-pill.is-active {
-    box-shadow: none !important;
   }
 }

@@ -4,20 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import type { ExperienceEntry } from "@/lib/about";
 
 /**
- * Career roadmap — arc layout.
+ * Career roadmap — quiet vertical list.
  *
- * Two-column card: a left column with an SVG arc + 8 year-range pills
- * positioned along it via polar-math CSS transforms, and a right column
- * with a stacked image + role detail. As the user scrolls vertically
- * through the section (sized to `count × 100vh`), the active milestone
- * advances from top to bottom of the arc.
+ * Two-column card: a narrow LEFT column with the year-range pills
+ * stacked vertically along a thin track, and a wide RIGHT column with
+ * the active role's H3 + paragraph + bullets. As the user scrolls
+ * vertically through the section (sized to `count × 100vh`), the
+ * active entry advances top-to-bottom.
  *
- * Visuals route through tokens — `--pair-a` resolves to the dusty pink
- * fill via the `data-pair="dustypink-ink"` wrapper on the about page.
- *
- * Adding a 9th entry to `about.experience` adds a 9th pill on the arc,
- * automatically redistributed via the `--total` and `--i` custom
- * properties.
+ * Visuals route through tokens; `--pair-a` resolves to dusty pink via
+ * the `data-pair="dustypink-ink"` wrapper around the section.
  */
 export function CareerRoadmap({ items }: { items: ExperienceEntry[] }) {
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -61,8 +57,6 @@ export function CareerRoadmap({ items }: { items: ExperienceEntry[] }) {
     window.scrollTo({ top: target, behavior: "smooth" });
   }
 
-  /* `--active-i` and `--total` drive the per-pill polar transform from
-     CSS. Pills carry their own `--i`. */
   const cardStyle = {
     ["--active-i" as string]: String(active),
     ["--total" as string]: String(total),
@@ -80,77 +74,51 @@ export function CareerRoadmap({ items }: { items: ExperienceEntry[] }) {
       </h2>
       <div className="roadmap-sticky">
         <article className="roadmap-card" style={cardStyle}>
-          {/* ── LEFT — vertical track + pills ──────────────────── */}
-          <div className="arc-col">
-            {/* The CSS draws the 1px line and the active marker. */}
-            <span aria-hidden className="arc-line" />
+          {/* ── LEFT — vertical timeline list ──────────────────── */}
+          <div className="timeline-col">
+            <div className="track">
+              {items.map((entry, i) => {
+                const isActive = i === active;
+                return (
+                  <button
+                    key={`entry-${i}`}
+                    type="button"
+                    onClick={() => jumpTo(i)}
+                    aria-current={isActive ? "step" : undefined}
+                    aria-label={`${entry.company}, ${entry.dates}`}
+                    className={`entry${isActive ? " is-active" : ""}`}
+                  >
+                    {entry.yearPill}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── RIGHT — role detail ────────────────────────────── */}
+          <div
+            className="detail-col"
+            role="region"
+            aria-live="polite"
+          >
             {items.map((entry, i) => {
               const isActive = i === active;
               return (
-                <button
-                  key={`pill-${i}`}
-                  type="button"
-                  onClick={() => jumpTo(i)}
-                  aria-current={isActive ? "step" : undefined}
-                  aria-label={`${entry.company}, ${entry.dates}`}
-                  className={`arc-pill${isActive ? " is-active" : ""}`}
-                  style={{ ["--i" as string]: i } as React.CSSProperties}
+                <div
+                  key={`detail-${i}`}
+                  className={`detail${isActive ? " is-active" : ""}`}
+                  hidden={!isActive}
                 >
-                  {entry.yearPill}
-                </button>
+                  <h3>{entry.shortTitle}</h3>
+                  <p className="body">{entry.description}</p>
+                  <ul>
+                    {entry.bullets.map((b, j) => (
+                      <li key={j}>{b}</li>
+                    ))}
+                  </ul>
+                </div>
               );
             })}
-          </div>
-
-          {/* ── RIGHT — image + detail ─────────────────────────── */}
-          <div className="content-col">
-            <div className="image-stage">
-              {items.map((entry, i) => {
-                const isActive = i === active;
-                return (
-                  <div
-                    key={`img-${i}`}
-                    className={`role-image${isActive ? " is-active" : ""}`}
-                    aria-hidden={!isActive}
-                  >
-                    <div className="frame">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={entry.image.src}
-                        alt={entry.image.alt}
-                        loading={i === 0 ? "eager" : "lazy"}
-                        decoding="async"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div
-              className="detail-stage"
-              role="region"
-              aria-live="polite"
-            >
-              {items.map((entry, i) => {
-                const isActive = i === active;
-                return (
-                  <div
-                    key={`detail-${i}`}
-                    className={`role-detail${isActive ? " is-active" : ""}`}
-                    hidden={!isActive}
-                  >
-                    <h3>{entry.shortTitle}</h3>
-                    <p className="body">{entry.description}</p>
-                    <ul>
-                      {entry.bullets.map((b, j) => (
-                        <li key={j}>{b}</li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         </article>
       </div>
