@@ -52,41 +52,34 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* ── Bio — sits below the halftone wash, on clear paper.
-            Two columns of body copy at the same size + weight. ─── */}
+        {/* ── Bio — single column, three stacked paragraphs at the
+            same body size, on clear paper. ────────────────────── */}
         <section className="px-[var(--spacing-page)] pt-16 md:pt-24 pb-20 md:pb-28">
           <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 md:col-span-10 md:col-start-2">
-              <div
-                className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10"
-                style={{ color: "var(--ink-soft)" }}
-              >
-                <div className="space-y-5 md:space-y-6">
-                  <p className="text-base md:text-lg leading-relaxed">
-                    Sam is a multidisciplinary designer with 13+ years of
-                    experience across FMCG, fintech, and consumer tech.
-                    Originally from Cape Town and now based in Amsterdam,
-                    she works at the intersection of brand, product, and
-                    visual communication.
-                  </p>
-                  <p className="text-base md:text-lg leading-relaxed">
-                    Her work focuses on building scalable, human-centered
-                    experiences that connect across every touchpoint. With
-                    a background spanning both agencies and startups, Sam
-                    combines strategic thinking with hands-on execution —
-                    bringing clarity, emotion, and systems thinking to
-                    everything from visual identities to product
-                    experiences.
-                  </p>
-                </div>
-                <div className="space-y-5 md:space-y-6">
-                  <p className="text-base md:text-lg leading-relaxed">
-                    Part strategist, part maker, part problem-solver —
-                    she’s a creative Swiss army knife for modern brands.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-8 md:mt-10 flex flex-wrap items-center gap-3">
+            <div
+              className="col-span-12 md:col-span-8 md:col-start-2 space-y-5 md:space-y-6"
+              style={{ color: "var(--ink-soft)" }}
+            >
+              <p className="text-base md:text-lg leading-relaxed">
+                Sam is a multidisciplinary designer with 13+ years of
+                experience across FMCG, fintech, and consumer tech.
+                Originally from Cape Town and now based in Amsterdam, she
+                works at the intersection of brand, product, and visual
+                communication.
+              </p>
+              <p className="text-base md:text-lg leading-relaxed">
+                Her work focuses on building scalable, human-centered
+                experiences that connect across every touchpoint. With a
+                background spanning both agencies and startups, Sam
+                combines strategic thinking with hands-on execution —
+                bringing clarity, emotion, and systems thinking to
+                everything from visual identities to product experiences.
+              </p>
+              <p className="text-base md:text-lg leading-relaxed">
+                Part strategist, part maker, part problem-solver — she’s a
+                creative Swiss army knife for modern brands.
+              </p>
+              <div className="pt-2 md:pt-4 flex flex-wrap items-center gap-4">
                 <ContactButton />
                 <MobileConfettiButton className="md:hidden" />
               </div>
