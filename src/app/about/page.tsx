@@ -48,82 +48,8 @@ export default async function AboutPage() {
         <AboutHero />
         <AboutNav />
 
-        {/* ── 01 / Overview ──────────────────────────────────────── */}
-        <MenuCard id="overview">
-          {/* Featured intro */}
-          <div
-            className="grid grid-cols-12 gap-4 py-8 md:py-10"
-            style={{ borderTop: "1px solid var(--rule)" }}
-          >
-            <div className="col-span-12 md:col-span-9">
-              <p className="font-display text-2xl md:text-3xl mb-3 text-[color:var(--ink)]">
-                Senior Product &amp; Visual Designer{" "}
-                <span className="font-mono text-[color:var(--meta)] align-middle ml-2">
-                  · est. 2012
-                </span>
-              </p>
-              <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
-                {profile.paragraph}
-              </p>
-            </div>
-          </div>
-
-          {/* Two specialty tiles */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 gap-0"
-            style={{ borderTop: "1px solid var(--rule)" }}
-          >
-            <SpecialtyTile
-              label="Specialty"
-              title="Design Systems"
-              body="Component libraries, design tokens, brand-to-product translation. Recently certified in Design Systems by Memorisely (2024)."
-            />
-            <div
-              className="md:border-l border-t md:border-t-0"
-              style={{ borderColor: "var(--rule)" }}
-            >
-              <SpecialtyTile
-                label="Currently"
-                title="AI-Native Product"
-                body="Building shipping AI products with the Anthropic Claude API, Supabase, and Claude Code — including HeyOtis and smallstitch.club."
-              />
-            </div>
-          </div>
-
-          {/* Stats row */}
-          <div
-            className="grid grid-cols-2 md:grid-cols-4"
-            style={{
-              borderTop: "1px solid var(--rule)",
-              borderBottom: "1px solid var(--rule)",
-            }}
-          >
-            {stats.map((s, i) => (
-              <div
-                key={s.label}
-                className={`p-5 md:p-7 hover:bg-[color:var(--paper-soft)] transition-colors ${
-                  i > 0 ? "md:border-l" : ""
-                } ${i % 2 === 1 ? "border-l md:border-l" : ""} ${
-                  i >= 2 ? "border-t md:border-t-0" : ""
-                }`}
-                style={{ borderColor: "var(--rule)" }}
-              >
-                <p
-                  className="font-display text-4xl md:text-5xl"
-                  style={{ lineHeight: 1, color: "var(--ink)" }}
-                >
-                  {s.value}
-                </p>
-                <p className="font-mono text-[color:var(--meta)] mt-3">
-                  {s.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </MenuCard>
-
-        {/* ── 02 / Experience — coral-sage palette wrapper so the
-            roadmap's --pair-a resolves to coral. ─────────────────── */}
+        {/* ── 01 / Experience — sits at the top of the page now,
+            below the hero. ──────────────────────────────────────── */}
         <div
           id="experience"
           data-pair="dustypink-ink"
@@ -200,6 +126,81 @@ export default async function AboutPage() {
                 ))}
               </ul>
             </InfoCell>
+          </div>
+        </MenuCard>
+
+        {/* ── 03 / Overview — moved to the bottom of the page,
+            sits just above the inverted footer CTA. ────────────── */}
+        <MenuCard id="overview">
+          {/* Featured intro */}
+          <div
+            className="grid grid-cols-12 gap-4 py-8 md:py-10"
+            style={{ borderTop: "1px solid var(--rule)" }}
+          >
+            <div className="col-span-12 md:col-span-9">
+              <p className="font-display text-2xl md:text-3xl mb-3 text-[color:var(--ink)]">
+                Senior Product &amp; Visual Designer{" "}
+                <span className="font-mono text-[color:var(--meta)] align-middle ml-2">
+                  · est. 2012
+                </span>
+              </p>
+              <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
+                {profile.paragraph}
+              </p>
+            </div>
+          </div>
+
+          {/* Two specialty tiles */}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 gap-0"
+            style={{ borderTop: "1px solid var(--rule)" }}
+          >
+            <SpecialtyTile
+              label="Specialty"
+              title="Design Systems"
+              body="Component libraries, design tokens, brand-to-product translation. Recently certified in Design Systems by Memorisely (2024)."
+            />
+            <div
+              className="md:border-l border-t md:border-t-0"
+              style={{ borderColor: "var(--rule)" }}
+            >
+              <SpecialtyTile
+                label="Currently"
+                title="AI-Native Product"
+                body="Building shipping AI products with the Anthropic Claude API, Supabase, and Claude Code — including HeyOtis and smallstitch.club."
+              />
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div
+            className="grid grid-cols-2 md:grid-cols-4"
+            style={{
+              borderTop: "1px solid var(--rule)",
+              borderBottom: "1px solid var(--rule)",
+            }}
+          >
+            {stats.map((s, i) => (
+              <div
+                key={s.label}
+                className={`p-5 md:p-7 hover:bg-[color:var(--paper-soft)] transition-colors ${
+                  i > 0 ? "md:border-l" : ""
+                } ${i % 2 === 1 ? "border-l md:border-l" : ""} ${
+                  i >= 2 ? "border-t md:border-t-0" : ""
+                }`}
+                style={{ borderColor: "var(--rule)" }}
+              >
+                <p
+                  className="font-display text-4xl md:text-5xl"
+                  style={{ lineHeight: 1, color: "var(--ink)" }}
+                >
+                  {s.value}
+                </p>
+                <p className="font-mono text-[color:var(--meta)] mt-3">
+                  {s.label}
+                </p>
+              </div>
+            ))}
           </div>
         </MenuCard>
 

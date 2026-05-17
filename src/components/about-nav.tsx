@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 type Section = { id: string; label: string; eyebrow: string };
 
 const SECTIONS: Section[] = [
-  { id: "overview", eyebrow: "01", label: "Overview" },
-  { id: "experience", eyebrow: "02", label: "Experience" },
-  { id: "personal", eyebrow: "03", label: "Personal" },
+  { id: "experience", eyebrow: "01", label: "Experience" },
+  { id: "personal", eyebrow: "02", label: "Personal" },
+  { id: "overview", eyebrow: "03", label: "Overview" },
 ];
 
 /**
