@@ -78,7 +78,8 @@ type VisualItem =
       images: string[];
       layout: "vertical" | "horizontal";
       caption?: string;
-    };
+    }
+  | { kind: "video"; url: string; caption?: string };
 
 /** Build a unified visuals array from possibly-legacy data:
  *  - If `visuals` is populated, parse and use it directly.
@@ -96,7 +97,7 @@ function buildVisuals(
         Boolean(x) &&
         typeof x === "object" &&
         "kind" in (x as object) &&
-        ["image", "compare", "grid", "stack", "media"].includes(
+        ["image", "compare", "grid", "stack", "media", "video"].includes(
           (x as { kind: string }).kind,
         ),
     )

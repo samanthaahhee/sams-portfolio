@@ -6,6 +6,8 @@ import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { ImageGrid } from "@/components/image-grid";
 import { ImageStack } from "@/components/image-stack";
 import { MediaRow } from "@/components/media-row";
+import { YouTubeEmbed } from "@/components/youtube-embed";
+import { BackToTop } from "@/components/back-to-top";
 import { CaseStudySections } from "@/components/case-study-sections";
 import { HalftoneCover } from "@/components/halftone-cover";
 import { getProject, getProjects } from "@/lib/db";
@@ -273,6 +275,15 @@ export default async function ProjectPage({
                       />
                     );
                   }
+                  if (v.kind === "video") {
+                    return (
+                      <YouTubeEmbed
+                        key={`v-${i}`}
+                        url={v.url}
+                        caption={cap}
+                      />
+                    );
+                  }
                   return (
                     <figure key={`v-${i}-${v.url}`} className="space-y-2">
                       <div
@@ -329,6 +340,8 @@ export default async function ProjectPage({
             </div>
           </div>
         </section>
+
+        <BackToTop />
       </main>
 
       <SiteFooter />

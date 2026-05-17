@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ImageUploadBox } from "./image-uploads";
+import { extractYouTubeId } from "@/components/youtube-embed";
 
 export type VisualItem =
   | { kind: "image"; url: string; caption?: string }
@@ -13,7 +14,8 @@ export type VisualItem =
       images: string[];
       layout: "vertical" | "horizontal";
       caption?: string;
-    };
+    }
+  | { kind: "video"; url: string; caption?: string };
 
 /* XHR upload helper (shared shape as image-uploads — keeps captions
  * sticky and per-row progress visible). */
@@ -113,6 +115,8 @@ export function VisualsEditor({
       ...visuals,
       { kind: "media", images: [""], layout: "vertical", caption: "" },
     ]);
+  const addVideo = () =>
+    onChange([...visuals, { kind: "video", url: "", caption: "" }]);
 
   async function doUpload(rowKey: string, file: File): Promise<string | null> {
     setUploadingIdx(rowKey);
@@ -169,6 +173,13 @@ export function VisualsEditor({
           >
             + GIF / Media
           </button>
+          <button
+            type="button"
+            onClick={addVideo}
+            className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+          >
+            + YouTube
+          </button>
         </div>
       </div>
 
@@ -195,7 +206,9 @@ export function VisualsEditor({
                       ? "3-up grid"
                       : v.kind === "stack"
                         ? "Image stack"
-                        : "GIF / Media"}
+                        : v.kind === "media"
+                          ? "GIF / Media"
+                          : "YouTube video"}
               </span>
               <div className="flex items-center gap-1.5">
                 <button
@@ -289,6 +302,13 @@ export function VisualsEditor({
               />
             )}
 
+            {v.kind === "video" && (
+              <VideoEditor
+                url={v.url}
+                onChange={(url) => update(i, { url })}
+              />
+            )}
+
             <input
               type="text"
               value={v.caption ?? ""}
@@ -339,6 +359,13 @@ export function VisualsEditor({
           >
             + GIF / Media
           </button>
+          <button
+            type="button"
+            onClick={addVideo}
+            className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+          >
+            + YouTube
+          </button>
         </div>
       )}
 
@@ -360,6 +387,48 @@ export function VisualsEditor({
  *  Layout toggle: stack vertically or arrange horizontally on the page.
  *  Preview boxes use a generic 4:3 placeholder; the published page
  *  renders each image at its intrinsic aspect ratio. */
+/** YouTube video editor — paste any common YouTube URL form. Renders
+ *  a thumbnail preview from i.ytimg.com once a valid ID is detected so
+ *  the admin gets immediate confirmation the URL parsed. */
+function VideoEditor({
+  url,
+  onChange,
+}: {
+  url: string;
+  onChange: (url: string) => void;
+}) {
+  const id = extractYouTubeId(url);
+  return (
+    <div className="space-y-2">
+      <input
+        type="url"
+        value={url}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://www.youtube.com/watch?v=…  or  https://youtu.be/…"
+        className="w-full px-3 py-2 border border-[color:var(--rule)] bg-transparent rounded-sm focus:outline-none focus:border-[color:var(--ink)] font-mono text-sm"
+      />
+      {url.trim() && !id && (
+        <p className="font-mono text-[10px] text-red-700">
+          Couldn’t parse a YouTube video ID from that URL.
+        </p>
+      )}
+      {id && (
+        <div
+          className="relative overflow-hidden rounded-sm border border-[color:var(--rule)]"
+          style={{ aspectRatio: "16 / 9", maxWidth: 360 }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+            alt="YouTube thumbnail preview"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MediaImagesEditor({
   images,
   layout,

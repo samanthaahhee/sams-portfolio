@@ -82,7 +82,8 @@ export type GalleryItem = {
 };
 
 /** Unified visual item — image / before-after slider / 3-up grid /
- *  cycling image stack / natural-aspect media (gif-friendly). */
+ *  cycling image stack / natural-aspect media (gif-friendly) /
+ *  YouTube embed. */
 export type VisualItem =
   | { kind: "image"; url: string; caption?: string }
   | { kind: "compare"; before: string; after: string; caption?: string }
@@ -93,6 +94,13 @@ export type VisualItem =
       images: string[];
       /** vertical = stack top-to-bottom, horizontal = side by side */
       layout: "vertical" | "horizontal";
+      caption?: string;
+    }
+  | {
+      kind: "video";
+      /** Any YouTube URL form — watch?v=, youtu.be/, embed/. The
+       *  renderer extracts the ID and builds the privacy-enhanced embed. */
+      url: string;
       caption?: string;
     };
 
