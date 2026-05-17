@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Testimonial } from "@/lib/about";
 
+const COLLAPSED_LINES = 6;
+
 /**
- * Horizontal testimonial carousel. CSS scroll-snap on a flex track,
- * arrow buttons + dots for controls. Each slide is a full-width card
- * with quote + attribution. Empty `quote` strings are filtered out.
+ * Horizontal testimonial carousel. Each slide is a uniform-height card
+ * with a clamped quote and a "Read more" toggle, so long and short
+ * recommendations occupy the same visual footprint until the user
+ * expands one. CSS scroll-snap on the track; arrow + dot controls.
  *
- * Keyboard accessible — arrows, focusable next/prev, dots map 1:1 to
- * slides. `prefers-reduced-motion: reduce` gates the smooth-scroll.
+ * `prefers-reduced-motion: reduce` strips the smooth-scroll.
  */
 export function TestimonialCarousel({
   items,
@@ -19,8 +21,9 @@ export function TestimonialCarousel({
   const valid = items.filter((t) => t.quote.trim().length > 0);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [active, setActive] = useState(0);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
-  /* Observe which slide is centred in the viewport. */
+  /* Track scroll position → active dot. */
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
@@ -39,15 +42,27 @@ export function TestimonialCarousel({
     return () => track.removeEventListener("scroll", onScroll);
   }, []);
 
-  const scrollTo = useCallback((i: number) => {
-    const track = trackRef.current;
-    if (!track) return;
-    const clamped = Math.max(0, Math.min(valid.length - 1, i));
-    track.scrollTo({
-      left: clamped * track.clientWidth,
-      behavior: "smooth",
+  const scrollTo = useCallback(
+    (i: number) => {
+      const track = trackRef.current;
+      if (!track) return;
+      const clamped = Math.max(0, Math.min(valid.length - 1, i));
+      track.scrollTo({
+        left: clamped * track.clientWidth,
+        behavior: "smooth",
+      });
+    },
+    [valid.length],
+  );
+
+  function toggle(i: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
     });
-  }, [valid.length]);
+  }
 
   if (valid.length === 0) return null;
 
@@ -76,49 +91,62 @@ export function TestimonialCarousel({
         aria-roledescription="carousel"
         aria-live="polite"
       >
-        {valid.map((t, i) => (
-          <article
-            key={i}
-            className="testimonial-slide"
-            aria-roledescription="slide"
-            aria-label={`${i + 1} of ${valid.length}`}
-          >
-            <span
-              aria-hidden
-              className="font-display block"
-              style={{
-                fontSize: "clamp(3rem, 6vw, 4.5rem)",
-                color: "var(--pair-b)",
-                opacity: 0.4,
-                lineHeight: 1,
-                fontWeight: 700,
-              }}
+        {valid.map((t, i) => {
+          const isOpen = expanded.has(i);
+          return (
+            <div
+              key={i}
+              className="testimonial-slide"
+              aria-roledescription="slide"
+              aria-label={`${i + 1} of ${valid.length}`}
             >
-              &ldquo;
-            </span>
-            <blockquote className="mt-3 text-base md:text-lg leading-relaxed text-[color:var(--ink)] whitespace-pre-line">
-              {t.quote}
-            </blockquote>
-            <footer
-              className="mt-6 pt-4 space-y-1"
-              style={{ borderTop: "1px solid var(--rule)" }}
-            >
-              <p className="font-mono text-[color:var(--ink)]">{t.name}</p>
-              <p className="font-mono text-[color:var(--meta)]">
-                {t.role}
-              </p>
-              {(t.relationship || t.date) && (
-                <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em]">
-                  {[t.relationship, t.date].filter(Boolean).join(" · ")}
-                </p>
-              )}
-            </footer>
-          </article>
-        ))}
+              <article className="testimonial-card">
+                <span aria-hidden className="testimonial-quote-mark">
+                  &ldquo;
+                </span>
+
+                <blockquote
+                  className={`testimonial-quote${isOpen ? " is-open" : ""}`}
+                  style={
+                    isOpen
+                      ? undefined
+                      : ({
+                          ["--clamp-lines" as string]: COLLAPSED_LINES,
+                        } as React.CSSProperties)
+                  }
+                >
+                  {t.quote}
+                </blockquote>
+
+                <button
+                  type="button"
+                  onClick={() => toggle(i)}
+                  aria-expanded={isOpen}
+                  className="testimonial-toggle"
+                >
+                  {isOpen ? "Show less ↑" : "Read more ↓"}
+                </button>
+
+                <footer className="testimonial-attrib">
+                  <p className="font-mono text-[color:var(--ink)]">
+                    {t.name}
+                  </p>
+                  <p className="font-mono text-[color:var(--meta)]">
+                    {t.role}
+                  </p>
+                  {(t.relationship || t.date) && (
+                    <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em]">
+                      {[t.relationship, t.date].filter(Boolean).join(" · ")}
+                    </p>
+                  )}
+                </footer>
+              </article>
+            </div>
+          );
+        })}
       </div>
 
       <div className="mt-8 flex items-center justify-between gap-4 flex-wrap">
-        {/* Dot pagination */}
         <ol
           className="flex items-center gap-2"
           aria-label="Carousel position"
@@ -146,7 +174,6 @@ export function TestimonialCarousel({
           })}
         </ol>
 
-        {/* Prev / Next */}
         <div className="flex items-center gap-2">
           <button
             type="button"

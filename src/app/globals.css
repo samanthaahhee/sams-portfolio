@@ -494,8 +494,9 @@ body {
 
 /* ──────────────────────────────────────────────────────────────────────
    Testimonial carousel — horizontal scroll-snap track below the
-   /about timeline. One slide per viewport width, snap to start, no
-   visible native scrollbar.
+   /about timeline. Each slide is a uniform-height card; long quotes
+   are clamped to a fixed line count and revealed via a Read more
+   toggle so all cards present the same visual footprint.
    ────────────────────────────────────────────────────────────────────── */
 
 .testimonial-track {
@@ -505,6 +506,7 @@ body {
   scroll-behavior: smooth;
   scrollbar-width: none;            /* Firefox */
   -ms-overflow-style: none;         /* IE/old Edge */
+  padding-bottom: 0.5rem;           /* room for shadow */
 }
 .testimonial-track::-webkit-scrollbar {
   display: none;                    /* WebKit */
@@ -513,8 +515,81 @@ body {
 .testimonial-slide {
   flex: 0 0 100%;
   scroll-snap-align: start;
-  padding: 0 clamp(0px, 2vw, 1.5rem);
-  max-width: 760px;
+  padding: 0 0.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+.testimonial-card {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+  background: var(--paper-soft);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--ink) 6%, transparent);
+  display: flex;
+  flex-direction: column;
+}
+
+.testimonial-quote-mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.5rem, 4.5vw, 3.5rem);
+  line-height: 0.6;
+  color: var(--pair-b);
+  opacity: 0.35;
+  margin-bottom: 0.25rem;
+}
+
+/* Quote — clamped to N lines when collapsed via --clamp-lines.
+   Uses the standard line-clamp pattern. Multi-paragraph quotes use
+   `whitespace: pre-line` to preserve breaks. */
+.testimonial-quote {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink);
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--clamp-lines, 6);
+  line-clamp: var(--clamp-lines, 6);
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+.testimonial-quote.is-open {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.testimonial-toggle {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.testimonial-toggle:hover {
+  color: var(--ink);
+}
+
+.testimonial-attrib {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
