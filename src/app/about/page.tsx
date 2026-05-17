@@ -1,10 +1,8 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { AboutHero } from "@/components/about-hero";
-import { AboutNav } from "@/components/about-nav";
-import { MenuCard } from "@/components/menu-card";
 import { CareerRoadmap } from "@/components/career-roadmap";
-import { TestimonialCarousel } from "@/components/testimonial-carousel";
+import { TestimonialsGrid } from "@/components/testimonials-grid";
 import {
   profile,
   stats,
@@ -25,17 +23,21 @@ export const metadata = {
 };
 
 /**
- * /about — long-form scrolling CV in editorial framing. Three sections
- * (Overview, Experience, Personal) with a sticky in-page nav and an
- * inverted footer CTA.
+ * /about — restructured per the audit brief.
  *
- * All copy lives in `src/lib/about.ts`. All visuals resolve to existing
- * design tokens — `data-pair="butter-slate"` is the only surface needed
- * to flip the whole page to another palette.
+ * Six sections in scan-friendly order:
+ *   1. Hero — who, where, what now
+ *   2. Snapshot — fast-scan stats + 2 specialty tiles
+ *   3. Experience — career timeline (proof)
+ *   4. Voices — testimonials (2×2 grid)
+ *   5. Connect — CTA + CV downloads + contact
+ *   6. Footnote strip — Skills · Tools · Education · Languages (mono, compact)
+ *
+ * Identity copy appears once in the hero, specialties once in the
+ * snapshot, experience copy once in the timeline. No repetition.
  */
 export default async function AboutPage() {
-  /* Prefer DB content; fall back to the static src/lib/about.ts seed
-   * if no rows are present (or the DB isn't configured at build time). */
+  /* Prefer DB content; fall back to the static src/lib/about.ts seed. */
   const dbExperience = await getExperience();
   const experience =
     dbExperience.length > 0 ? dbExperience : staticExperience;
@@ -45,134 +47,17 @@ export default async function AboutPage() {
       <SiteHeader pageNo="A" />
 
       <main>
+        {/* ── 1. Hero — who I am, where I am, what I'm doing now ── */}
         <AboutHero />
-        <AboutNav />
 
-        {/* ── 01 / Experience — sits at the top of the page now,
-            below the hero. ──────────────────────────────────────── */}
-        <div
-          id="experience"
+        {/* ── 2. Snapshot — fast-scan: 4 stats + 2 specialty tiles
+            in dustypink-ink to match the timeline below. ──────── */}
+        <section
+          id="snapshot"
           data-pair="dustypink-ink"
-          className="scroll-mt-20"
+          className="px-[var(--spacing-page)] py-16 md:py-24 scroll-mt-20"
           style={{ background: "var(--paper-soft)" }}
         >
-          {/* The sticky scroll-driven roadmap card */}
-          <CareerRoadmap items={experience} />
-
-          {/* Testimonial carousel — sits below the timeline */}
-          <TestimonialCarousel items={testimonials} />
-
-          {/* Download row — sits beneath the carousel */}
-          <section className="px-[var(--spacing-page)] pt-10 md:pt-14 pb-20 md:pb-28">
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 gap-4"
-              aria-label="Download CV"
-            >
-              <DownloadCard
-                href={downloads.pdf.href}
-                label={downloads.pdf.label}
-                meta="PDF · A4 · single page"
-              />
-              <DownloadCard
-                href={downloads.docx.href}
-                label={downloads.docx.label}
-                meta="DOCX · for Workday / Greenhouse / Lever"
-              />
-            </div>
-          </section>
-        </div>
-
-        {/* ── 03 / Personal ──────────────────────────────────────── */}
-        <MenuCard id="personal">
-          {/* Info row — Skills · Tools · Education · Languages */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-4 gap-0"
-            style={{
-              borderTop: "1px solid var(--rule)",
-              borderBottom: "1px solid var(--rule)",
-            }}
-          >
-            <InfoCell title="Skills">
-              <p className="leading-relaxed text-[color:var(--ink-soft)]">
-                {skills.join(" · ")}
-              </p>
-            </InfoCell>
-            <InfoCell title="Tools" withBorder>
-              <p className="leading-relaxed text-[color:var(--ink-soft)]">
-                {tools.join(" · ")}
-              </p>
-            </InfoCell>
-            <InfoCell title="Education" withBorder>
-              <ul className="space-y-3 text-[color:var(--ink-soft)]">
-                {education.map((e) => (
-                  <li key={e.title}>
-                    <p className="text-[color:var(--ink)]">{e.title}</p>
-                    <p className="font-mono text-[color:var(--meta)]">
-                      {e.institution} · {e.year}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </InfoCell>
-            <InfoCell title="Languages" withBorder>
-              <ul className="space-y-3 text-[color:var(--ink-soft)]">
-                {languages.map((l) => (
-                  <li key={l.name}>
-                    <span className="text-[color:var(--ink)]">{l.name}</span>{" "}
-                    <span className="font-mono text-[color:var(--meta)]">
-                      {l.level}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </InfoCell>
-          </div>
-        </MenuCard>
-
-        {/* ── 03 / Overview — moved to the bottom of the page,
-            sits just above the inverted footer CTA. ────────────── */}
-        <MenuCard id="overview">
-          {/* Featured intro */}
-          <div
-            className="grid grid-cols-12 gap-4 py-8 md:py-10"
-            style={{ borderTop: "1px solid var(--rule)" }}
-          >
-            <div className="col-span-12 md:col-span-9">
-              <p className="font-display text-2xl md:text-3xl mb-3 text-[color:var(--ink)]">
-                Senior Product &amp; Visual Designer{" "}
-                <span className="font-mono text-[color:var(--meta)] align-middle ml-2">
-                  · est. 2012
-                </span>
-              </p>
-              <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
-                {profile.paragraph}
-              </p>
-            </div>
-          </div>
-
-          {/* Two specialty tiles */}
-          <div
-            className="grid grid-cols-1 md:grid-cols-2 gap-0"
-            style={{ borderTop: "1px solid var(--rule)" }}
-          >
-            <SpecialtyTile
-              label="Specialty"
-              title="Design Systems"
-              body="Component libraries, design tokens, brand-to-product translation. Recently certified in Design Systems by Memorisely (2024)."
-            />
-            <div
-              className="md:border-l border-t md:border-t-0"
-              style={{ borderColor: "var(--rule)" }}
-            >
-              <SpecialtyTile
-                label="Currently"
-                title="AI-Native Product"
-                body="Building shipping AI products with the Anthropic Claude API, Supabase, and Claude Code — including HeyOtis and smallstitch.club."
-              />
-            </div>
-          </div>
-
-          {/* Stats row */}
           <div
             className="grid grid-cols-2 md:grid-cols-4"
             style={{
@@ -183,11 +68,9 @@ export default async function AboutPage() {
             {stats.map((s, i) => (
               <div
                 key={s.label}
-                className={`p-5 md:p-7 hover:bg-[color:var(--paper-soft)] transition-colors ${
-                  i > 0 ? "md:border-l" : ""
-                } ${i % 2 === 1 ? "border-l md:border-l" : ""} ${
-                  i >= 2 ? "border-t md:border-t-0" : ""
-                }`}
+                className={`p-5 md:p-7 ${i > 0 ? "md:border-l" : ""} ${
+                  i % 2 === 1 ? "border-l md:border-l" : ""
+                } ${i >= 2 ? "border-t md:border-t-0" : ""}`}
                 style={{ borderColor: "var(--rule)" }}
               >
                 <p
@@ -202,11 +85,54 @@ export default async function AboutPage() {
               </div>
             ))}
           </div>
-        </MenuCard>
 
-        {/* ── Inverted footer CTA ────────────────────────────────── */}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2"
+            style={{ borderBottom: "1px solid var(--rule)" }}
+          >
+            <SpecialtyTile
+              eyebrow="Specialty"
+              title="Design Systems"
+              body="Component libraries, design tokens, brand-to-product translation. Certified Design Systems by Memorisely (2024)."
+            />
+            <div
+              className="md:border-l border-t md:border-t-0"
+              style={{ borderColor: "var(--rule)" }}
+            >
+              <SpecialtyTile
+                eyebrow="Currently building"
+                title="AI-native products"
+                body="Shipping with the Anthropic Claude API, Supabase, and Claude Code. HeyOtis and smallstitch.club are both in flight."
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ── 3. Experience — the career timeline. No intro
+            paragraph; the section header carries it. ─────────── */}
+        <div
+          id="experience"
+          data-pair="dustypink-ink"
+          className="scroll-mt-20"
+          style={{ background: "var(--paper-soft)" }}
+        >
+          <CareerRoadmap items={experience} />
+        </div>
+
+        {/* ── 4. Voices — testimonials in a 2×2 grid ────────────── */}
+        <div
+          id="voices"
+          data-pair="dustypink-ink"
+          className="scroll-mt-20"
+          style={{ background: "var(--paper-soft)" }}
+        >
+          <TestimonialsGrid items={testimonials} />
+        </div>
+
+        {/* ── 5. Connect — CTA + contact row + CV downloads ──── */}
         <section
-          className="px-[var(--spacing-page)] py-20 md:py-28"
+          id="connect"
+          className="px-[var(--spacing-page)] py-20 md:py-28 scroll-mt-20"
           style={{ background: "var(--ink)", color: "var(--paper)" }}
         >
           <div className="grid grid-cols-12 gap-4">
@@ -223,7 +149,12 @@ export default async function AboutPage() {
                 work together?
               </span>
             </h2>
-            <div className="col-span-12 md:col-span-9 mt-8 md:mt-10 flex flex-wrap gap-3">
+            <p className="col-span-12 md:col-span-8 mt-6 md:mt-8 text-base md:text-lg leading-relaxed opacity-80">
+              Open to senior product &amp; visual design roles, freelance
+              briefs, and AI-product collaborations.
+            </p>
+
+            <div className="col-span-12 md:col-span-10 mt-8 flex flex-wrap items-center gap-3">
               <ContactPill
                 href={`mailto:${profile.email}`}
                 label={profile.email}
@@ -233,16 +164,55 @@ export default async function AboutPage() {
                 label="LinkedIn ↗"
                 external
               />
-              <ContactPill
+              <span
+                className="font-mono opacity-70 ml-1"
+                style={{ color: "var(--paper)" }}
+              >
+                · Based in Amsterdam
+              </span>
+            </div>
+
+            <p className="col-span-12 mt-12 md:mt-14 font-mono opacity-70 max-w-2xl">
+              Whichever serves you better — the styled PDF for humans, the
+              DOCX for ATS systems.
+            </p>
+            <div className="col-span-12 md:col-span-10 mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <InvertedDownloadCard
                 href={downloads.pdf.href}
-                label="Download CV ↗"
+                label="Styled CV"
+                meta="PDF · A4 · single page"
+              />
+              <InvertedDownloadCard
+                href={downloads.docx.href}
+                label="Plain CV"
+                meta="DOCX · for Workday / Greenhouse / Lever"
               />
             </div>
-            <p className="col-span-12 mt-12 md:mt-16 font-mono opacity-70 max-w-3xl">
-              Made by Sam Ahhee Schneider in Amsterdam · ©{" "}
-              {new Date().getFullYear()} Sam Ahhee, all rights reserved.
-            </p>
           </div>
+        </section>
+
+        {/* ── 6. Footnote info strip — compact mono rows, just
+            before the global footer. ───────────────────────────── */}
+        <section
+          id="footnote"
+          className="px-[var(--spacing-page)] py-12 md:py-16 scroll-mt-20"
+        >
+          <FootnoteRow label="Skills" content={skills.join(" · ")} />
+          <FootnoteRow label="Tools" content={tools.join(" · ")} />
+          <FootnoteRow
+            label="Education"
+            content={education
+              .map((e) => `${e.title} — ${e.institution} (${e.year})`)
+              .join(" · ")}
+          />
+          <FootnoteRow
+            label="Languages"
+            content={languages.map((l) => `${l.name} (${l.level})`).join(" · ")}
+          />
+          <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em] mt-8">
+            Set in Plus Jakarta Sans &amp; Sometype Mono · Made in
+            Amsterdam · MMXXVI
+          </p>
         </section>
       </main>
 
@@ -254,41 +224,21 @@ export default async function AboutPage() {
 /* ── Local helpers ─────────────────────────────────────────────────── */
 
 function SpecialtyTile({
-  label,
+  eyebrow,
   title,
   body,
 }: {
-  label: string;
+  eyebrow: string;
   title: string;
   body: string;
 }) {
   return (
-    <div className="p-5 md:p-7 hover:bg-[color:var(--paper-soft)] transition-colors">
-      <p className="font-mono text-[color:var(--meta)] mb-3">{label}</p>
+    <div className="p-5 md:p-7 hover:bg-[color:var(--paper)] transition-colors">
+      <p className="font-mono text-[color:var(--meta)] mb-3">{eyebrow}</p>
       <p className="font-display text-xl md:text-2xl mb-2 text-[color:var(--ink)]">
         {title}
       </p>
       <p className="text-[color:var(--ink-soft)] leading-relaxed">{body}</p>
-    </div>
-  );
-}
-
-function InfoCell({
-  title,
-  withBorder,
-  children,
-}: {
-  title: string;
-  withBorder?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`p-5 md:p-7 ${withBorder ? "md:border-l border-t md:border-t-0" : ""}`}
-      style={{ borderColor: "var(--rule)" }}
-    >
-      <p className="font-mono text-[color:var(--meta)] mb-3">{title}</p>
-      {children}
     </div>
   );
 }
@@ -317,7 +267,8 @@ function ContactPill({
   );
 }
 
-function DownloadCard({
+/** CV download card — inverted variant for the dark Connect section. */
+function InvertedDownloadCard({
   href,
   label,
   meta,
@@ -329,21 +280,41 @@ function DownloadCard({
   return (
     <a
       href={href}
-      className="group flex items-center justify-between gap-4 p-5 rounded-sm border transition-colors hover:border-[color:var(--ink)]"
-      style={{ borderColor: "var(--rule)" }}
+      className="group flex items-center justify-between gap-4 p-5 rounded-sm border transition-colors hover:border-[color:var(--paper)]"
+      style={{
+        borderColor: "color-mix(in srgb, var(--paper) 25%, transparent)",
+        color: "var(--paper)",
+      }}
     >
       <div>
-        <p className="font-display text-lg md:text-xl text-[color:var(--ink)]">
-          {label}
-        </p>
-        <p className="font-mono text-[color:var(--meta)] mt-1">{meta}</p>
+        <p className="font-display text-lg md:text-xl">{label}</p>
+        <p className="font-mono opacity-70 mt-1">{meta}</p>
       </div>
-      <span
-        aria-hidden
-        className="font-mono text-[color:var(--ink-soft)] group-hover:text-[color:var(--ink)] transition-colors"
-      >
+      <span aria-hidden className="font-mono opacity-80 group-hover:opacity-100">
         Download ↓
       </span>
     </a>
+  );
+}
+
+/** Compact mono row for the footnote info strip — a 120px label cell
+ *  followed by inline content. Rows stack on mobile. */
+function FootnoteRow({
+  label,
+  content,
+}: {
+  label: string;
+  content: string;
+}) {
+  return (
+    <div
+      className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-1 md:gap-6 py-3 md:py-4"
+      style={{ borderTop: "1px solid var(--rule)" }}
+    >
+      <p className="font-mono text-[color:var(--meta)]">{label}</p>
+      <p className="font-mono text-[color:var(--ink-soft)] leading-relaxed">
+        {content}
+      </p>
+    </div>
   );
 }

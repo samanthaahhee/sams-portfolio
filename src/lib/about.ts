@@ -55,10 +55,10 @@ export const profile = {
 };
 
 export const stats: { value: string; label: string }[] = [
-  { value: "13+", label: "Years of design practice" },
-  { value: "25+", label: "Brands shaped — FMCG, fintech, product, agency" },
+  { value: "13+", label: "Years across product, brand & editorial design" },
+  { value: "25+", label: "Brands shaped — FMCG, fintech, agency, product" },
+  { value: "08", label: "Roles · Amsterdam · Cape Town" },
   { value: "02", label: "Languages — English · Mandarin" },
-  { value: "01", label: "Full-stack AI product in build — HeyOtis" },
 ];
 
 export const experience: ExperienceEntry[] = [
@@ -72,7 +72,7 @@ export const experience: ExperienceEntry[] = [
     context: "Currently building HeyOtis",
     featured: true,
     description:
-      "Eight roles across thirteen years. Currently building AI-native products at Ten 8 City — scroll back through the work, all the way to the first junior role at Radar Advertising in Cape Town.",
+      "Designing and shipping HeyOtis end-to-end — research, IA, design system, brand, and AI conversation flows on the Anthropic Claude API.",
     bullets: [
       "Designing and shipping HeyOtis end-to-end — research, IA, design system, brand, Claude API conversation flows.",
       "Built and launched smallstitch.club — full visual identity, brand, and product.",

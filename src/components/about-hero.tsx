@@ -35,27 +35,31 @@ export function AboutHero() {
             const isLast = i === words.length - 1;
             const trimmed = isLast ? w.replace(/\.$/, "") : w;
             return (
-              <motion.span
-                key={`${w}-${i}`}
-                initial={{ y: 60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{
-                  delay: i * 0.15,
-                  duration: 0.7,
-                  ease: [0.2, 0.8, 0.2, 1],
-                }}
-                className="inline-block mr-[0.25em]"
-              >
-                {trimmed}
-                {isLast && (
-                  <span
-                    aria-hidden
-                    style={{ color: "var(--pair-b)" }}
-                  >
-                    .
-                  </span>
-                )}
-              </motion.span>
+              <span key={`w-${i}`}>
+                <motion.span
+                  initial={{ y: 60, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{
+                    delay: i * 0.15,
+                    duration: 0.7,
+                    ease: [0.2, 0.8, 0.2, 1],
+                  }}
+                  className="inline-block"
+                >
+                  {trimmed}
+                  {isLast && (
+                    <span aria-hidden style={{ color: "var(--pair-b)" }}>
+                      .
+                    </span>
+                  )}
+                </motion.span>
+                {/* Explicit space text node between word spans —
+                    inline-block animated spans don't preserve
+                    whitespace from JSX siblings, so we render one
+                    here. The non-breaking space keeps words intact
+                    on tight wraps. */}
+                {!isLast && " "}
+              </span>
             );
           })}
         </motion.h1>
@@ -63,10 +67,12 @@ export function AboutHero() {
         <p
           className="col-span-12 md:col-span-8 md:col-start-2 mt-10 md:mt-14 text-base md:text-xl leading-relaxed text-[color:var(--ink-soft)]"
         >
-          {profile.subhead}
+          Senior product &amp; visual designer in Amsterdam. Currently
+          building HeyOtis at Ten 8 City.
         </p>
 
-        {/* Meta strip — location · email · LinkedIn · portfolio. */}
+        {/* Meta strip — location · email · LinkedIn. Portfolio link
+            removed; visitors are already on the portfolio. */}
         <ul className="col-span-12 md:col-span-10 md:col-start-2 mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[color:var(--meta)]">
           <li>{profile.location}</li>
           <li aria-hidden className="opacity-50">·</li>
@@ -87,17 +93,6 @@ export function AboutHero() {
               className="underline underline-offset-4 hover:text-[color:var(--ink)] transition-colors"
             >
               LinkedIn ↗
-            </a>
-          </li>
-          <li aria-hidden className="opacity-50">·</li>
-          <li>
-            <a
-              href={profile.links.portfolio}
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-4 hover:text-[color:var(--ink)] transition-colors"
-            >
-              Portfolio ↗
             </a>
           </li>
         </ul>
