@@ -38,12 +38,18 @@ export function ArchiveSection({ projects }: { projects: Project[] }) {
 
   return (
     <section id="archive" className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20">
-      <p
-        className="font-display mb-10 md:mb-14"
-        style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
-      >
-        Additional Projects.
-      </p>
+      <div className="mb-10 md:mb-14 max-w-2xl">
+        <p
+          className="font-display"
+          style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
+        >
+          Additional Projects.
+        </p>
+        <p className="mt-4 md:mt-5 text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
+          A collection of work spanning brand, digital, packaging and
+          illustration.
+        </p>
+      </div>
 
       {/* ── Filter chips ─────────────────────────────────────────── */}
       <div
