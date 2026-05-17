@@ -119,7 +119,7 @@ export default function AboutPage() {
             roadmap's --pair-a resolves to coral. ─────────────────── */}
         <div
           id="experience"
-          data-pair="coral-sage"
+          data-pair="dustypink-ink"
           className="scroll-mt-20 pt-12 md:pt-16"
           style={{ background: "var(--paper-soft)" }}
         >
