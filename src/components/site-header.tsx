@@ -18,9 +18,6 @@ export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
           <Link href="/" className="hover:text-[color:var(--ink)] transition-colors">
             Work
           </Link>
-          <Link href="/about" className="hover:text-[color:var(--ink)] transition-colors">
-            About
-          </Link>
           <Link href="/contact" className="hover:text-[color:var(--ink)] transition-colors">
             Contact
           </Link>
