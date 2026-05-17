@@ -54,6 +54,7 @@ export function SiteFooter() {
 
         {/* ── Far right — contact + location + copyright ──────────── */}
         <div className="md:text-right space-y-3 text-[color:var(--ink-soft)]">
+          <p className="font-mono text-[color:var(--meta)]">Let&rsquo;s connect</p>
           <CopyEmailButton email={EMAIL} />
           <p>Based in Amsterdam.</p>
           <p className="font-mono text-[color:var(--meta)] pt-3">

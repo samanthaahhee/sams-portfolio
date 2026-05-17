@@ -107,7 +107,7 @@ export default async function Home() {
         </section>
 
         {/* ── Also from the Archive — supporting work ────────────────── */}
-        <div className="rule mx-[var(--spacing-page)] mt-32 md:mt-40" />
+        <div className="rule mx-[var(--spacing-page)] mt-16 md:mt-24" />
         <ArchiveSection projects={projects} />
 
       </main>
