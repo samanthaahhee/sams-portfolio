@@ -127,7 +127,7 @@ export default async function AboutPage() {
         <div
           id="experience"
           data-pair="dustypink-ink"
-          className="scroll-mt-20 pt-12 md:pt-16"
+          className="scroll-mt-20"
           style={{ background: "var(--paper-soft)" }}
         >
           {/* The sticky scroll-driven roadmap card */}
