@@ -8,10 +8,6 @@ import {
   stats,
   experience as staticExperience,
   testimonials,
-  skills,
-  tools,
-  education,
-  languages,
   downloads,
 } from "@/lib/about";
 import { getExperience } from "@/lib/db";
@@ -191,29 +187,6 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        {/* ── 6. Footnote info strip — compact mono rows, just
-            before the global footer. ───────────────────────────── */}
-        <section
-          id="footnote"
-          className="px-[var(--spacing-page)] py-12 md:py-16 scroll-mt-20"
-        >
-          <FootnoteRow label="Skills" content={skills.join(" · ")} />
-          <FootnoteRow label="Tools" content={tools.join(" · ")} />
-          <FootnoteRow
-            label="Education"
-            content={education
-              .map((e) => `${e.title} — ${e.institution} (${e.year})`)
-              .join(" · ")}
-          />
-          <FootnoteRow
-            label="Languages"
-            content={languages.map((l) => `${l.name} (${l.level})`).join(" · ")}
-          />
-          <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em] mt-8">
-            Set in Plus Jakarta Sans &amp; Sometype Mono · Made in
-            Amsterdam · MMXXVI
-          </p>
-        </section>
       </main>
 
       <SiteFooter />
@@ -297,24 +270,3 @@ function InvertedDownloadCard({
   );
 }
 
-/** Compact mono row for the footnote info strip — a 120px label cell
- *  followed by inline content. Rows stack on mobile. */
-function FootnoteRow({
-  label,
-  content,
-}: {
-  label: string;
-  content: string;
-}) {
-  return (
-    <div
-      className="grid grid-cols-1 md:grid-cols-[120px_1fr] gap-1 md:gap-6 py-3 md:py-4"
-      style={{ borderTop: "1px solid var(--rule)" }}
-    >
-      <p className="font-mono text-[color:var(--meta)]">{label}</p>
-      <p className="font-mono text-[color:var(--ink-soft)] leading-relaxed">
-        {content}
-      </p>
-    </div>
-  );
-}
