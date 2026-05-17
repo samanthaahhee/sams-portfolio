@@ -38,43 +38,12 @@ export function ArchiveSection({ projects }: { projects: Project[] }) {
 
   return (
     <section id="archive" className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20">
-      {/* ── Section masthead ─────────────────────────────────────── */}
-      <div className="grid grid-cols-12 gap-4 items-baseline mb-10 md:mb-14">
-        <div className="col-span-12 md:col-span-7">
-          <div className="flex items-baseline justify-between md:justify-start gap-6 font-mono text-[color:var(--meta)] mb-4">
-            <span>Also from the Archive</span>
-            <span>
-              {String(filtered.length).padStart(2, "0")} of{" "}
-              {String(projects.length).padStart(2, "0")}
-            </span>
-          </div>
-          <p
-            className="font-display"
-            style={{
-              fontSize: "var(--text-d3)",
-              lineHeight: 1.0,
-            }}
-          >
-            Field notes,
-            <br className="hidden md:block" />
-            smaller pieces.
-          </p>
-        </div>
-        <div className="col-span-12 md:col-span-4 md:col-start-9">
-          <p className="text-[color:var(--ink-soft)] leading-relaxed">
-            Brand, packaging, illustration, campaign, editorial — the work
-            that piles up beside the big projects.
-          </p>
-          <a
-            href="https://www.behance.net/Samantha_ahhee"
-            target="_blank"
-            rel="noreferrer"
-            className="font-mono inline-block mt-4 underline underline-offset-4 hover:opacity-70 transition-opacity"
-          >
-            See all on Behance ↗
-          </a>
-        </div>
-      </div>
+      <p
+        className="font-display mb-10 md:mb-14"
+        style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
+      >
+        Other work.
+      </p>
 
       {/* ── Filter chips ─────────────────────────────────────────── */}
       <div

@@ -22,10 +22,6 @@ export function AboutHero() {
       />
 
       <div className="relative grid grid-cols-12 gap-4">
-        <p className="col-span-12 font-mono text-[color:var(--meta)] mb-6">
-          Volume 01 · A CV in menu form · Est. MMXXVI
-        </p>
-
         <motion.h1
           className="col-span-12 md:col-span-11 font-display"
           style={{

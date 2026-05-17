@@ -28,13 +28,7 @@ export default async function Home() {
           />
 
 
-          <div className="col-span-12 flex items-center justify-between font-mono text-[color:var(--meta)] mb-12 md:mb-20">
-            <span>Volume 01</span>
-            <span className="hidden sm:inline">A portfolio in print form</span>
-            <span>Est. 2026</span>
-          </div>
-
-          <div className="relative grid grid-cols-12 gap-4 items-center">
+          <div className="relative grid grid-cols-12 gap-4 items-center pt-4 md:pt-8">
             <h1
               className="col-span-12 md:col-span-7 font-display relative z-10"
               style={{
@@ -57,14 +51,28 @@ export default async function Home() {
           </div>
 
           <div className="relative grid grid-cols-12 gap-4 mt-12 md:mt-16">
-            <div className="col-span-12 md:col-span-8 md:col-start-2">
-              <p
-                className="text-xl md:text-2xl leading-snug"
-                style={{ color: "var(--ink)" }}
-              >
-                Hey, I'm Sam — a swiss-army-knife full-stack designer working
-                across brand, product, and editorial. I make things that are
-                beautiful first and useful always, for teams that want both.
+            <div
+              className="col-span-12 md:col-span-8 md:col-start-2 space-y-5 md:space-y-6"
+              style={{ color: "var(--ink)" }}
+            >
+              <p className="text-xl md:text-2xl leading-snug">
+                Sam is a multidisciplinary designer with 13+ years of
+                experience across FMCG, fintech, and consumer tech.
+                Originally from Cape Town and now based in Amsterdam, she
+                works at the intersection of brand, product, and visual
+                communication.
+              </p>
+              <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
+                Her work focuses on building scalable, human-centered
+                experiences that connect across every touchpoint. With a
+                background spanning both agencies and startups, Sam combines
+                strategic thinking with hands-on execution — bringing
+                clarity, emotion, and systems thinking to everything from
+                visual identities to product experiences.
+              </p>
+              <p className="text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
+                Part strategist, part maker, part problem-solver — she’s a
+                creative Swiss army knife for modern brands.
               </p>
               <div className="mt-6 md:mt-8 flex flex-wrap items-center gap-3">
                 <ContactButton />
@@ -80,10 +88,12 @@ export default async function Home() {
           id="selected-work"
           className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20"
         >
-          <div className="flex items-baseline justify-between font-mono text-[color:var(--meta)] mb-10">
-            <span>Selected Work</span>
-            <span>{String(caseStudies.length).padStart(2, "0")} pieces</span>
-          </div>
+          <p
+            className="font-display mb-10 md:mb-14"
+            style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
+          >
+            Selected work.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-16">
             {caseStudies.map((study, i) => (
@@ -96,20 +106,6 @@ export default async function Home() {
         <div className="rule mx-[var(--spacing-page)] mt-32 md:mt-40" />
         <ArchiveSection projects={projects} />
 
-        {/* ── Closing editorial note ─────────────────────────────────── */}
-        <section className="px-[var(--spacing-page)] pt-32 md:pt-48 pb-12">
-          <div className="grid grid-cols-12 gap-4">
-            <p
-              className="col-span-12 md:col-span-8 md:col-start-3 font-display text-center"
-              style={{
-                fontSize: "var(--text-d3)",
-                lineHeight: 1.05,
-              }}
-            >
-              Design that holds the room and does the work.
-            </p>
-          </div>
-        </section>
       </main>
 
       <SiteFooter />
