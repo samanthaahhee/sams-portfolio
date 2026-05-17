@@ -294,9 +294,10 @@ body {
   border-radius: 22px;
   width: 100%;
   max-width: 1280px;
-  height: min(80vh, 680px);
-  /* Tight vertical, comfortable horizontal — card hugs the content
-     vertically rather than spreading content into a tall card. */
+  /* Height halved from the original min(80vh, 680px) → the card now
+     hugs its content vertically with roughly half the empty top/bottom
+     space the previous version had. */
+  height: min(60vh, 520px);
   padding: clamp(0.625rem, 1vw, 1rem) clamp(2.5rem, 4vw, 4rem);
   box-shadow: 0 28px 60px rgba(28, 22, 18, 0.1);
 
@@ -488,5 +489,36 @@ body {
   .entry,
   .detail {
     transition: none !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Testimonial carousel — horizontal scroll-snap track below the
+   /about timeline. One slide per viewport width, snap to start, no
+   visible native scrollbar.
+   ────────────────────────────────────────────────────────────────────── */
+
+.testimonial-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;            /* Firefox */
+  -ms-overflow-style: none;         /* IE/old Edge */
+}
+.testimonial-track::-webkit-scrollbar {
+  display: none;                    /* WebKit */
+}
+
+.testimonial-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  padding: 0 clamp(0px, 2vw, 1.5rem);
+  max-width: 760px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-track {
+    scroll-behavior: auto;
   }
 }

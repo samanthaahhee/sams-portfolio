@@ -24,11 +24,16 @@ export type ExperienceEntry = {
 };
 
 export type Testimonial = {
-  /** Leave empty / placeholder string until the real quote arrives.
-   *  The tile renders a dashed-border placeholder when this is empty. */
+  /** Quote body. Empty string renders as a dashed placeholder. */
   quote: string;
+  /** Recommender name. */
   name: string;
+  /** Recommender role + company / title line. */
   role: string;
+  /** Optional context (e.g. "managed Sam directly", "worked with Sam on the same team"). */
+  relationship?: string;
+  /** Optional date string (e.g. "Mar 2018", "Nov 2024"). */
+  date?: string;
 };
 
 export const profile = {
@@ -199,28 +204,39 @@ export const experience: ExperienceEntry[] = [
   },
 ];
 
-/* Placeholder testimonials — empty `quote` renders as dashed placeholder
- * tile. Paste real LinkedIn recommendations to swap each one in. */
+/* LinkedIn recommendations. Ordered newest → oldest. */
 export const testimonials: Testimonial[] = [
   {
-    quote: "",
-    name: "[Recommender name]",
-    role: "[Role · Company]",
+    quote:
+      "I had the pleasure of working closely with Sam during my time at Temper, and she’s one of those rare designers who combines creative excellence with strategic thinking. She consistently brings fresh energy and high standards to everything she works on, with a sharp eye for visual detail and a strong sense of how design contributes to the bigger picture.\n\nWhat stands out most is her ability to lead with initiative — she doesn’t wait to be asked. Whether it’s shaping design direction, connecting her work to broader product goals, or initiating new ideas, Sam steps forward with clarity and purpose. She’s also a highly collaborative teammate, involving others early, staying open to feedback, and always looking for ways to make the work better.\n\nIf you’re looking for a designer who takes ownership, thinks big, and cares deeply about quality and impact, Sam is someone you want on your team.",
+    name: "Love Sootalu",
+    role: "User Experience",
+    relationship: "Love managed Sam directly",
+    date: "Jul 2025",
   },
   {
-    quote: "",
-    name: "[Recommender name]",
-    role: "[Role · Company]",
+    quote:
+      "Sam is a super creative designer and one I had the pleasure of hiring and managing during her time at Recharge. She consistently delivered work that elevated our brand and pushed it forward, bringing real creative muscle to the team.\n\nShe’s also a great mentor and was a huge support to me in growing the team. Whether leading on big projects or rolling up her sleeves to tackle the details, Sam brought fresh ideas, energy, and a drive to get things done.\n\nI’d recommend Sam to any team looking for a talented creative who makes a real impact.",
+    name: "Ross Cumming",
+    role: "Chief of Staff · Strategy, Communication, PR, Corporate Narrative & M&A transformation",
+    relationship: "Ross managed Sam directly",
+    date: "Nov 2024",
   },
   {
-    quote: "",
-    name: "[Recommender name]",
-    role: "[Role · Company]",
+    quote:
+      "Sam was great to work with, always positive and willing to bounce ideas off of, while still managing to solve her own problems and come up with well-designed solutions. As a team member, she was invaluable. She’s got all the skills needed, but more than that, she is a positive asset to have and is always raising the office morale.",
+    name: "Claire Shaban",
+    role: "Freelance Senior Digital Art Director · Cape Town",
+    relationship: "Claire worked with Sam on the same team",
+    date: "Oct 2022",
   },
   {
-    quote: "",
-    name: "[Recommender name]",
-    role: "[Role · Company]",
+    quote:
+      "Having worked with Sam as her CD for the past 6 years I can tell you that there is no one more dedicated or hard working. When the brief changes at the last minute she’s able to pull rabbits out of thin air and deliver great design in the limited time. And, when given the chance to craft her work, her designs are standout, well thought out and out the box. The quintessential millennial means she’s also always got her fingers on the pulse of the target market. I wish her all the best in the future.",
+    name: "David Jennions",
+    role: "Freelance Copywriter, Creative Director, Creative Strategist & BIG ideas acolyte",
+    relationship: "David managed Sam directly",
+    date: "Mar 2018",
   },
 ];
 

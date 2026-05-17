@@ -4,7 +4,7 @@ import { AboutHero } from "@/components/about-hero";
 import { AboutNav } from "@/components/about-nav";
 import { MenuCard } from "@/components/menu-card";
 import { CareerRoadmap } from "@/components/career-roadmap";
-import { TestimonialTile } from "@/components/testimonial-tile";
+import { TestimonialCarousel } from "@/components/testimonial-carousel";
 import {
   profile,
   stats,
@@ -133,7 +133,10 @@ export default async function AboutPage() {
           {/* The sticky scroll-driven roadmap card */}
           <CareerRoadmap items={experience} />
 
-          {/* Download row — sits beneath the timeline */}
+          {/* Testimonial carousel — sits below the timeline */}
+          <TestimonialCarousel items={testimonials} />
+
+          {/* Download row — sits beneath the carousel */}
           <section className="px-[var(--spacing-page)] pt-10 md:pt-14 pb-20 md:pb-28">
             <div
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -155,13 +158,6 @@ export default async function AboutPage() {
 
         {/* ── 03 / Personal ──────────────────────────────────────── */}
         <MenuCard id="personal">
-          {/* Testimonials 2×2 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-14 md:mb-20">
-            {testimonials.map((t, i) => (
-              <TestimonialTile key={i} t={t} />
-            ))}
-          </div>
-
           {/* Info row — Skills · Tools · Education · Languages */}
           <div
             className="grid grid-cols-1 md:grid-cols-4 gap-0"
