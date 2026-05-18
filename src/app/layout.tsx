@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: "/og-smallstitch.png",
-        width: 1024,
-        height: 1024,
-        alt: "Smallstitch — runners in Forest Folk and Little Legs Club tees",
+        width: 1895,
+        height: 1296,
+        alt: "Smallstitch — 3D illustration of the storefront with pink and green striped awning",
       },
     ],
   },
