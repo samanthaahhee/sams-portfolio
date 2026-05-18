@@ -31,16 +31,6 @@ export function SiteFooter() {
             </li>
             <li>
               <a
-                href="https://www.behance.net/"
-                className="hover:text-[color:var(--ink)] transition-colors"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Behance ↗
-              </a>
-            </li>
-            <li>
-              <a
                 href="https://smallstitch.club"
                 className="hover:text-[color:var(--ink)] transition-colors"
                 target="_blank"
