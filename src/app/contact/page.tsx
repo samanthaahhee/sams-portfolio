@@ -1,5 +1,8 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { CopyEmailButton } from "@/components/copy-email-button";
+
+const EMAIL = "samantha.ahhee@gmail.com";
 
 export const metadata = { title: "Contact" };
 
@@ -15,14 +18,19 @@ export default function ContactPage() {
           >
             Say hi.
           </h1>
-          <div className="col-span-12 md:col-span-6 md:col-start-2 space-y-6 text-lg md:text-xl leading-relaxed">
+          <div className="col-span-12 md:col-span-7 md:col-start-2 space-y-8 text-lg md:text-xl leading-relaxed">
             <p>
-              Best for: full-time design roles, brand-and-product engagements,
-              and quietly weird side projects.
+              I thrive in start up and scale up environments and am always
+              on the lookout for interesting projects and freelance gigs.
+              Please feel free to reach out to me anytime.
             </p>
-            <p className="text-[color:var(--ink-soft)]">
-              Email + form coming in the next pass.
-            </p>
+
+            <div className="space-y-2">
+              <CopyEmailButton email={EMAIL} />
+              <p className="text-[color:var(--ink-soft)]">
+                South African based in Amsterdam.
+              </p>
+            </div>
           </div>
         </div>
       </main>
