@@ -64,19 +64,19 @@ export default async function Home() {
                 Sam is a multidisciplinary designer with 13+ years of
                 experience across FMCG, fintech, and consumer tech.
                 Originally from Cape Town and now based in Amsterdam, she
-                works at the intersection of brand, product, and visual
-                communication.
+                works at the intersection of brand, product, illustration,
+                and visual communication.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
-                Her work focuses on building scalable, human-centered
+                Her work focuses on building scalable, human centered
                 experiences that connect across every touchpoint. With a
                 background spanning both agencies and startups, Sam
-                combines strategic thinking with hands-on execution —
+                combines strategic thinking with hands on execution,
                 bringing clarity, emotion, and systems thinking to
                 everything from visual identities to product experiences.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
-                Part strategist, part maker, part problem-solver — she’s a
+                Part strategist, part maker, part problem solver. She’s a
                 creative Swiss army knife for modern brands.
               </p>
               <div className="pt-2 md:pt-4 flex flex-wrap items-center gap-4">
