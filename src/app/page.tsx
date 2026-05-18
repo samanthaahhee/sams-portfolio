@@ -68,14 +68,13 @@ export default async function Home() {
                 and visual communication.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
-                I love creating things that not only look good, but
-                actually make people feel something. Over the years
-                I’ve worked with both agencies and startups, which means
-                I’m just as comfortable thinking about the bigger picture
-                as I am getting stuck into the details. From shaping
-                visual identities to improving product experiences, I
-                enjoy finding simple, thoughtful ways to connect brands
-                with people.
+                I love creating things that make people feel something.
+                Over the years I’ve worked with both agencies and
+                startups, which means I’m just as comfortable thinking
+                about the bigger picture as I am getting stuck into the
+                details. From shaping visual identities to improving
+                product experiences, I enjoy finding simple, thoughtful
+                ways to connect brands with people.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
                 I’m naturally curious, hands on, and probably happiest
