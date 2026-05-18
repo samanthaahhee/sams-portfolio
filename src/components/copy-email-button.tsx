@@ -21,9 +21,14 @@ type Variant = "inline" | "title";
 export function CopyEmailButton({
   email,
   variant = "inline",
+  label,
 }: {
   email: string;
   variant?: Variant;
+  /** Custom display text for the title variant. Defaults to the
+   *  email address itself. The copy action always writes `email`
+   *  to the clipboard regardless of what's shown. */
+  label?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -51,7 +56,7 @@ export function CopyEmailButton({
           href={`mailto:${email}`}
           className="hover:opacity-80 transition-opacity"
         >
-          {email}
+          {label ?? email}
         </a>
         <button
           type="button"

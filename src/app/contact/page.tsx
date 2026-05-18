@@ -13,7 +13,11 @@ export default function ContactPage() {
       <main className="px-[var(--spacing-page)] py-20 md:py-32">
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-12 mb-12">
-            <CopyEmailButton email={EMAIL} variant="title" />
+            <CopyEmailButton
+              email={EMAIL}
+              variant="title"
+              label="Let’s connect."
+            />
           </div>
           <div className="col-span-12 md:col-span-7 md:col-start-2 text-lg md:text-xl leading-relaxed">
             <p>
