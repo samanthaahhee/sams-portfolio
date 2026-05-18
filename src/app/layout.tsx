@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/og-smallstitch.png",
+        url: "/og-storefront.png",
         width: 1895,
         height: 1296,
         alt: "Smallstitch — 3D illustration of the storefront with pink and green striped awning",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "Sam Ahhee Schneider — Multidisciplinary Designer",
     description:
       "Brand, product, illustration, and visual communication. Currently building HeyOtis at Ten 8 City in Amsterdam.",
-    images: ["/og-smallstitch.png"],
+    images: ["/og-storefront.png"],
   },
 };
 
