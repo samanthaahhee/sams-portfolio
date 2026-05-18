@@ -6,15 +6,31 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL("https://samahhee.com"),
   title: {
-    default: "Sam Ahhee — Visual Communications Designer",
-    template: "%s · Sam Ahhee",
+    default: "Sam Ahhee Schneider — Multidisciplinary Designer",
+    template: "%s · Sam Ahhee Schneider",
   },
   description:
-    "Sam Ahhee is a visual communications designer working across brand, product, and editorial. A swiss-army-knife, full-stack designer.",
+    "Sam Ahhee Schneider is a multidisciplinary designer working across brand, product, illustration, and visual communication.",
   openGraph: {
-    title: "Sam Ahhee — Visual Communications Designer",
-    description: "Brand, product, and editorial design — a portfolio in print form.",
+    title: "Sam Ahhee Schneider — Multidisciplinary Designer",
+    description:
+      "Brand, product, illustration, and visual communication. Currently building HeyOtis at Ten 8 City in Amsterdam.",
     type: "website",
+    images: [
+      {
+        url: "/og-smallstitch.png",
+        width: 1024,
+        height: 1024,
+        alt: "Smallstitch — runners in Forest Folk and Little Legs Club tees",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sam Ahhee Schneider — Multidisciplinary Designer",
+    description:
+      "Brand, product, illustration, and visual communication. Currently building HeyOtis at Ten 8 City in Amsterdam.",
+    images: ["/og-smallstitch.png"],
   },
 };
 
