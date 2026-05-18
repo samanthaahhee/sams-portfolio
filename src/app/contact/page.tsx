@@ -21,9 +21,9 @@ export default function ContactPage() {
           </div>
           <div className="col-span-12 md:col-span-7 md:col-start-2 text-lg md:text-xl leading-relaxed">
             <p>
-              I thrive in start up and scale up environments and am always
-              on the lookout for interesting projects and freelance gigs.
-              Please feel free to reach out to me anytime.
+              If you’ve got something brewing, a project to shape, an
+              idea you’re still figuring out, a collaboration in mind,
+              I’d love to hear about it. My inbox is open.
             </p>
           </div>
         </div>
