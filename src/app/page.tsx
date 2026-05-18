@@ -61,23 +61,27 @@ export default async function Home() {
               style={{ color: "var(--ink-soft)" }}
             >
               <p className="text-base md:text-lg leading-relaxed">
-                Sam is a multidisciplinary designer with 13+ years of
-                experience across FMCG, fintech, and consumer tech.
-                Originally from Cape Town and now based in Amsterdam, she
-                works at the intersection of brand, product, illustration,
+                I’m a multidisciplinary designer with 13+ years of
+                experience working across FMCG, fintech, and consumer
+                tech. Originally from Cape Town and now based in
+                Amsterdam, I work across brand, product, illustration,
                 and visual communication.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
-                Her work focuses on building scalable, human centered
-                experiences that connect across every touchpoint. With a
-                background spanning both agencies and startups, Sam
-                combines strategic thinking with hands on execution,
-                bringing clarity, emotion, and systems thinking to
-                everything from visual identities to product experiences.
+                I love creating things that not only look good, but
+                actually make people feel something. Over the years
+                I’ve worked with both agencies and startups, which means
+                I’m just as comfortable thinking about the bigger picture
+                as I am getting stuck into the details. From shaping
+                visual identities to improving product experiences, I
+                enjoy finding simple, thoughtful ways to connect brands
+                with people.
               </p>
               <p className="text-base md:text-lg leading-relaxed">
-                Part strategist, part maker, part problem solver. She’s a
-                creative Swiss army knife for modern brands.
+                I’m naturally curious, hands on, and probably happiest
+                when I’m making, refining, and solving problems. A bit of
+                a creative Swiss army knife, with a soft spot for good
+                storytelling, clean design, and typography.
               </p>
               <div className="pt-2 md:pt-4 flex flex-wrap items-center gap-4">
                 <ContactButton />
