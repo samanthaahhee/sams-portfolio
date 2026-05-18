@@ -40,9 +40,6 @@ export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
           </Link>
         </nav>
         <div className="flex items-center justify-end gap-6">
-          <span className="font-mono text-[color:var(--meta)] hidden sm:inline">
-            No. {pageNo} / 2026
-          </span>
           <ThemeToggle />
         </div>
       </div>
