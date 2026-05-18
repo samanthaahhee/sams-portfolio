@@ -2,13 +2,29 @@
 
 import { useState } from "react";
 
+type Variant = "inline" | "title";
+
 /**
- * Click-to-copy email block. Shows the email address with a small
- * copy icon; on click, writes the email to the clipboard and swaps
- * the icon to a "copied" check for ~1.5s. Falls back to a regular
- * mailto link on accessible focus / keyboard.
+ * Click-to-copy email block. Two variants:
+ *  - "inline" (default): mono-sized address with a small copy icon
+ *    button to the right. Used in the footer and elsewhere as a
+ *    body-level affordance.
+ *  - "title": display-weight address rendered as a hero title with
+ *    a copy icon scaled to match. Used on the Contact page as the
+ *    page heading.
+ *
+ * In both cases, clicking the icon writes the email to the clipboard
+ * and swaps to a check for ~1.5s. Clipboard API unavailable → opens
+ * the mail client as a fallback. The address itself remains a
+ * standard mailto link for keyboard / right-click users.
  */
-export function CopyEmailButton({ email }: { email: string }) {
+export function CopyEmailButton({
+  email,
+  variant = "inline",
+}: {
+  email: string;
+  variant?: Variant;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function onCopy() {
@@ -17,9 +33,54 @@ export function CopyEmailButton({ email }: { email: string }) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard API unavailable — open the mail client as a fallback.
       window.location.href = `mailto:${email}`;
     }
+  }
+
+  if (variant === "title") {
+    return (
+      <h1
+        className="font-display flex flex-wrap items-center gap-4 md:gap-6 break-all"
+        style={{
+          fontSize: "var(--text-d2)",
+          lineHeight: 0.92,
+          letterSpacing: "-0.02em",
+        }}
+      >
+        <a
+          href={`mailto:${email}`}
+          className="hover:opacity-80 transition-opacity"
+        >
+          {email}
+        </a>
+        <button
+          type="button"
+          onClick={onCopy}
+          aria-label={
+            copied
+              ? "Email address copied"
+              : "Copy email address to clipboard"
+          }
+          className="inline-flex items-center justify-center rounded-md border transition-colors flex-shrink-0"
+          style={{
+            width: "0.9em",
+            height: "0.9em",
+            borderColor: "var(--rule-strong)",
+            color: copied ? "var(--pair-b)" : "var(--ink-soft)",
+          }}
+        >
+          {copied ? <CheckIcon big /> : <CopyIcon big />}
+        </button>
+        {copied && (
+          <span
+            aria-live="polite"
+            className="font-mono text-[11px] uppercase tracking-[0.14em] text-[color:var(--meta)]"
+          >
+            Copied
+          </span>
+        )}
+      </h1>
+    );
   }
 
   return (
@@ -38,11 +99,7 @@ export function CopyEmailButton({ email }: { email: string }) {
         }
         className="inline-flex items-center justify-center w-6 h-6 rounded-sm border border-[color:var(--rule)] text-[color:var(--ink-soft)] hover:border-[color:var(--ink)] hover:text-[color:var(--ink)] transition-colors"
       >
-        {copied ? (
-          <CheckIcon />
-        ) : (
-          <CopyIcon />
-        )}
+        {copied ? <CheckIcon /> : <CopyIcon />}
       </button>
       {copied && (
         <span
@@ -56,11 +113,12 @@ export function CopyEmailButton({ email }: { email: string }) {
   );
 }
 
-function CopyIcon() {
+function CopyIcon({ big = false }: { big?: boolean }) {
+  const size = big ? "55%" : 12;
   return (
     <svg
-      width="12"
-      height="12"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -75,11 +133,12 @@ function CopyIcon() {
   );
 }
 
-function CheckIcon() {
+function CheckIcon({ big = false }: { big?: boolean }) {
+  const size = big ? "55%" : 12;
   return (
     <svg
-      width="12"
-      height="12"
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
