@@ -101,7 +101,7 @@ export default async function Home() {
               Selected work.
             </p>
             <p className="mt-4 md:mt-5 text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
-              Long-term in-house work shaping brand, product, and marketing
+              Long term in house work shaping brand, product, and marketing
               systems across multiple channels.
             </p>
           </div>
