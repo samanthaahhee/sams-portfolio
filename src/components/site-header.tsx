@@ -12,7 +12,7 @@ export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
           href="/"
           className="hidden md:inline font-mono text-[color:var(--meta)] hover:text-[color:var(--ink)] transition-colors"
         >
-          Sam Ahhee · Visual Communications
+          My portfolio
         </Link>
         <nav className="font-mono flex items-center gap-6 text-[color:var(--ink-soft)]">
           <Link
