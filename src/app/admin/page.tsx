@@ -11,11 +11,19 @@ export default async function AdminHome() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-12">
-      <header>
-        <p className="font-mono text-[color:var(--meta)] mb-2">Overview</p>
-        <h1 className="font-display text-4xl md:text-5xl" style={{ lineHeight: 0.95 }}>
-          Dashboard
-        </h1>
+      <header className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <p className="font-mono text-[color:var(--meta)] mb-2">Overview</p>
+          <h1 className="font-display text-4xl md:text-5xl" style={{ lineHeight: 0.95 }}>
+            Dashboard
+          </h1>
+        </div>
+        <Link
+          href="/admin/settings"
+          className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+        >
+          Site settings
+        </Link>
       </header>
 
       {/* Projects */}

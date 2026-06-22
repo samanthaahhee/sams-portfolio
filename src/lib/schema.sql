@@ -121,3 +121,12 @@ CREATE TABLE IF NOT EXISTS case_studies (
 );
 
 CREATE INDEX IF NOT EXISTS case_studies_position_idx ON case_studies (position);
+
+-- Generic key/value bag for site-wide settings the admin can edit.
+-- e.g. cv_url — overrides the static /files/Sam-ahhee-Schneider-CV.pdf
+-- when set. Empty string means "use the static default".
+CREATE TABLE IF NOT EXISTS site_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL DEFAULT '',
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

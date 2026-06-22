@@ -603,6 +603,52 @@ export async function setExperienceOrder(slugs: string[]) {
   }
 }
 
+/* ── Site settings — generic key/value, editable from admin ───────── */
+
+export const DEFAULT_CV_URL = "/files/Sam-ahhee-Schneider-CV.pdf";
+
+/** Read a site setting. Falls back to the provided default when the DB
+ *  isn't configured, the table doesn't exist yet, or the key is unset. */
+export async function getSiteSetting(
+  key: string,
+  fallback = "",
+): Promise<string> {
+  if (!dbConfigured()) return fallback;
+  try {
+    const { rows } = await sql<{ value: string }>`
+      SELECT value FROM site_settings WHERE key = ${key} LIMIT 1
+    `;
+    const v = rows[0]?.value?.trim();
+    return v && v.length > 0 ? v : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export async function setSiteSetting(key: string, value: string) {
+  await sql`
+    INSERT INTO site_settings (key, value, updated_at)
+    VALUES (${key}, ${value}, NOW())
+    ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value,
+          updated_at = NOW()
+  `;
+}
+
+/** Convenience — the CV download URL shown in the site header. If the
+ *  stored value is a Vercel Blob URL, append `?download=…` so the
+ *  browser forces a download (cross-origin `download=` attribute alone
+ *  is ignored). Same-origin URLs are returned unchanged so the static
+ *  `/files/…` default still works. */
+export async function getCvUrl(): Promise<string> {
+  const raw = await getSiteSetting("cv_url", DEFAULT_CV_URL);
+  if (/blob\.vercel-storage\.com/.test(raw) && !/[?&]download=/.test(raw)) {
+    const sep = raw.includes("?") ? "&" : "?";
+    return `${raw}${sep}download=Sam-ahhee-Schneider-CV.pdf`;
+  }
+  return raw;
+}
+
 /** Find the slug immediately above or below a given slug in the
  *  ordered list. Returns null if at the edge.
  *

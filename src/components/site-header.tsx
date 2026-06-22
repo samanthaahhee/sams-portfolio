@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
+import { getCvUrl } from "@/lib/db";
 
-export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
+export async function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
+  const cvUrl = await getCvUrl();
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[color:var(--paper)]/80 border-b border-[color:var(--rule)]">
       <div
@@ -25,7 +27,7 @@ export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
               attribute. Browsers that respect it auto-download the file
               instead of opening it in a viewer. */}
           <a
-            href="/files/Sam-ahhee-Schneider-CV.pdf"
+            href={cvUrl}
             download="Sam-ahhee-Schneider-CV.pdf"
             className="inline-flex items-center gap-1.5 hover:text-[color:var(--ink)] transition-colors"
           >
