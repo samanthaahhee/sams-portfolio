@@ -12,14 +12,16 @@
  *    each body's position every frame and translate a matching DOM
  *    element. Keeps the typography crisp (no canvas raster) and lets
  *    the pills inherit existing site tokens.
- *  - Stars are vertex-based polygon bodies, sized to roughly match
- *    their SVG glyphs.
- *  - Mouse / touch dragging is wired up via Matter's Mouse +
+ *  - DOM elements are located via querySelectorAll inside the
+ *    container on each setup pass (and reused inside the rAF loop).
+ *    This sidesteps React 19 callback-ref lifecycle weirdness that
+ *    was leaving most refs null.
+ *  - Stars are circumscribed polygon bodies — the visual is a spiky
+ *    SVG path, but the hitbox is a heptagon. Close enough and
+ *    avoids needing poly-decomp.
+ *  - Mouse / touch dragging is wired via Matter's Mouse +
  *    MouseConstraint modules.
- *  - On mount we measure the container, build bodies, run the engine.
- *    On resize we tear everything down and rebuild from scratch — the
- *    simplest robust approach.
- *  - Reduce-motion users get a static "pile" with no engine running.
+ *  - Reduce-motion users get a static pile with no engine running.
  */
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -29,7 +31,7 @@ import Matter from "matter-js";
 
 export type Pill = {
   label: string;
-  /** Tailwind / inline color string used as the pill background. */
+  /** Pill background colour. */
   bg: string;
   /** Text colour. */
   fg?: string;
@@ -43,13 +45,11 @@ export type Star = {
   bg: string;
   /** Number of points (default 7). */
   points?: number;
-  /** Inner/outer radius ratio (default 0.62). */
+  /** Inner/outer radius ratio (default 0.6). Lower = spikier. */
   inset?: number;
   /** Optional inner blue dot in the middle. */
   dot?: string;
 };
-
-type Body = Matter.Body & { sah?: { kind: "pill" | "star"; index: number } };
 
 /* ── Defaults — matches the user's screenshot ──────────────────────── */
 
@@ -77,32 +77,20 @@ export const DEFAULT_STARS: Star[] = [
 
 /* ── Helpers ───────────────────────────────────────────────────────── */
 
-function starVertices(
-  size: number,
-  points = 7,
-  inset = 0.6,
-): Matter.Vector[] {
-  const verts: Matter.Vector[] = [];
+function starPathSvg(size: number, points = 7, inset = 0.6) {
   const outer = size / 2;
   const inner = outer * inset;
+  const cx = size / 2;
+  const cy = size / 2;
   const step = Math.PI / points;
+  const verts: { x: number; y: number }[] = [];
   for (let i = 0; i < points * 2; i++) {
     const r = i % 2 === 0 ? outer : inner;
     const a = i * step - Math.PI / 2;
-    verts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+    verts.push({ x: Math.cos(a) * r + cx, y: Math.sin(a) * r + cy });
   }
-  return verts;
-}
-
-function starPathSvg(size: number, points = 7, inset = 0.6) {
-  const verts = starVertices(size, points, inset);
-  const cx = size / 2;
-  const cy = size / 2;
   return verts
-    .map(
-      (v, i) =>
-        `${i === 0 ? "M" : "L"} ${(cx + v.x).toFixed(2)} ${(cy + v.y).toFixed(2)}`,
-    )
+    .map((v, i) => `${i === 0 ? "M" : "L"} ${v.x.toFixed(2)} ${v.y.toFixed(2)}`)
     .join(" ")
     .concat(" Z");
 }
@@ -123,30 +111,18 @@ export function PillPhysics({
 }: {
   pills?: Pill[];
   stars?: Star[];
-  /** Fixed canvas height in px. Width fills the container. */
   height?: number;
   background?: string;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const pillRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const starRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const engineRef = useRef<Matter.Engine | null>(null);
-  const runnerRef = useRef<Matter.Runner | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const bodiesRef = useRef<{ pills: Body[]; stars: Body[] }>({
-    pills: [],
-    stars: [],
-  });
   const [measured, setMeasured] = useState({ w: 0, h: height });
   const reduceMotion = useMemo(() => prefersReducedMotion(), []);
   const reactId = useId();
 
-  // Set up the engine once we know the container's width.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
     const setSize = () => {
       const rect = el.getBoundingClientRect();
       setMeasured({ w: Math.max(320, rect.width), h: height });
@@ -169,7 +145,6 @@ export function PillPhysics({
       Engine,
       Runner,
       Bodies,
-      Body,
       Composite,
       Mouse,
       MouseConstraint,
@@ -178,7 +153,6 @@ export function PillPhysics({
     const engine = Engine.create({
       gravity: { x: 0, y: 1, scale: 0.0014 },
     });
-    engineRef.current = engine;
     const world = engine.world;
 
     // Walls — invisible, just contain the bodies.
@@ -190,25 +164,31 @@ export function PillPhysics({
     };
     const wallT = 200;
     Composite.add(world, [
-      Bodies.rectangle(W / 2, H + wallT / 2, W, wallT, wallOpts), // floor
-      Bodies.rectangle(-wallT / 2, H / 2, wallT, H * 2, wallOpts), // left
-      Bodies.rectangle(W + wallT / 2, H / 2, wallT, H * 2, wallOpts), // right
-      Bodies.rectangle(W / 2, -wallT / 2, W, wallT, wallOpts), // ceiling
+      Bodies.rectangle(W / 2, H + wallT / 2, W, wallT, wallOpts),
+      Bodies.rectangle(-wallT / 2, H / 2, wallT, H * 2, wallOpts),
+      Bodies.rectangle(W + wallT / 2, H / 2, wallT, H * 2, wallOpts),
+      Bodies.rectangle(W / 2, -wallT / 2, W, wallT, wallOpts),
     ]);
 
-    // Pill bodies — sized by the rendered DOM element so the visual
-    // and the hitbox match exactly. Falls back to an estimate based on
-    // label length when getBoundingClientRect returns 0 (which can
-    // happen if the element hasn't been laid out yet).
-    const pillBodies: Body[] = [];
+    // Find DOM nodes via querySelectorAll inside the container. This is
+    // robust against React 19 callback-ref edge cases — every node that
+    // was rendered is in the DOM by the time useEffect runs.
+    const pillNodes = Array.from(
+      el.querySelectorAll<HTMLDivElement>("[data-pill-idx]"),
+    );
+    const starNodes = Array.from(
+      el.querySelectorAll<HTMLDivElement>("[data-star-idx]"),
+    );
+
+    // Pill bodies — sized from the rendered DOM element with a
+    // label-length fallback in case the rect isn't laid out yet.
+    const pillBodies: Matter.Body[] = [];
     for (let i = 0; i < pills.length; i++) {
-      const node = pillRefs.current[i];
+      const node = pillNodes[i];
       const r = node?.getBoundingClientRect();
-      const estW = pills[i].label.length * 9 + 40; // mono ~9px/char + 40px padding
+      const estW = pills[i].label.length * 9 + 40;
       const w = Math.max(r?.width ?? 0, estW, 80);
       const h = Math.max(r?.height ?? 0, 40);
-      // Stagger across the top with random horizontal noise so they
-      // don't fall in a tight column.
       const x = ((i + 0.5) / pills.length) * W + (Math.random() - 0.5) * 60;
       const y = -80 - i * 50;
       const body = Bodies.rectangle(x, y, w, h, {
@@ -218,16 +198,12 @@ export function PillPhysics({
         frictionAir: 0.018,
         density: 0.0015,
         angle: ((pills[i].rotate ?? (Math.random() - 0.5) * 30) * Math.PI) / 180,
-      }) as Body;
-      body.sah = { kind: "pill", index: i };
+      });
       pillBodies.push(body);
     }
 
-    // Stars — concave polygon bodies need poly-decomp for proper
-    // decomposition; without it, fromVertices falls back to a convex
-    // hull. We use a polygon approximation (Bodies.polygon) instead so
-    // the hitbox is always valid regardless of dependencies.
-    const starBodies: Body[] = [];
+    // Stars — circumscribed polygon hitboxes (cheap + always valid).
+    const starBodies: Matter.Body[] = [];
     for (let i = 0; i < stars.length; i++) {
       const s = stars[i];
       const x = Math.random() * (W - 80) + 40;
@@ -238,15 +214,13 @@ export function PillPhysics({
         frictionAir: 0.022,
         density: 0.0012,
         angle: Math.random() * Math.PI,
-      }) as Body;
-      body.sah = { kind: "star", index: i };
+      });
       starBodies.push(body);
     }
 
     Composite.add(world, [...pillBodies, ...starBodies]);
-    bodiesRef.current = { pills: pillBodies, stars: starBodies };
 
-    // Mouse / touch interaction.
+    // Mouse / touch.
     const mouse = Mouse.create(el);
     const mouseConstraint = MouseConstraint.create(engine, {
       mouse,
@@ -258,7 +232,7 @@ export function PillPhysics({
     });
     Composite.add(world, mouseConstraint);
 
-    // Matter's mouse module hijacks wheel events — let the page scroll.
+    // Let the page scroll over the canvas.
     const m = mouse as unknown as {
       element: HTMLElement;
       mousewheel: EventListener;
@@ -268,34 +242,35 @@ export function PillPhysics({
 
     const runner = Runner.create();
     Runner.run(runner, engine);
-    runnerRef.current = runner;
 
-    // Sync DOM transforms each frame from body positions.
+    let rafId = 0;
     const sync = () => {
-      pillBodies.forEach((b, i) => {
-        const node = pillRefs.current[i];
-        if (!node) return;
-        node.style.transform = `translate3d(${b.position.x - node.offsetWidth / 2}px, ${b.position.y - node.offsetHeight / 2}px, 0) rotate(${b.angle}rad)`;
-      });
-      starBodies.forEach((b, i) => {
-        const node = starRefs.current[i];
-        if (!node) return;
-        node.style.transform = `translate3d(${b.position.x - node.offsetWidth / 2}px, ${b.position.y - node.offsetHeight / 2}px, 0) rotate(${b.angle}rad)`;
-      });
-      rafRef.current = requestAnimationFrame(sync);
+      for (let i = 0; i < pillBodies.length; i++) {
+        const node = pillNodes[i];
+        if (!node) continue;
+        const b = pillBodies[i];
+        node.style.transform = `translate3d(${
+          b.position.x - node.offsetWidth / 2
+        }px, ${b.position.y - node.offsetHeight / 2}px, 0) rotate(${b.angle}rad)`;
+      }
+      for (let i = 0; i < starBodies.length; i++) {
+        const node = starNodes[i];
+        if (!node) continue;
+        const b = starBodies[i];
+        node.style.transform = `translate3d(${
+          b.position.x - node.offsetWidth / 2
+        }px, ${b.position.y - node.offsetHeight / 2}px, 0) rotate(${b.angle}rad)`;
+      }
+      rafId = requestAnimationFrame(sync);
     };
-    rafRef.current = requestAnimationFrame(sync);
+    rafId = requestAnimationFrame(sync);
 
     return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-      if (runnerRef.current) Runner.stop(runnerRef.current);
-      Engine.clear(engine);
+      cancelAnimationFrame(rafId);
+      Runner.stop(runner);
       Composite.clear(world, false, true);
-      engineRef.current = null;
-      runnerRef.current = null;
+      Engine.clear(engine);
     };
-    // We intentionally only re-init when size changes meaningfully or
-    // the pill/star inputs change identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [measured.w, measured.h, reduceMotion, pills, stars]);
 
@@ -311,24 +286,20 @@ export function PillPhysics({
       }}
       aria-label="Interactive playground of personality tags"
     >
-      {/* Subtle starfield backdrop — purely decorative */}
+      {/* Decorative starfield */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none opacity-50"
         style={{
           backgroundImage:
             "radial-gradient(circle at 12% 18%, #ffffff14 0 1.5px, transparent 1.5px), radial-gradient(circle at 78% 32%, #ffffff10 0 1px, transparent 1px), radial-gradient(circle at 42% 72%, #ffffff10 0 1.5px, transparent 1.5px), radial-gradient(circle at 88% 86%, #ffffff14 0 1px, transparent 1px)",
-          backgroundSize: "100% 100%",
         }}
       />
 
-      {/* Pills — absolutely positioned, transformed by the rAF loop */}
       {pills.map((p, i) => (
         <div
           key={`${reactId}-pill-${i}`}
-          ref={(n) => {
-            pillRefs.current[i] = n;
-          }}
+          data-pill-idx={i}
           className="absolute top-0 left-0 px-5 py-2.5 rounded-full font-mono text-[15px] md:text-[16px] whitespace-nowrap shadow-[0_1px_0_rgba(0,0,0,0.06)] will-change-transform"
           style={{
             background: p.bg,
@@ -340,13 +311,10 @@ export function PillPhysics({
         </div>
       ))}
 
-      {/* Stars — SVG glyph inside an absolutely positioned wrapper */}
       {stars.map((s, i) => (
         <div
           key={`${reactId}-star-${i}`}
-          ref={(n) => {
-            starRefs.current[i] = n;
-          }}
+          data-star-idx={i}
           className="absolute top-0 left-0 will-change-transform"
           style={{
             width: s.size,
