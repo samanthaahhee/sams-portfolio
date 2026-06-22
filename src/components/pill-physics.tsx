@@ -197,16 +197,20 @@ export function PillPhysics({
     ]);
 
     // Pill bodies — sized by the rendered DOM element so the visual
-    // and the hitbox match exactly.
+    // and the hitbox match exactly. Falls back to an estimate based on
+    // label length when getBoundingClientRect returns 0 (which can
+    // happen if the element hasn't been laid out yet).
     const pillBodies: Body[] = [];
-    pillRefs.current.forEach((node, i) => {
-      if (!node) return;
-      const r = node.getBoundingClientRect();
-      const w = r.width || 140;
-      const h = r.height || 44;
-      // Stagger across the top, slight random horizontal noise.
-      const x = ((i + 0.5) / pills.length) * W + (Math.random() - 0.5) * 18;
-      const y = -80 - i * 30;
+    for (let i = 0; i < pills.length; i++) {
+      const node = pillRefs.current[i];
+      const r = node?.getBoundingClientRect();
+      const estW = pills[i].label.length * 9 + 40; // mono ~9px/char + 40px padding
+      const w = Math.max(r?.width ?? 0, estW, 80);
+      const h = Math.max(r?.height ?? 0, 40);
+      // Stagger across the top with random horizontal noise so they
+      // don't fall in a tight column.
+      const x = ((i + 0.5) / pills.length) * W + (Math.random() - 0.5) * 60;
+      const y = -80 - i * 50;
       const body = Bodies.rectangle(x, y, w, h, {
         chamfer: { radius: h / 2 },
         restitution: 0.45,
@@ -217,31 +221,27 @@ export function PillPhysics({
       }) as Body;
       body.sah = { kind: "pill", index: i };
       pillBodies.push(body);
-    });
+    }
 
+    // Stars — concave polygon bodies need poly-decomp for proper
+    // decomposition; without it, fromVertices falls back to a convex
+    // hull. We use a polygon approximation (Bodies.polygon) instead so
+    // the hitbox is always valid regardless of dependencies.
     const starBodies: Body[] = [];
-    starRefs.current.forEach((node, i) => {
-      if (!node) return;
+    for (let i = 0; i < stars.length; i++) {
       const s = stars[i];
-      const verts = starVertices(s.size, s.points ?? 7, s.inset ?? 0.6);
       const x = Math.random() * (W - 80) + 40;
       const y = -120 - Math.random() * 200;
-      const body = Bodies.fromVertices(
-        x,
-        y,
-        [verts],
-        {
-          restitution: 0.55,
-          friction: 0.25,
-          frictionAir: 0.022,
-          density: 0.0012,
-          angle: Math.random() * Math.PI,
-        },
-        true,
-      ) as Body;
+      const body = Bodies.polygon(x, y, s.points ?? 7, s.size / 2, {
+        restitution: 0.55,
+        friction: 0.25,
+        frictionAir: 0.022,
+        density: 0.0012,
+        angle: Math.random() * Math.PI,
+      }) as Body;
       body.sah = { kind: "star", index: i };
       starBodies.push(body);
-    });
+    }
 
     Composite.add(world, [...pillBodies, ...starBodies]);
     bodiesRef.current = { pills: pillBodies, stars: starBodies };
