@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { CopyEmailButton } from "./copy-email-button";
 
 const EMAIL = "samantha.ahhee@gmail.com";
@@ -11,14 +10,6 @@ export function SiteFooter() {
         <div className="space-y-3 max-w-xs">
           <p className="font-mono text-[color:var(--meta)]">Elsewhere</p>
           <ul className="space-y-1 text-[color:var(--ink-soft)]">
-            <li>
-              <Link
-                href="/contact"
-                className="hover:text-[color:var(--ink)] transition-colors"
-              >
-                Email
-              </Link>
-            </li>
             <li>
               <a
                 href="https://www.linkedin.com/"

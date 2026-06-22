@@ -25,8 +25,8 @@ export function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
               attribute. Browsers that respect it auto-download the file
               instead of opening it in a viewer. */}
           <a
-            href="/files/Sam-ahhee-CV.pdf"
-            download="Sam-ahhee-CV.pdf"
+            href="/files/Sam-ahhee-Schneider-CV.pdf"
+            download="Sam-ahhee-Schneider-CV.pdf"
             className="inline-flex items-center gap-1.5 hover:text-[color:var(--ink)] transition-colors"
           >
             Experience
