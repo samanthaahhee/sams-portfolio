@@ -119,6 +119,9 @@ export function PillPhysics({
   const [measured, setMeasured] = useState({ w: 0, h: height });
   const reduceMotion = useMemo(() => prefersReducedMotion(), []);
   const reactId = useId();
+  const [debug, setDebug] = useState<{ pills: number; stars: number } | null>(
+    null,
+  );
 
   useEffect(() => {
     const el = containerRef.current;
@@ -179,6 +182,18 @@ export function PillPhysics({
     const starNodes = Array.from(
       el.querySelectorAll<HTMLDivElement>("[data-star-idx]"),
     );
+
+    // Diagnostic — surface the actual node counts on screen so we can
+    // tell whether rendering or physics is the broken link.
+    setDebug({ pills: pillNodes.length, stars: starNodes.length });
+    console.log("[pill-physics] init", {
+      pillProps: pills.length,
+      starProps: stars.length,
+      pillNodes: pillNodes.length,
+      starNodes: starNodes.length,
+      W,
+      H,
+    });
 
     // Pill bodies — sized from the rendered DOM element with a
     // label-length fallback in case the rect isn't laid out yet.
@@ -304,7 +319,9 @@ export function PillPhysics({
           style={{
             background: p.bg,
             color: p.fg ?? "#111",
-            transform: "translate3d(-9999px, -9999px, 0)",
+            // Visible staggered fallback position so each pill is
+            // confirmable even if the physics rAF never fires.
+            transform: `translate3d(${20 + (i % 4) * 180}px, ${20 + Math.floor(i / 4) * 60}px, 0)`,
           }}
         >
           {p.label}
@@ -319,7 +336,7 @@ export function PillPhysics({
           style={{
             width: s.size,
             height: s.size,
-            transform: "translate3d(-9999px, -9999px, 0)",
+            transform: `translate3d(${40 + i * 110}px, ${280 + (i % 2) * 60}px, 0)`,
           }}
         >
           <svg
@@ -343,6 +360,13 @@ export function PillPhysics({
           </svg>
         </div>
       ))}
+
+      {/* Diagnostic overlay — temporary */}
+      {debug && (
+        <div className="absolute top-2 right-2 z-50 px-3 py-1.5 rounded-md bg-white/90 text-black font-mono text-[11px] pointer-events-none">
+          pills DOM: {debug.pills} / {pills.length} · stars DOM: {debug.stars} / {stars.length}
+        </div>
+      )}
 
       {reduceMotion && (
         <div className="absolute inset-0 flex flex-wrap items-end content-end gap-2 p-6 pointer-events-none">
