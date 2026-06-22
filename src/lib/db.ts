@@ -635,18 +635,12 @@ export async function setSiteSetting(key: string, value: string) {
   `;
 }
 
-/** Convenience — the CV download URL shown in the site header. If the
- *  stored value is a Vercel Blob URL, append `?download=…` so the
- *  browser forces a download (cross-origin `download=` attribute alone
- *  is ignored). Same-origin URLs are returned unchanged so the static
- *  `/files/…` default still works. */
+/** Convenience — the CV URL shown in the site header. Returned as-is;
+ *  the header opens it in a new tab so the browser's PDF viewer can
+ *  render it. (Previously we appended `?download=…` to force download,
+ *  but new-tab preview is the preferred UX.) */
 export async function getCvUrl(): Promise<string> {
-  const raw = await getSiteSetting("cv_url", DEFAULT_CV_URL);
-  if (/blob\.vercel-storage\.com/.test(raw) && !/[?&]download=/.test(raw)) {
-    const sep = raw.includes("?") ? "&" : "?";
-    return `${raw}${sep}download=Sam-ahhee-Schneider-CV.pdf`;
-  }
-  return raw;
+  return getSiteSetting("cv_url", DEFAULT_CV_URL);
 }
 
 /** Find the slug immediately above or below a given slug in the

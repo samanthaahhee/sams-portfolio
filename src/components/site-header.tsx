@@ -23,16 +23,16 @@ export async function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
           >
             Work
           </Link>
-          {/* Experience → direct PDF download via the anchor's `download`
-              attribute. Browsers that respect it auto-download the file
-              instead of opening it in a viewer. */}
+          {/* Experience → opens the CV PDF in a new tab so the
+              browser's built-in viewer can render it. */}
           <a
             href={cvUrl}
-            download="Sam-ahhee-Schneider-CV.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 hover:text-[color:var(--ink)] transition-colors"
           >
             Experience
-            <DownloadIcon />
+            <ExternalIcon />
           </a>
           <Link
             href="/contact"
@@ -49,7 +49,7 @@ export async function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
   );
 }
 
-function DownloadIcon() {
+function ExternalIcon() {
   return (
     <svg
       width="12"
@@ -62,9 +62,9 @@ function DownloadIcon() {
       strokeLinejoin="round"
       aria-hidden
     >
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-      <polyline points="7 10 12 15 17 10" />
-      <line x1="12" y1="15" x2="12" y2="3" />
+      <path d="M14 3h7v7" />
+      <path d="M10 14L21 3" />
+      <path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" />
     </svg>
   );
 }
