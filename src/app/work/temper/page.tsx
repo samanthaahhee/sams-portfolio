@@ -100,7 +100,7 @@ export default async function TemperCaseStudyPage() {
           />
         </section>
 
-        {/* Meta column + summary */}
+        {/* Meta column + tabbed body */}
         <section className="px-[var(--spacing-page)] pt-16 md:pt-24">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-3 md:col-start-2 space-y-6 mb-10 md:mb-0">
@@ -132,16 +132,9 @@ export default async function TemperCaseStudyPage() {
               </div>
             </div>
 
-            <div className="col-span-12 md:col-span-6 md:col-start-6">
-              <p className="text-base md:text-xl leading-relaxed font-bold text-[color:var(--ink)]">
-                {META.summary}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <SectionTabs
-          tabs={[
+            <div className="col-span-12 md:col-span-7 md:col-start-6">
+              <SectionTabs
+                tabs={[
             {
               num: "01",
               label: "Context",
@@ -418,8 +411,11 @@ export default async function TemperCaseStudyPage() {
                 </>
               ),
             },
-          ]}
-        />
+                ]}
+              />
+            </div>
+          </div>
+        </section>
 
         {/* Visuals — still pulled from data */}
         {study.visuals && study.visuals.length > 0 && (
