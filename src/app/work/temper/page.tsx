@@ -31,7 +31,7 @@ import {
   Pullquote,
   Stats,
 } from "@/components/case-study-blocks";
-import { SectionTab, SectionTabs } from "@/components/case-study-tabs";
+import { SectionTabs } from "@/components/case-study-tabs";
 import { getCaseStudies, getCaseStudyBySlug } from "@/lib/db";
 import { customColorsToStyle } from "@/lib/palette";
 
@@ -140,30 +140,43 @@ export default async function TemperCaseStudyPage() {
           </div>
         </section>
 
-        <SectionTabs>
-          <SectionTab num="01" label="Context">
-            <Body>
-              Temper is a Dutch platform connecting freelance contractors
-              with hospitality and events clients. In 2025 it was operating
-              in a landscape that was about to shift underneath it. A wave
-              of EU labour-law reform, mirroring the regulatory pressure
-              that had already challenged Uber&rsquo;s contractor model, put
-              platforms like Temper directly in the crosshairs. Enterprise
-              clients who relied on the platform were beginning to feel
-              exposed. The risk of being on the wrong side of a labour
-              classification ruling was real, and some were actively
-              evaluating whether to exit the contract model entirely.
-            </Body>
-            <Body>
-              The business had a clear choice: adapt or lose clients. What
-              it didn&rsquo;t have was time, runway, or the engineering
-              capacity to build a new product from scratch. With roughly
-              22,000 registered users and 9,000 actives, the stakes of
-              getting the transition wrong were significant.
-            </Body>
-          </SectionTab>
-
-          <SectionTab num="02" label="Brand problem">
+        <SectionTabs
+          tabs={[
+            {
+              num: "01",
+              label: "Context",
+              content: (
+                <>
+                  <Body>
+                    Temper is a Dutch platform connecting freelance
+                    contractors with hospitality and events clients. In
+                    2025 it was operating in a landscape that was about
+                    to shift underneath it. A wave of EU labour-law
+                    reform, mirroring the regulatory pressure that had
+                    already challenged Uber&rsquo;s contractor model, put
+                    platforms like Temper directly in the crosshairs.
+                    Enterprise clients who relied on the platform were
+                    beginning to feel exposed. The risk of being on the
+                    wrong side of a labour classification ruling was
+                    real, and some were actively evaluating whether to
+                    exit the contract model entirely.
+                  </Body>
+                  <Body>
+                    The business had a clear choice: adapt or lose
+                    clients. What it didn&rsquo;t have was time, runway,
+                    or the engineering capacity to build a new product
+                    from scratch. With roughly 22,000 registered users
+                    and 9,000 actives, the stakes of getting the
+                    transition wrong were significant.
+                  </Body>
+                </>
+              ),
+            },
+            {
+              num: "02",
+              label: "Brand problem",
+              content: (
+                <>
           <Body>
             The business decision was made to pivot the contract model, and to
             do it by duplicating and reskinning the existing app rather than
@@ -182,20 +195,25 @@ export default async function TemperCaseStudyPage() {
             in the first place?
           </Body>
 
-            <Pullquote>
-              I was already deep into a marketing refresh when the pivot
-              was announced. The previous rebrand had never been fully
-              implemented in the product. Marketing was using Temper green
-              throughout. The product was running in Temper purple. Users
-              were encountering two visually different brands depending on
-              where they touched the platform &mdash; a consequence of
-              technical debt that had never been prioritised after the
-              previous rebrand.
-            </Pullquote>
-          </SectionTab>
-
-          <SectionTab num="03" label="Directions considered">
-          <div className="space-y-10 md:space-y-12">
+                  <Pullquote>
+                    I was already deep into a marketing refresh when the
+                    pivot was announced. The previous rebrand had never
+                    been fully implemented in the product. Marketing was
+                    using Temper green throughout. The product was
+                    running in Temper purple. Users were encountering
+                    two visually different brands depending on where
+                    they touched the platform &mdash; a consequence of
+                    technical debt that had never been prioritised after
+                    the previous rebrand.
+                  </Pullquote>
+                </>
+              ),
+            },
+            {
+              num: "03",
+              label: "Directions considered",
+              content: (
+                <div className="space-y-10 md:space-y-12">
             <DirectionCard
               status="Rejected"
               title="Public rebrand with dual launch"
@@ -240,11 +258,15 @@ export default async function TemperCaseStudyPage() {
               inherently risky. Visual coherence was what made that credible
               rather than confusing.
             </DirectionCard>
-            </div>
-          </SectionTab>
-
-          <SectionTab num="04" label="Making the case">
-          <Body>
+                </div>
+              ),
+            },
+            {
+              num: "04",
+              label: "Making the case",
+              content: (
+                <>
+                  <Body>
             The decision to elevate the brand during the reskin, rather than
             ship a minimum viable version, was not straightforward to get
             through. Product were understandably cautious. Under a four-month
@@ -290,12 +312,17 @@ export default async function TemperCaseStudyPage() {
             to be consistent across both apps, replacing a fragmented set of
             assets that had accumulated across teams with a cohesive library
             that could scale.
-          </Body>
-          </SectionTab>
-
-          <SectionTab num="05" label="Retention">
-          <Body>
-            Once Temper Staff launched quietly, we hit the problem
+                  </Body>
+                </>
+              ),
+            },
+            {
+              num: "05",
+              label: "Retention",
+              content: (
+                <>
+                  <Body>
+                    Once Temper Staff launched quietly, we hit the problem
             we&rsquo;d anticipated. Shift volume on the new platform was too
             low to keep users engaged. People were downloading, seeing
             limited opportunities, and leaving. The drop-off was directly
@@ -319,12 +346,17 @@ export default async function TemperCaseStudyPage() {
             recommendations. The employment model on Temper Staff removed
             that restriction entirely, making this kind of outreach legally
             permissible for the first time. The pivot unlocked a retention
-            mechanic the original product had never been able to use.
-          </Body>
-          </SectionTab>
-
-          <SectionTab num="06" label="Outcome">
-          <Stats
+                    mechanic the original product had never been able to use.
+                  </Body>
+                </>
+              ),
+            },
+            {
+              num: "06",
+              label: "Outcome",
+              content: (
+                <>
+                  <Stats
             items={[
               { value: "82%", label: "Email open rate on shift campaign" },
               { value: "4 months", label: "Brand system delivered to deadline" },
@@ -355,13 +387,18 @@ export default async function TemperCaseStudyPage() {
             the two models, laying the groundwork for an eventual platform
             merge that would make Temper model-agnostic. The tagging system
             meant the merge, when it came, wouldn&rsquo;t require users to
-            relearn anything from scratch.
-          </Body>
-          </SectionTab>
-
-          <SectionTab num="07" label="Reflection">
-          <Body>
-            The thing I&rsquo;d do differently is build the preference-capture
+                    relearn anything from scratch.
+                  </Body>
+                </>
+              ),
+            },
+            {
+              num: "07",
+              label: "Reflection",
+              content: (
+                <>
+                  <Body>
+                    The thing I&rsquo;d do differently is build the preference-capture
             flow before launch rather than in response to drop-off. We lost
             users in the window between migration and first relevant shift
             &mdash; users who might have stayed if we&rsquo;d been in their
@@ -376,10 +413,13 @@ export default async function TemperCaseStudyPage() {
             the team exactly what users were seeing, in a format they
             couldn&rsquo;t dismiss as subjective, changed the conversation.
             That shift in framing is what made the design system possible
-            under the deadline we had.
-          </Body>
-          </SectionTab>
-        </SectionTabs>
+                    under the deadline we had.
+                  </Body>
+                </>
+              ),
+            },
+          ]}
+        />
 
         {/* Visuals — still pulled from data */}
         {study.visuals && study.visuals.length > 0 && (
