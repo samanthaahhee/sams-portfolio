@@ -33,7 +33,7 @@ const SLUG = "bos-ice-tea";
 
 const META = {
   no: "03",
-  title: "Trade materials worth keeping.",
+  title: "A South African brand in EMEA.",
   client: "BOS Ice Tea",
   year: "2018–2019",
   role: "Senior Art Director (EMEA region)",
