@@ -38,10 +38,10 @@ export function SectionHeading({
 export function Pullquote({ children }: { children: ReactNode }) {
   return (
     <figure className="my-10 md:my-14 border-y border-[color:var(--rule)] py-8 md:py-10">
-      <blockquote className="font-display text-[color:var(--ink)] leading-snug text-2xl md:text-3xl lg:text-4xl">
+      <blockquote className="font-medium italic text-[color:var(--ink-soft)] leading-relaxed text-lg md:text-xl">
         <span
           aria-hidden
-          className="font-mono text-[color:var(--meta)] mr-2 align-top"
+          className="font-mono not-italic text-[color:var(--meta)] mr-2 align-top"
         >
           “
         </span>
