@@ -35,18 +35,21 @@ const META = {
   no: "03",
   title: "A bold brand in a bigger market.",
   client: "BOS Ice Tea",
+  // Year is retained for the cover plate only — it was removed from the
+  // meta sidebar per the latest brief.
   year: "2018–2019",
   role: "Senior Art Director (EMEA region)",
   market: "Benelux launch",
   tags: [
-    "Brand toolkit",
-    "Trade marketing",
-    "Activation design",
-    "Art direction",
-    "Market entry",
+    "Brand awareness",
+    "Product launch",
+    "Trade materials",
+    "Activation",
+    "Digital campaign",
+    "Concepting",
   ],
   summary:
-    "A South African ice tea brand entering the Benelux with a rand-denominated budget. The brief: build a trade and activation toolkit interesting enough that bar owners would actively choose to display it.",
+    "A South African ice tea brand entering the Benelux with a rand-denominated budget — building brand recognition across trade, activation, digital, and influencer through a personality-first creative approach.",
 } as const;
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -103,10 +106,6 @@ export default async function BosIceTeaCaseStudyPage() {
                 <p>{META.client}</p>
               </div>
               <div>
-                <p className="font-mono text-[color:var(--meta)] mb-2">Year</p>
-                <p>{META.year}</p>
-              </div>
-              <div>
                 <p className="font-mono text-[color:var(--meta)] mb-2">Role</p>
                 <p>{META.role}</p>
               </div>
@@ -152,8 +151,9 @@ export default async function BosIceTeaCaseStudyPage() {
                           product and a brand personality built around
                           four pillars: nature, art and music, design,
                           and sustainability. The challenge was how to
-                          make that personality felt in a new market
-                          without the spend to force it.
+                          make that personality felt across every
+                          channel in a new market, without the spend to
+                          force it.
                         </Body>
                       </>
                     ),
@@ -164,43 +164,25 @@ export default async function BosIceTeaCaseStudyPage() {
                     content: (
                       <>
                         <Body>
-                          Entering the Benelux market meant competing
-                          in terrace culture, where the primary
-                          competitor for a branded ice tea isn&rsquo;t
-                          another soft drink, it&rsquo;s a beer. Trade
-                          materials in this environment aren&rsquo;t
-                          decoration, they&rsquo;re real estate. A bar
-                          owner who puts your branded planter on their
-                          terrace or your coaster on every table is
-                          giving you something paid media can&rsquo;t
-                          replicate: proximity to the moment of
-                          purchase, repeated over an entire season.
+                          BOS had no name recognition in the Benelux.
+                          The goal at this stage wasn&rsquo;t to
+                          convert, it was to spark curiosity first. To
+                          get people thinking &ldquo;I keep seeing this
+                          brand everywhere, what is it?&rdquo; before
+                          they ever picked up a bottle. That meant
+                          showing up consistently and memorably across
+                          a wide range of touchpoints: trade,
+                          activation, digital, and influencer, all on a
+                          budget that demanded every execution earned
+                          its place.
                         </Body>
                         <Body>
-                          Generic branded trade materials don&rsquo;t
-                          earn that placement. A bar owner has seen
-                          thousands of them. BOS needed trade materials
-                          that were interesting enough to want, useful
-                          enough to keep, and on-brand enough to do the
-                          awareness work while they sat there.
-                        </Body>
-                        <Body>
-                          The strategic bet was to make trade materials
-                          that got venue owners to say &ldquo;that&rsquo;s
-                          clever.&rdquo; Not materials that explained
-                          the brand, but materials that embodied it.
-                          Every touchpoint had to tell a story or earn
-                          its place by being more interesting than what
-                          was already on the terrace.
-                        </Body>
-                        <Body>
-                          There was a deeper challenge underneath this
-                          too. BOS had no name recognition in the
-                          Benelux. The goal wasn&rsquo;t to convert
-                          immediately, it was to spark curiosity first.
-                          To get people thinking &ldquo;I keep seeing
-                          this brand everywhere, what is it?&rdquo;
-                          before they ever picked up a bottle.
+                          The strategic bet was that personality could
+                          do the work that spend couldn&rsquo;t. Not
+                          materials and campaigns that explained the
+                          brand, but ones that embodied it. Every
+                          touchpoint had to feel distinctly BOS or it
+                          wasn&rsquo;t worth doing.
                         </Body>
                       </>
                     ),
@@ -214,45 +196,54 @@ export default async function BosIceTeaCaseStudyPage() {
                           status="Rejected"
                           title="Leading with the red original"
                         >
-                          One early direction was to introduce the red
-                          original ice tea as the hero product for the
-                          EU launch, leaning into the Rooibos origin
-                          story and the visual of a naturally red tea.
-                          The problem was that the signature BOS pack
-                          is yellow. Launching in a new market with a
-                          red product would have muddied the brand
-                          recognition we were trying to build from
-                          zero. We needed visual consistency more than
-                          product range at that stage.
+                          The first EU product launch was the BOS
+                          original, a red-coloured ice tea designed to
+                          introduce consumers to the taste of Rooibos
+                          on its own terms. It was a logical strategy:
+                          lead with the hero ingredient, educate the
+                          palate, build from there. In practice it
+                          didn&rsquo;t land. The signature BOS pack is
+                          yellow, and launching in a new market with a
+                          red product muddied the brand recognition we
+                          were trying to build from zero. The Rooibos
+                          education story was harder to tell than
+                          anticipated to a market with no frame of
+                          reference for the ingredient. It was a real
+                          learning about the difference between what
+                          makes sense strategically and what consumers
+                          can actually receive without context.
                         </DirectionCard>
 
                         <DirectionCard
                           status="Rejected"
-                          title="Standard trade branding"
+                          title="Standard trade and campaign branding"
                         >
                           The default approach would have been branded
-                          parasols, standard POS displays, and
-                          logo-heavy glassware. Safe and entirely
-                          forgettable. In a terrace environment where a
-                          bar owner can choose between a well-funded
-                          beer brand&rsquo;s umbrella or a South
-                          African ice tea brand&rsquo;s coaster,
-                          generic materials lose every time.
+                          parasols, standard POS displays, logo-heavy
+                          glassware, and generic social ads. Safe and
+                          entirely forgettable. In a terrace
+                          environment where a bar owner can choose
+                          between a well-funded beer brand&rsquo;s
+                          umbrella or a South African ice tea
+                          brand&rsquo;s coaster, generic materials lose
+                          every time. The same logic applied to
+                          digital: BOS couldn&rsquo;t outspend
+                          established players, so the creative had to
+                          work harder.
                         </DirectionCard>
 
                         <DirectionCard
                           status="Chosen"
-                          title="A trade toolkit built to be wanted"
+                          title="A personality-first approach across every channel"
                         >
-                          We built a trade and sales toolkit where
-                          every item had to justify its existence by
-                          being something a venue would actively
-                          choose to display. Each piece was concepted
-                          to do double duty: function as a useful or
-                          desirable object, and quietly build brand
-                          presence while doing it. The bold BOS colour
-                          palette ran through everything, making the
-                          brand unmissable without shouting.
+                          We built every execution around a single
+                          filter: would this feel unmistakably BOS
+                          without the logo? Trade materials that
+                          venues would actively want. Activations that
+                          created real moments. Digital ads that were
+                          concepted rather than produced. The bold BOS
+                          colour palette ran through everything as the
+                          constant thread.
                         </DirectionCard>
                       </div>
                     ),
@@ -264,53 +255,38 @@ export default async function BosIceTeaCaseStudyPage() {
                       <>
                         <Body>
                           As Senior Art Director, I led concepting and
-                          design across the full trade and activation
-                          toolkit over the course of a year, working
+                          design across the full campaign, working
                           with a Creative Director and a copywriter,
                           and managing a DTP artist and junior
-                          designer. The scope covered the complete
-                          rebuild of BOS&rsquo;s trade materials, sales
-                          toolkit, and activation assets for the
-                          Benelux market.
+                          designer.
                         </Body>
                         <Body>
-                          The surfboard shower, installed at beach
-                          bars, brought the nature pillar to life in a
-                          way a branded parasol never could.
-                          Functional, photogenic, and distinctly BOS
-                          without needing to explain itself. The
-                          condiment and cutlery holder gave venues
-                          something practical that earned its place on
-                          the table. The sandwich board with a
-                          built-in planter doubled as both a point of
-                          sale and something venues genuinely wanted
-                          for the terrace. Each item gave BOS
-                          sustained, passive visibility across an
-                          entire season.
+                          <strong className="font-semibold">
+                            Trade and activation.
+                          </strong>{" "}
+                          The trade toolkit was built around items
+                          venues would actively choose to display: a
+                          surfboard shower at beach bars, a sandwich
+                          board with a built-in planter, a condiment
+                          and cutlery holder, and seasonal coasters.
+                          Each item was concepted to do double duty,
+                          function as something useful or desirable,
+                          and quietly build brand presence while doing
+                          it. The Zandvoort summer activation took the
+                          art and music pillar furthest: a shipping
+                          container converted into a giant boombox
+                          became a venue for up-and-coming DJs to play
+                          live sets at a beach bar, turning BOS into an
+                          experience worth attending rather than a
+                          product on a menu. A tuk tuk sampling vehicle
+                          brought the brand directly to golf courses,
+                          putting BOS in front of a new audience in an
+                          unexpected format.
                         </Body>
                         <Body>
-                          The summer activation at Zandvoort was the
-                          highest expression of the art and music
-                          pillar. A shipping container converted into a
-                          giant boombox became a venue for up-and-coming
-                          DJs to play live sets at a beach bar,
-                          turning BOS into an experience rather than
-                          just a product on a menu. The kind of
-                          activation that gets talked about,
-                          photographed, and remembered, on a budget
-                          that would never have stretched to a
-                          conventional sponsorship.
-                        </Body>
-                        <Body>
-                          The perfect serve added another layer. A
-                          camp-style copper mug kept the drink cold
-                          while signalling an outdoor, adventurous
-                          lifestyle, giving bar staff a ritual to own
-                          and making the BOS drinking experience
-                          something distinct from anything else on the
-                          menu.
-                        </Body>
-                        <Body>
+                          <strong className="font-semibold">
+                            Sales toolkit.
+                          </strong>{" "}
                           The sales toolkit was designed as a
                           conversation starter. A custom-made backpack
                           in BOS signature yellow with bold red
@@ -319,22 +295,44 @@ export default async function BosIceTeaCaseStudyPage() {
                           was entirely the point. Inside, a fully
                           organised system of compartments held product
                           samples, garnish herbs, brand materials and
-                          the perfect serve components. A sales rep
+                          the perfect serve components, a camp-style
+                          copper mug that kept the drink cold and
+                          signalled an outdoor lifestyle. A sales rep
                           walking into a venue carrying it didn&rsquo;t
                           need an opening line. The bag did the work.
                           Alongside it, a branded tea towel printed
-                          with the full BOS origin story, from the
-                          Cederberg Mountains to the &ldquo;go
-                          bos&rdquo; saying, turned a functional object
-                          into a piece of brand education.
+                          with the full BOS origin story turned a
+                          functional object into a piece of brand
+                          education.
                         </Body>
                         <Body>
-                          Photoshoots were planned with minimal
-                          resource, using bold colour, strong natural
-                          light, and the toolkit items themselves as
-                          props, keeping the BOS signature palette
-                          front and centre without requiring large
-                          production budgets.
+                          <strong className="font-semibold">Digital.</strong>{" "}
+                          The social ad campaign was fully concepted,
+                          not just produced. The creative leaned into
+                          BOS&rsquo;s bold colour palette and
+                          personality-led tone, designed to stop the
+                          scroll in a category where most brands
+                          default to product shots and health claims.
+                        </Body>
+                        <Body>
+                          <strong className="font-semibold">
+                            Influencer.
+                          </strong>{" "}
+                          In the era of unboxing content, the
+                          influencer pack was designed as a
+                          &ldquo;parcel parcel&rdquo; experience, a
+                          layered unwrapping where each layer revealed
+                          something new and told a piece of the BOS
+                          story. The unboxing was the content, not
+                          just the packaging around it.
+                        </Body>
+                        <Body>
+                          Photoshoots across all workstreams were
+                          planned with minimal resource, using bold
+                          colour, strong natural light, and the
+                          toolkit items themselves as props, keeping
+                          the BOS signature palette front and centre
+                          without requiring large production budgets.
                         </Body>
                       </>
                     ),
@@ -347,17 +345,18 @@ export default async function BosIceTeaCaseStudyPage() {
                         <Stats
                           items={[
                             {
-                              value: "1 yr",
-                              label: "Full toolkit rebuilt from scratch",
+                              value: "360°",
+                              label:
+                                "Campaign coverage across trade, digital, activation and influencer",
                             },
                             {
-                              value: "Benelux",
-                              label: "Market entry supported across the region",
+                              value: "1",
+                              label: "Product launched into the Benelux market",
                             },
                             {
                               value: "4",
                               label:
-                                "Brand pillars embedded across every touchpoint",
+                                "Brand pillars embedded consistently across every touchpoint",
                             },
                           ]}
                         />
@@ -368,17 +367,14 @@ export default async function BosIceTeaCaseStudyPage() {
                           genuinely differentiated to walk into
                           accounts with, shifting the conversation
                           from &ldquo;here is our product&rdquo; to
-                          &ldquo;here is our world.&rdquo; In a market
-                          where brand recognition started at zero, the
-                          materials were the primary vehicle for making
-                          BOS feel like it belonged.
+                          &ldquo;here is our world.&rdquo;
                         </Body>
                         <Body>
-                          The Zandvoort boombox activation demonstrated
-                          that the brand could generate genuine
-                          cultural traction on a limited budget, by
-                          creating an experience worth attending rather
-                          than an ad worth ignoring.
+                          In a market where brand recognition started
+                          at zero and budget was limited, the work
+                          demonstrated that personality and creative
+                          consistency can substitute for spend, when
+                          every execution is held to the same standard.
                         </Body>
                       </>
                     ),
@@ -390,26 +386,26 @@ export default async function BosIceTeaCaseStudyPage() {
                       <>
                         <Body>
                           The thing I&rsquo;d push harder on next time
-                          is measuring placement rate. We knew the
-                          toolkit was being well received, but we
-                          didn&rsquo;t have a systematic way of
-                          tracking how many items were actually making
-                          it onto terraces versus sitting in a
-                          storeroom. That data would have sharpened the
-                          next iteration, telling us which items were
-                          genuinely earning their place and which were
-                          liked but not used.
+                          is measurement across channels. We had a
+                          clear sense that the work was landing, but
+                          without systematic tracking across trade
+                          placement, digital performance, and
+                          activation reach, it was difficult to know
+                          which executions were doing the most work.
+                          That data would have sharpened both the
+                          in-flight decisions and the next brief.
                         </Body>
                         <Body>
-                          What I&rsquo;d protect is the &ldquo;would
-                          they want it without the branding&rdquo;
-                          test. It&rsquo;s a useful filter for any
-                          trade or activation work where the budget is
-                          limited. It stops you spending money on
-                          things that only work if people are already
-                          fans, and forces the creativity into the
-                          object itself rather than onto a logo printed
-                          on top of it.
+                          What I&rsquo;d protect is the single creative
+                          filter: would this feel unmistakably BOS
+                          without the logo? It kept the work honest
+                          across a wide range of formats and budgets,
+                          and stopped any single execution from
+                          drifting into generic territory. When
+                          you&rsquo;re building brand recognition from
+                          scratch in a competitive market, consistency
+                          of personality is the only asset you can
+                          compound over time.
                         </Body>
                       </>
                     ),
