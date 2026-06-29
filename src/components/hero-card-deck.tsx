@@ -208,7 +208,11 @@ export function HeroCardDeck({
         <div
           className="relative"
           style={{
-            width: "clamp(240px, 39vw, 550px)",
+            // Optimised for MacBook Pro 16" (1728×1117 logical px) —
+            // 45vw on that viewport = 778px, capped at 780. Smaller
+            // viewports clamp down via the vw value; min 240px keeps
+            // it readable on phones.
+            width: "clamp(240px, 45vw, 780px)",
             aspectRatio: "4 / 3",
           }}
         >
