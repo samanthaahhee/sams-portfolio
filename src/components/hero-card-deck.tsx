@@ -183,7 +183,7 @@ export function HeroCardDeck({
           stacked oddly under the bio. Width clamps so it shrinks
           gracefully on narrow viewports. */}
       <div
-        className="absolute z-20 flex items-center justify-center top-[68%] left-1/2 md:top-1/2 md:left-[72%]"
+        className="absolute z-20 flex items-center justify-center top-[68%] left-1/2 md:top-1/2 md:left-[66%]"
         style={{ transform: "translate(-50%, -50%)" }}
       >
         <div
