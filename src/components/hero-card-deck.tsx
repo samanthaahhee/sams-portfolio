@@ -200,23 +200,23 @@ export function HeroCardDeck({
         //   Line-height 53 %, alignment middle/centre
         // Backdrop-filter on the wrapping container approximates the
         // "frost" by softly blurring the gradient behind the wordmark.
+        // Stroke + all the glass layers render at full strength,
+        // then the whole h1 is faded to 30 % via `opacity` so the
+        // wordmark sits as a single quiet shape behind the deck.
         const baseType: React.CSSProperties = {
           fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
           fontSize: "clamp(18rem, 68vw, 65rem)",
           lineHeight: 0.53,
           letterSpacing: "0em",
           color: "transparent",
-          WebkitTextStroke: "2.5px rgba(255, 255, 255, 0.55)",
+          WebkitTextStroke: "2.5px rgba(255, 255, 255, 1)",
           textShadow: [
-            // -45° highlight (up + left), Light 80 %
             "-2px -2px 0 rgba(255, 255, 255, 0.55)",
-            // Soft inner glow opposite the light direction
             "3px 3px 8px rgba(0, 0, 0, 0.18)",
-            // Depth 292 → big diffuse drop shadow
             "0 28px 56px rgba(0, 0, 0, 0.30)",
-            // Frost 292 → outer bloom
             "0 0 48px rgba(255, 255, 255, 0.18)",
           ].join(", "),
+          opacity: 0.3,
         };
         return (
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
