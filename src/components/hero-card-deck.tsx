@@ -139,14 +139,23 @@ export function HeroCardDeck({
         if (!card.accentColor) {
           setAccentColor(`rgb(${boost(aR)}, ${boost(aG)}, ${boost(aB)})`);
         }
-        // Build the background gradient — darken each picked colour
-        // so the wordmark + cards still pop on top of it.
-        const dim = (n: number) => Math.round(n * 0.55);
+        // Build the background gradient — desaturate AND dim each
+        // picked colour so the bg reads as a soft, muted wash rather
+        // than punchy candy colours.
+        //   sat 0.35 → blend 65 % toward neutral grey (kills the pop)
+        //   bri 0.40 → multiply brightness ×0.40 (deep but not black)
+        const mute = (cR: number, cG: number, cB: number) => {
+          const avg = (cR + cG + cB) / 3;
+          const sat = 0.35;
+          const bri = 0.4;
+          const ch = (c: number) => Math.round((avg + (c - avg) * sat) * bri);
+          return `rgb(${ch(cR)}, ${ch(cG)}, ${ch(cB)})`;
+        };
         if (!card.bgColor) {
           setBgGradient([
-            `rgb(${dim(c0.r)}, ${dim(c0.g)}, ${dim(c0.b)})`,
-            `rgb(${dim(c1.r)}, ${dim(c1.g)}, ${dim(c1.b)})`,
-            `rgb(${dim(c2.r)}, ${dim(c2.g)}, ${dim(c2.b)})`,
+            mute(c0.r, c0.g, c0.b),
+            mute(c1.r, c1.g, c1.b),
+            mute(c2.r, c2.g, c2.b),
           ]);
         }
       } catch {
@@ -188,8 +197,7 @@ export function HeroCardDeck({
           fontSize: "clamp(18rem, 68vw, 65rem)",
           lineHeight: 0.78,
           letterSpacing: "-0.04em",
-          color: accentColor,
-          transition: "color 900ms ease",
+          color: "rgba(255, 255, 255, 0.30)",
         };
         return (
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
