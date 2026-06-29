@@ -213,15 +213,6 @@ export function HeroCardDeck({
         </nav>
       </div>
 
-      {/* ── Bottom-right bio (tagline moved to its own block below) */}
-      <div className="absolute bottom-0 right-0 z-30 px-[var(--spacing-page)] pb-6 md:pb-10 text-white">
-        <p className="text-white/75 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] text-right">
-          Art director and visual communicator with 13+ years of
-          experience helping people understand and connect with brands
-          through visual storytelling, across campaigns, digital,
-          print, events, and everything in between.
-        </p>
-      </div>
 
       {/* ── Wordmark — Figma-exported SVG with the glass / outline
           effect baked in (opacity 0.2 inside the SVG). Sits behind

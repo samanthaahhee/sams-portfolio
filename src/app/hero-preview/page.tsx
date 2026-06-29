@@ -48,10 +48,16 @@ export default async function HeroPreview() {
     <div className="bg-[#1a0d10] text-white">
       <HeroCardDeck cards={cards} />
 
-      {/* Tagline — own block below the hero */}
+      {/* Tagline + descriptor — own block below the hero */}
       <section className="px-[var(--spacing-page)] py-16 md:py-24 text-center">
         <p className="font-display text-2xl md:text-4xl font-semibold text-white">
           Thinker. Maker. Doer.
+        </p>
+        <p className="mt-5 md:mt-6 text-white/70 text-[13px] md:text-[14px] leading-relaxed max-w-[58ch] mx-auto">
+          Art director and visual communicator with 13+ years of
+          experience helping people understand and connect with brands
+          through visual storytelling, across campaigns, digital,
+          print, events, and everything in between.
         </p>
       </section>
 
