@@ -40,11 +40,11 @@ export function HeroCardDeck({
   const [bgColor, setBgColor] = useState("#170a0d");
   const [accentColor, setAccentColor] = useState(PINK);
   // Three-stop gradient sampled from the most-saturated, well-spaced
-  // pixels in the front card. Drives the wordmark fill.
-  const [accentGradient, setAccentGradient] = useState<string[]>([
-    PINK,
-    "#c97cc2",
-    "#9b6fb6",
+  // pixels in the front card. Drives the section background.
+  const [bgGradient, setBgGradient] = useState<string[]>([
+    "#3a1632",
+    "#2a1626",
+    "#170a0d",
   ]);
 
   useEffect(() => {
@@ -139,13 +139,16 @@ export function HeroCardDeck({
         if (!card.accentColor) {
           setAccentColor(`rgb(${boost(aR)}, ${boost(aG)}, ${boost(aB)})`);
         }
-        // Build the 3-stop gradient. We always update this — there's
-        // no per-card override slot for it yet.
-        setAccentGradient([
-          `rgb(${boost(c0.r)}, ${boost(c0.g)}, ${boost(c0.b)})`,
-          `rgb(${boost(c1.r)}, ${boost(c1.g)}, ${boost(c1.b)})`,
-          `rgb(${boost(c2.r)}, ${boost(c2.g)}, ${boost(c2.b)})`,
-        ]);
+        // Build the background gradient — darken each picked colour
+        // so the wordmark + cards still pop on top of it.
+        const dim = (n: number) => Math.round(n * 0.55);
+        if (!card.bgColor) {
+          setBgGradient([
+            `rgb(${dim(c0.r)}, ${dim(c0.g)}, ${dim(c0.b)})`,
+            `rgb(${dim(c1.r)}, ${dim(c1.g)}, ${dim(c1.b)})`,
+            `rgb(${dim(c2.r)}, ${dim(c2.g)}, ${dim(c2.b)})`,
+          ]);
+        }
       } catch {
         /* tainted canvas — keep current bg */
       }
@@ -159,8 +162,10 @@ export function HeroCardDeck({
       style={{
         height: "calc(100vh - 56px)",
         minHeight: 640,
-        background: bgColor,
-        transition: "background-color 900ms ease",
+        // Solid base + image-sampled 3-stop gradient layered on top so
+        // the colour fades transition smoothly between cards.
+        background: `linear-gradient(160deg, ${bgGradient[0]} 0%, ${bgGradient[1]} 55%, ${bgGradient[2]} 100%), ${bgColor}`,
+        transition: "background 900ms ease",
       }}
     >
       {/* Soft vignette so the centre stays darker than the edges */}
@@ -183,13 +188,8 @@ export function HeroCardDeck({
           fontSize: "clamp(18rem, 68vw, 65rem)",
           lineHeight: 0.78,
           letterSpacing: "-0.04em",
-          backgroundImage: `linear-gradient(180deg, ${accentGradient[0]} 0%, ${accentGradient[1]} 50%, ${accentGradient[2]} 100%)`,
-          WebkitBackgroundClip: "text",
-          backgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          color: "transparent",
-          transition:
-            "background-image 900ms ease",
+          color: accentColor,
+          transition: "color 900ms ease",
         };
         return (
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
