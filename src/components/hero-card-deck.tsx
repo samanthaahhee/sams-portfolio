@@ -197,7 +197,7 @@ export function HeroCardDeck({
           alt=""
           aria-hidden
           className="w-full h-full object-contain"
-          style={{ opacity: 0.18, transform: "translateY(-10px) scale(1.15)" }}
+          style={{ opacity: 0.21, transform: "translateY(-10px) scale(1.15)" }}
         />
       </div>
 
