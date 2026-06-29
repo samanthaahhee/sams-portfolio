@@ -5,7 +5,6 @@
  * blank.
  */
 
-import { SiteHeader } from "@/components/site-header";
 import { HeroCardDeck, type DeckCard } from "@/components/hero-card-deck";
 import { getCaseStudies, getHeroCards, getProjects } from "@/lib/db";
 
@@ -47,7 +46,6 @@ export default async function HeroPreview() {
 
   return (
     <div className="bg-[#1a0d10] text-white">
-      <SiteHeader pageNo="HP" />
       <HeroCardDeck cards={cards} />
       <div className="px-[var(--spacing-page)] py-12 md:py-16 text-center">
         <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em]">

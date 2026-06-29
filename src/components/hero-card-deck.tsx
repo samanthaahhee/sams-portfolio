@@ -169,7 +169,7 @@ export function HeroCardDeck({
     <div
       className="relative w-full overflow-hidden select-none"
       style={{
-        height: "calc(100vh - 56px)",
+        height: "100vh",
         minHeight: 640,
         // Solid base + image-sampled 3-stop gradient layered on top so
         // the colour fades transition smoothly between cards.
@@ -186,6 +186,45 @@ export function HeroCardDeck({
             "radial-gradient(ellipse at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%)",
         }}
       />
+
+      {/* ── Top bar — logo (left) + nav (right) ─────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-6 md:pt-8">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero/sam-ahhee-logo.svg"
+          alt="Sam Ahhee"
+          className="h-12 md:h-14 w-auto"
+        />
+        <nav className="flex items-center gap-6 md:gap-8 text-white font-display text-sm md:text-base pt-2">
+          <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
+            Work
+          </Link>
+          <a
+            href="/files/Sam-ahhee-Schneider-CV.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-70 transition-opacity"
+          >
+            Experience
+          </a>
+          <Link href="/contact" className="hover:opacity-70 transition-opacity">
+            Contact
+          </Link>
+        </nav>
+      </div>
+
+      {/* ── Bottom-left tagline + bottom-right bio ───────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 px-[var(--spacing-page)] pb-6 md:pb-10 text-white">
+        <p className="font-display text-lg md:text-2xl font-semibold self-end">
+          Thinker. Maker. Doer.
+        </p>
+        <p className="text-white/75 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] md:justify-self-end md:text-right">
+          Art director and visual communicator with 13+ years of
+          experience helping people understand and connect with brands
+          through visual storytelling, across campaigns, digital,
+          print, events, and everything in between.
+        </p>
+      </div>
 
       {/* ── Wordmark — Figma-exported SVG with the glass / outline
           effect baked in (opacity 0.2 inside the SVG). Sits behind
