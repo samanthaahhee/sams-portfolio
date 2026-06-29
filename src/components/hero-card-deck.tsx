@@ -187,29 +187,56 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Top — centred nav. */}
-      <nav className="absolute top-0 left-0 right-0 z-30 pt-8 md:pt-10 flex justify-center items-center gap-8 md:gap-12 text-white font-display text-sm md:text-base">
-        <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
-          Work
+      {/* ── Top bar — SAM AHHEE monogram (left) + nav (right) ──── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-7 md:pt-9">
+        <Link href="/" aria-label="Sam Ahhee — home" className="hover:opacity-80 transition-opacity">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero/sam-ahhee-logo.svg"
+            alt="Sam Ahhee"
+            className="h-11 md:h-14 w-auto"
+          />
         </Link>
-        <a
-          href="/files/Sam-ahhee-Schneider-CV.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:opacity-70 transition-opacity"
-        >
-          Experience
-        </a>
-        <Link href="/contact" className="hover:opacity-70 transition-opacity">
-          Contact
-        </Link>
-      </nav>
+        <nav className="flex items-center gap-8 md:gap-12 text-white font-display text-sm md:text-base">
+          <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
+            Work
+          </Link>
+          <a
+            href="/files/Sam-ahhee-Schneider-CV.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-70 transition-opacity"
+          >
+            Experience
+          </a>
+          <Link href="/contact" className="hover:opacity-70 transition-opacity">
+            Contact
+          </Link>
+        </nav>
+      </div>
 
-      {/* ── Fanned deck — biased to the upper third so the headline
-          below has room. */}
+      {/* ── Upper centred type block — headline + descriptor ───── */}
+      <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center text-white" style={{ top: "16%" }}>
+        <h1
+          className="font-display font-bold tracking-[-0.02em] mx-auto max-w-[22ch]"
+          style={{
+            fontSize: "clamp(1.75rem, 3.4vw, 3rem)",
+            lineHeight: 1.08,
+          }}
+        >
+          Hey I&rsquo;m Sam, a Visual Communication Designer,
+          translating complex ideas into clear storytelling.
+        </h1>
+        <p className="mt-4 md:mt-6 text-white/70 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] mx-auto">
+          13+ years across FMCG, fintech and consumer tech sitting at
+          the intersection between brand and product.
+        </p>
+      </div>
+
+      {/* ── Fanned deck — lower half, centred horizontally. */}
       <div
-        className="absolute z-20 flex items-center justify-center top-[38%] left-1/2"
-        style={{ transform: "translate(-50%, calc(-50% - 20px))" }}
+        className="absolute z-20 flex items-center justify-center left-1/2"
+        style={{ top: "68%", transform: "translate(-50%, -50%)" }}
       >
         <div
           className="relative"
@@ -282,24 +309,6 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Bottom — centred headline + descriptor below the deck */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 pb-10 md:pb-16 px-[var(--spacing-page)] text-center text-white">
-        <h1
-          className="font-display font-bold tracking-[-0.02em] mx-auto max-w-[22ch]"
-          style={{
-            fontSize: "clamp(1.75rem, 3.6vw, 3.25rem)",
-            lineHeight: 1.06,
-          }}
-        >
-          I&rsquo;m Sam, a visual communication designer
-          translating complex ideas into clear storytelling.
-        </h1>
-        <p className="mt-5 md:mt-6 text-white/75 text-[12px] md:text-[13px] leading-relaxed max-w-[64ch] mx-auto">
-          13+ years across FMCG, fintech and consumer tech. Brand
-          systems, product, editorial, illustration — work that earns
-          its place at every touchpoint.
-        </p>
-      </div>
     </div>
   );
 }
