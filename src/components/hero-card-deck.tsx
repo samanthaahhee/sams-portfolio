@@ -178,22 +178,18 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Fanned deck — anchored to a fixed point in the right
-          half of the viewport (centred at 72% across, 50% down) so
-          it sits naturally between the wordmark and the edge with
-          even breathing room. */}
+      {/* ── Fanned deck — pinned to the right half on desktop and
+          to the lower middle on mobile so it never gets clipped or
+          stacked oddly under the bio. Width clamps so it shrinks
+          gracefully on narrow viewports. */}
       <div
-        className="hidden md:flex absolute z-20 items-center justify-center"
-        style={{
-          left: "72%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
-        }}
+        className="absolute z-20 flex items-center justify-center top-[68%] left-1/2 md:top-1/2 md:left-[72%]"
+        style={{ transform: "translate(-50%, -50%)" }}
       >
         <div
           className="relative"
           style={{
-            width: "min(55vw, 720px)",
+            width: "clamp(240px, 48vw, 640px)",
             aspectRatio: "4 / 3",
           }}
         >
