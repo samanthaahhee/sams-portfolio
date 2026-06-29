@@ -1,11 +1,11 @@
 /**
- * Preview-only landing-hero exploration — kinetic work collage with
- * spotlight cycle, inspired by monopo.london's reel.
- * Live homepage is unchanged.
+ * Preview-only landing-hero exploration — fanned card deck of every
+ * case study + project, auto-shuffling every few seconds. Click any
+ * card to open it. Live homepage is unchanged.
  */
 
 import { SiteHeader } from "@/components/site-header";
-import { HeroCollage, type CollagePiece } from "@/components/hero-collage";
+import { HeroCardDeck, type DeckCard } from "@/components/hero-card-deck";
 import { getCaseStudies, getProjects } from "@/lib/db";
 
 export const metadata = { title: "Hero preview" };
@@ -16,7 +16,7 @@ export default async function HeroPreview() {
     getProjects(),
   ]);
 
-  const pieces: CollagePiece[] = [
+  const cards: DeckCard[] = [
     ...caseStudies.map((c) => ({
       href: `/work/${c.slug}`,
       src: c.cover,
@@ -29,12 +29,12 @@ export default async function HeroPreview() {
       title: p.title,
       client: p.brand,
     })),
-  ].filter((p) => Boolean(p.src));
+  ].filter((c) => Boolean(c.src));
 
   return (
-    <div className="bg-[#0e0a08] text-white">
+    <div className="bg-[#1a0d10] text-white">
       <SiteHeader pageNo="HP" />
-      <HeroCollage pieces={pieces} wordmark="Sam Ahhee" />
+      <HeroCardDeck cards={cards} />
       <div className="px-[var(--spacing-page)] py-12 md:py-16 text-center">
         <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em]">
           Preview · not linked publicly. Live homepage is unchanged.
