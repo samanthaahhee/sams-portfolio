@@ -208,7 +208,7 @@ export function HeroCardDeck({
         <div
           className="relative"
           style={{
-            width: "clamp(180px, 30vw, 420px)",
+            width: "clamp(240px, 39vw, 550px)",
             aspectRatio: "4 / 3",
           }}
         >
