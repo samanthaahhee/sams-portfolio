@@ -218,14 +218,17 @@ export function HeroCardDeck({
       {/* ── Upper centred type block — headline + descriptor ───── */}
       <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center text-white" style={{ top: "16%" }}>
         <h1
-          className="font-display font-bold tracking-[-0.02em] mx-auto max-w-[22ch]"
+          className="font-display font-bold tracking-[-0.02em] mx-auto"
           style={{
-            fontSize: "clamp(1.75rem, 3.4vw, 3rem)",
-            lineHeight: 1.08,
+            fontSize: "clamp(1.35rem, 2.4vw, 2.25rem)",
+            lineHeight: 1.18,
           }}
         >
-          Hey I&rsquo;m Sam, a Visual Communication Designer,
-          translating complex ideas into clear storytelling.
+          Hey I&rsquo;m Sam, a Visual Communication
+          <br />
+          Designer, translating complex
+          <br />
+          ideas into clear storytelling.
         </h1>
         <p className="mt-4 md:mt-6 text-white/70 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] mx-auto">
           13+ years across FMCG, fintech and consumer tech sitting at
