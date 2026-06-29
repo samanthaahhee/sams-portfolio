@@ -200,17 +200,38 @@ export function HeroCardDeck({
         />
       </div>
 
-      {/* ── Top — title + role on one centred block ─────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-30 pt-10 md:pt-14 px-[var(--spacing-page)] text-center text-white">
-        <h1
-          className="font-display font-bold tracking-[-0.02em]"
-          style={{ fontSize: "clamp(2.25rem, 4vw, 3.75rem)", lineHeight: 1 }}
-        >
-          Sam Ahhee
-        </h1>
-        <p className="mt-2 md:mt-3 text-white/75 text-sm md:text-base">
-          Visual Comms Designer
-        </p>
+      {/* ── Top — title (left) + nav (right) ────────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between gap-6 px-[var(--spacing-page)] pt-8 md:pt-10 text-white">
+        <Link href="/" className="hover:opacity-80 transition-opacity">
+          <h1
+            className="font-display font-bold tracking-[-0.02em] leading-none"
+            style={{ fontSize: "clamp(1.5rem, 2.2vw, 2rem)" }}
+          >
+            Sam Ahhee
+          </h1>
+          <p className="mt-1.5 text-white/75 text-xs md:text-sm">
+            Visual Comms Designer
+          </p>
+        </Link>
+        <nav className="flex items-center gap-6 md:gap-10 font-display text-sm md:text-base">
+          <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
+            Work
+          </Link>
+          <a
+            href="/files/Sam-ahhee-Schneider-CV.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-70 transition-opacity"
+          >
+            Experience
+          </a>
+          <Link href="/about-me" className="hover:opacity-70 transition-opacity">
+            About
+          </Link>
+          <Link href="/contact" className="hover:opacity-70 transition-opacity">
+            Contact
+          </Link>
+        </nav>
       </div>
 
       {/* ── Fanned deck — dead centre on the viewport. */}
@@ -289,26 +310,15 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Bottom — centred nav ─────────────────────────────────── */}
-      <nav className="absolute bottom-0 left-0 right-0 z-30 pb-8 md:pb-12 flex justify-center items-center gap-6 md:gap-12 text-white font-display text-sm md:text-base">
-        <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
-          Work
-        </Link>
-        <a
-          href="/files/Sam-ahhee-Schneider-CV.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:opacity-70 transition-opacity"
-        >
-          Experience
-        </a>
-        <Link href="/about-me" className="hover:opacity-70 transition-opacity">
-          About me
-        </Link>
-        <Link href="/contact" className="hover:opacity-70 transition-opacity">
-          Contact
-        </Link>
-      </nav>
+      {/* ── Bottom — centred bio paragraph ───────────────────────── */}
+      <div className="absolute bottom-0 left-0 right-0 z-30 pb-8 md:pb-12 px-[var(--spacing-page)] text-center text-white/85">
+        <p className="text-[12px] md:text-[13px] leading-relaxed max-w-[68ch] mx-auto">
+          Art director and visual communicator with 13+ years of
+          experience helping people understand and connect with brands
+          through visual storytelling across campaigns, digital, print,
+          events, and everything in between.
+        </p>
+      </div>
     </div>
   );
 }

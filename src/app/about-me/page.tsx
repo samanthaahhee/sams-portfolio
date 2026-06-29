@@ -13,22 +13,22 @@ export const metadata = {
 
 export default function AboutMePage() {
   return (
-    <div data-pair="butter-slate" className="bg-[#1f1813] text-[color:var(--paper)]">
+    <div data-pair="butter-slate" className="text-[color:var(--ink)]">
       <SiteHeader pageNo="A" />
 
-      <main className="relative min-h-screen">
-        {/* Subtle dotted texture so the dark plane has tooth */}
-        <div
-          aria-hidden
-          className="absolute inset-0 halftone-fine opacity-[0.08] pointer-events-none"
-          style={{ ["--dot" as string]: "var(--paper)" }}
-        />
-
+      <main className="relative">
         {/* ── Top — meta label + huge heading + portrait ─────────── */}
         <section className="relative px-[var(--spacing-page)] pt-12 md:pt-20 pb-12 md:pb-16">
-          <div className="grid grid-cols-12 gap-4 items-start">
+          {/* Subtle halftone wash like the original homepage masthead */}
+          <div
+            aria-hidden
+            className="absolute inset-x-0 top-0 bottom-0 halftone opacity-[0.10] pointer-events-none"
+            style={{ ["--dot" as string]: "var(--pair-b)" }}
+          />
+
+          <div className="relative grid grid-cols-12 gap-4 items-start">
             <div className="col-span-12 md:col-span-7">
-              <p className="font-mono text-[10px] uppercase tracking-[0.14em] opacity-60 mb-6 md:mb-10">
+              <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em] mb-6 md:mb-10">
                 About me
               </p>
               <h1
@@ -57,7 +57,10 @@ export default function AboutMePage() {
         {/* ── Long-form bio ─────────────────────────────────────── */}
         <section className="relative px-[var(--spacing-page)] pt-4 md:pt-10 pb-24 md:pb-32">
           <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-12 md:col-span-8 md:col-start-2 space-y-5 md:space-y-6 text-[color:var(--paper)]/85">
+            <div
+              className="col-span-12 md:col-span-8 md:col-start-2 space-y-5 md:space-y-6"
+              style={{ color: "var(--ink-soft)" }}
+            >
               <p className="text-base md:text-lg leading-relaxed">
                 I&rsquo;m a multidisciplinary designer with 13+ years
                 of experience working across FMCG, fintech, and
