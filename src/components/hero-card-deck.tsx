@@ -209,7 +209,7 @@ export function HeroCardDeck({
             className="h-11 md:h-14 w-auto"
           />
         </Link>
-        <nav className="flex items-center gap-8 md:gap-12 text-white font-display text-sm md:text-base">
+        <nav className="flex items-center gap-8 md:gap-12 text-white font-display font-normal text-sm md:text-base">
           <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
             Work
           </Link>
@@ -256,7 +256,7 @@ export function HeroCardDeck({
             // 45vw on that viewport = 778px, capped at 780. Smaller
             // viewports clamp down via the vw value; min 240px keeps
             // it readable on phones.
-            width: "clamp(170px, 32vw, 550px)",
+            width: "clamp(190px, 35vw, 600px)",
             aspectRatio: "4 / 3",
           }}
         >
