@@ -187,6 +187,21 @@ export function HeroCardDeck({
         }}
       />
 
+      {/* Faint white grid — subtle architectural lines for depth */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
+          backgroundSize: "80px 80px",
+          maskImage:
+            "radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%)",
+        }}
+      />
+
       {/* ── Top bar — SAM AHHEE monogram (left) + nav (right) ──── */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-7 md:pt-9">
         <Link href="/" aria-label="Sam Ahhee — home" className="hover:opacity-80 transition-opacity">
