@@ -169,23 +169,6 @@ export function HeroCardDeck({
       </div>
 
 
-      {/* ── Bottom info strip ───────────────────────────────────── */}
-      <div className="absolute left-0 right-0 bottom-0 px-[var(--spacing-page)] pb-5 md:pb-8 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/80 z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
-          <div>
-            <p>Based in Amsterdam</p>
-            <p className="text-white/55">Born in Cape Town</p>
-          </div>
-          <div className="md:text-center">
-            <p>Multidisciplinary designer</p>
-            <p className="text-white/55">brand · product · visual</p>
-          </div>
-          <div className="md:text-right">
-            <p>Selected work, shuffled</p>
-            <p className="text-white/55">click any card</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
