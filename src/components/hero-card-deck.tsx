@@ -149,41 +149,25 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Wordmark layer — "Sam" pinned top, "Ahhee" pinned
-          bottom, both behind the deck. Each word's horizontal
-          alignment shifts whenever the deck shuffles, so the type
-          re-composes itself around the cards. */}
+      {/* ── Wordmark layer — "Sam" pinned top-right-ish, "Ahhee"
+          pinned bottom-left-ish behind the deck. Fixed composition
+          matching the reference; only the colour transitions on
+          shuffle. */}
       {(() => {
-        // Eight choreographed alignment pairs cycled by `front`.
-        // Sam and Ahhee are deliberately offset asymmetrically so
-        // the composition never reads as a static logo.
-        const LAYOUTS: { sam: number; ahhee: number }[] = [
-          { sam: -8, ahhee: 10 },
-          { sam: 12, ahhee: -8 },
-          { sam: -14, ahhee: -4 },
-          { sam: 6, ahhee: 14 },
-          { sam: 16, ahhee: -14 },
-          { sam: -6, ahhee: 6 },
-          { sam: 0, ahhee: -12 },
-          { sam: -16, ahhee: 4 },
-        ];
-        const layout = LAYOUTS[front % LAYOUTS.length];
         const baseType = {
           fontSize: "clamp(5rem, 22vw, 18rem)",
           color: accentColor,
           lineHeight: 0.85,
           letterSpacing: "-0.03em",
+          transition: "color 900ms ease",
         } as const;
-        const ease =
-          "transform 1100ms cubic-bezier(.22,.61,.36,1), color 900ms ease";
         return (
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between py-4 md:py-8 px-[var(--spacing-page)] text-white">
             <h1
               className="font-display"
               style={{
                 ...baseType,
-                transform: `translateX(${layout.sam}vw)`,
-                transition: ease,
+                transform: "translateX(10vw)",
               }}
             >
               Sam
@@ -192,8 +176,7 @@ export function HeroCardDeck({
               className="font-display"
               style={{
                 ...baseType,
-                transform: `translateX(${layout.ahhee}vw)`,
-                transition: ease,
+                transform: "translateX(-6vw)",
               }}
             >
               Ahhee
