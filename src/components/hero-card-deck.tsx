@@ -193,7 +193,7 @@ export function HeroCardDeck({
         <div
           className="relative"
           style={{
-            width: "min(40vw, 520px)",
+            width: "min(55vw, 720px)",
             aspectRatio: "4 / 3",
           }}
         >
