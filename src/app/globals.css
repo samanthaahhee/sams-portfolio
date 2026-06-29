@@ -134,6 +134,7 @@ html {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 body {
@@ -143,6 +144,7 @@ body {
   letter-spacing: -0.005em;
   background: var(--paper);
   color: var(--ink);
+  overflow-x: hidden;
 }
 
 ::selection {
