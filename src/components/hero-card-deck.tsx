@@ -69,18 +69,38 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* The fan */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative" style={{ width: "min(46vw, 480px)", aspectRatio: "3 / 4" }}>
+      {/* Short bio, top-left */}
+      <div className="absolute top-6 md:top-10 left-[var(--spacing-page)] z-40 max-w-[26ch] md:max-w-[34ch]">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-white/55 mb-2">
+          About
+        </p>
+        <p className="text-white/90 text-[12px] md:text-[13px] leading-relaxed">
+          A multidisciplinary designer with 13+ years across FMCG,
+          fintech and consumer tech. From Cape Town, based in
+          Amsterdam &mdash; working across brand, product, illustration
+          and visual communication.
+        </p>
+      </div>
+
+      {/* The fan — biased slightly upward so the deepest cards don't
+          drop into the bottom info strip. */}
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ paddingBottom: "8vh" }}
+      >
+        <div
+          className="relative"
+          style={{ width: "min(36vw, 380px)", aspectRatio: "3 / 4" }}
+        >
           {shown.map((c, i) => {
             const slot = (i - front + N) % N;
             const t = N === 1 ? 0 : slot / (N - 1); // 0 (front) → 1 (back)
             // Fan out alternating left/right, growing offset as we move back.
             const direction = slot % 2 === 0 ? 1 : -1;
-            const rot = direction * (4 + slot * 5);
-            const xPct = direction * (slot * 7); // % of card width
-            const yPct = slot * 3.5;
-            const scale = 1 - slot * 0.04;
+            const rot = direction * (3 + slot * 4);
+            const xPct = direction * (slot * 6); // % of card width
+            const yPct = slot * 2.2;
+            const scale = 1 - slot * 0.035;
             return (
               <Link
                 key={`${c.href}-${i}`}
@@ -115,13 +135,13 @@ export function HeroCardDeck({
                   }}
                 />
                 {/* Card label — top-left, like the reference */}
-                <div className="absolute top-4 left-4 right-4 text-white">
+                <div className="absolute top-3 left-3 right-3 text-white">
                   {c.client && (
-                    <p className="font-display italic text-sm md:text-base mb-0.5 text-white/85">
+                    <p className="font-display italic text-[11px] md:text-[12px] mb-0.5 text-white/85 leading-tight">
                       {c.client}
                     </p>
                   )}
-                  <p className="font-display text-lg md:text-xl leading-tight">
+                  <p className="font-display text-sm md:text-base leading-tight">
                     {c.title}
                   </p>
                 </div>
