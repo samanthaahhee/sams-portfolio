@@ -193,6 +193,9 @@ export function HeroCardDeck({
           <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
             Work
           </Link>
+          <Link href="/about-me" className="hover:opacity-70 transition-opacity">
+            About
+          </Link>
           <a
             href="/files/Sam-ahhee-Schneider-CV.pdf"
             target="_blank"
