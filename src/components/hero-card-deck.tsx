@@ -187,29 +187,6 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Top bar — nav only (no corner logo) ─────────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-end px-[var(--spacing-page)] pt-6 md:pt-8">
-        <nav className="flex items-center gap-6 md:gap-10 text-white font-display text-sm md:text-base">
-          <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
-            Work
-          </Link>
-          <Link href="/about-me" className="hover:opacity-70 transition-opacity">
-            About
-          </Link>
-          <a
-            href="/files/Sam-ahhee-Schneider-CV.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-70 transition-opacity"
-          >
-            Experience
-          </a>
-          <Link href="/contact" className="hover:opacity-70 transition-opacity">
-            Contact
-          </Link>
-        </nav>
-      </div>
-
       {/* ── Faint background wordmark — Figma PNG, sits behind
           everything for texture. ────────────────────────────────── */}
       <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center select-none">
@@ -223,31 +200,23 @@ export function HeroCardDeck({
         />
       </div>
 
-      {/* ── Left column — huge Sam / Ahhee wordmark, tagline, bio. */}
-      <div className="absolute z-20 top-1/2 left-[var(--spacing-page)] -translate-y-1/2 max-w-[40vw] text-white">
+      {/* ── Top — title + role on one centred block ─────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 pt-10 md:pt-14 px-[var(--spacing-page)] text-center text-white">
         <h1
-          className="font-display font-bold leading-[0.86] tracking-[-0.03em]"
-          style={{ fontSize: "clamp(3.5rem, 7vw, 7rem)" }}
+          className="font-display font-bold tracking-[-0.02em]"
+          style={{ fontSize: "clamp(2.25rem, 4vw, 3.75rem)", lineHeight: 1 }}
         >
-          Sam
-          <br />
-          Ahhee
+          Sam Ahhee
         </h1>
-        <p className="mt-7 md:mt-9 font-display text-base md:text-lg font-semibold">
-          Thinker. Maker. Doer.
-        </p>
-        <p className="mt-3 text-white/70 text-[12px] md:text-[13px] leading-relaxed max-w-[42ch]">
-          Art director and visual communicator with 13+ years of
-          experience helping people understand and connect with brands
-          through visual storytelling, across campaigns, digital,
-          print, events, and everything in between.
+        <p className="mt-2 md:mt-3 text-white/75 text-sm md:text-base">
+          Visual Comms Designer
         </p>
       </div>
 
-      {/* ── Fanned deck — right of centre, vertically centred. */}
+      {/* ── Fanned deck — dead centre on the viewport. */}
       <div
-        className="absolute z-20 flex items-center justify-center top-1/2 left-[68%]"
-        style={{ transform: "translate(-50%, -50%)" }}
+        className="absolute z-20 flex items-center justify-center top-1/2 left-1/2"
+        style={{ transform: "translate(-50%, calc(-50% + 16px))" }}
       >
         <div
           className="relative"
@@ -320,7 +289,26 @@ export function HeroCardDeck({
         </div>
       </div>
 
-
+      {/* ── Bottom — centred nav ─────────────────────────────────── */}
+      <nav className="absolute bottom-0 left-0 right-0 z-30 pb-8 md:pb-12 flex justify-center items-center gap-6 md:gap-12 text-white font-display text-sm md:text-base">
+        <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
+          Work
+        </Link>
+        <a
+          href="/files/Sam-ahhee-Schneider-CV.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:opacity-70 transition-opacity"
+        >
+          Experience
+        </a>
+        <Link href="/about-me" className="hover:opacity-70 transition-opacity">
+          About me
+        </Link>
+        <Link href="/contact" className="hover:opacity-70 transition-opacity">
+          Contact
+        </Link>
+      </nav>
     </div>
   );
 }
