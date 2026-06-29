@@ -181,7 +181,7 @@ export function HeroCardDeck({
       {(() => {
         const baseType: React.CSSProperties = {
           fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
-          fontSize: "clamp(11rem, 40vw, 38rem)",
+          fontSize: "clamp(14rem, 52vw, 50rem)",
           lineHeight: 0.78,
           letterSpacing: "-0.04em",
           backgroundImage: `linear-gradient(180deg, ${accentColor} 0%, ${accentSecondary} 100%)`,
