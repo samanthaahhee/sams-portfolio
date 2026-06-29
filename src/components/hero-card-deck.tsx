@@ -39,6 +39,9 @@ export function HeroCardDeck({
   const [front, setFront] = useState(0);
   const [bgColor, setBgColor] = useState("#170a0d");
   const [accentColor, setAccentColor] = useState(PINK);
+  // Secondary accent — second-most-saturated colour in the image, used
+  // as the bottom stop of the wordmark's gradient fill.
+  const [accentSecondary, setAccentSecondary] = useState("#9b6fb6");
 
   useEffect(() => {
     if (N <= 1) return;
@@ -83,10 +86,14 @@ export function HeroCardDeck({
         // Average pixel — used (darkened) for the section background.
         let r = 0, g = 0, b = 0;
         const n = data.length / 4;
-        // Track the most saturated, medium-bright pixel — used as the
-        // wordmark accent so it always reads as the image's "pop".
+        // Track the two most saturated, medium-bright pixels — first
+        // pop drives the wordmark's accent, second drives the gradient
+        // bottom-stop. Skip near-duplicates of the first so the
+        // gradient actually shows variation.
         let bestScore = -1;
-        let aR = 244, aG = 184, aB = 208; // PINK fallback
+        let aR = 244, aG = 184, aB = 208; // PINK fallback (primary)
+        let secondScore = -1;
+        let sR = 155, sG = 111, sB = 182; // soft violet fallback
         for (let i = 0; i < data.length; i += 4) {
           const pr = data[i], pg = data[i + 1], pb = data[i + 2];
           r += pr;
@@ -97,13 +104,22 @@ export function HeroCardDeck({
           if (mx === 0) continue;
           const sat = (mx - mn) / mx;
           const light = (mx + mn) / 510; // 0..1
-          // Prefer saturated, not too dark or washed out.
           const score = sat * (1 - Math.abs(light - 0.55) * 1.1);
           if (score > bestScore) {
+            // Demote previous best to second slot.
+            secondScore = bestScore;
+            sR = aR; sG = aG; sB = aB;
             bestScore = score;
-            aR = pr;
-            aG = pg;
-            aB = pb;
+            aR = pr; aG = pg; aB = pb;
+          } else if (score > secondScore) {
+            // Reject if too close to primary (Euclidean distance in
+            // RGB) — gradient with near-identical stops reads as a
+            // flat colour.
+            const dist = Math.hypot(pr - aR, pg - aG, pb - aB);
+            if (dist > 60) {
+              secondScore = score;
+              sR = pr; sG = pg; sB = pb;
+            }
           }
         }
 
@@ -121,6 +137,15 @@ export function HeroCardDeck({
           const ag = Math.min(255, Math.round(aG * boost));
           const ab = Math.min(255, Math.round(aB * boost));
           setAccentColor(`rgb(${ar}, ${ag}, ${ab})`);
+        }
+        // Always update the secondary — there's no per-card override
+        // for the gradient bottom-stop (yet).
+        {
+          const boost = 1.05;
+          const sr = Math.min(255, Math.round(sR * boost));
+          const sg = Math.min(255, Math.round(sG * boost));
+          const sb = Math.min(255, Math.round(sB * boost));
+          setAccentSecondary(`rgb(${sr}, ${sg}, ${sb})`);
         }
       } catch {
         /* tainted canvas — keep current bg */
@@ -149,25 +174,28 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Wordmark layer — "Sam" on top, "Ahhee" on bottom, both
-          centred horizontally and stacked vertically behind the
-          deck. Only the colour transitions on shuffle. */}
+      {/* ── Wordmark layer — Jacquard 12 at extreme scale so the
+          pixel grid reads as texture rather than legible type. Two
+          lines, fixed centre stack, painted with a gradient between
+          the two top accent colours from the front card. */}
       {(() => {
-        const baseType = {
-          fontSize: "clamp(5rem, 22vw, 18rem)",
-          color: accentColor,
-          lineHeight: 0.85,
-          letterSpacing: "-0.03em",
-          transition: "color 900ms ease",
-        } as const;
+        const baseType: React.CSSProperties = {
+          fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
+          fontSize: "clamp(11rem, 40vw, 38rem)",
+          lineHeight: 0.78,
+          letterSpacing: "-0.04em",
+          backgroundImage: `linear-gradient(180deg, ${accentColor} 0%, ${accentSecondary} 100%)`,
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          color: "transparent",
+          transition:
+            "background-image 900ms ease",
+        };
         return (
-          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between items-center py-4 md:py-8 px-[var(--spacing-page)] text-white text-center">
-            <h1 className="font-display" style={baseType}>
-              Sam
-            </h1>
-            <h1 className="font-display" style={baseType}>
-              Ahhee
-            </h1>
+          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
+            <h1 style={baseType}>Sam</h1>
+            <h1 style={{ ...baseType, marginTop: "-0.12em" }}>Ahhee</h1>
           </div>
         );
       })()}
