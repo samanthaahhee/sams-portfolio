@@ -206,7 +206,7 @@ export function HeroCardDeck({
           lineHeight: 0.53,
           letterSpacing: "0em",
           color: "transparent",
-          WebkitTextStroke: "1.4px rgba(255, 255, 255, 1)",
+          WebkitTextStroke: "1.4px rgba(255, 255, 255, 0.30)",
           textShadow: [
             // -45° highlight (up + left), Light 80 %
             "-2px -2px 0 rgba(255, 255, 255, 0.55)",
