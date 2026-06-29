@@ -227,13 +227,14 @@ export function HeroCardDeck({
         </nav>
       </div>
 
-      {/* ── Upper centred headline (3 fixed lines). ──────────────── */}
-      <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center text-white" style={{ top: "12%" }}>
+      {/* ── Upper centred headline. ──────────────────────────────── */}
+      <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center" style={{ top: "12%" }}>
         <h1
-          className="font-display font-bold tracking-[-0.02em] mx-auto"
+          className="font-sans font-medium tracking-[-0.02em] mx-auto"
           style={{
             fontSize: "clamp(0.95rem, 1.5vw, 1.4rem)",
             lineHeight: 1.35,
+            color: "rgba(255, 255, 255, 0.6)",
           }}
         >
           Hey I&rsquo;m Sam. I&rsquo;m a visual communication
