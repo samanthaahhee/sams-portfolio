@@ -187,14 +187,17 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Top bar — logo (left) + nav (right) ─────────────────── */}
+      {/* ── Top bar — wordmark (left) + nav (right) ─────────────── */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-6 md:pt-8">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero/sam-ahhee-logo.svg"
-          alt="Sam Ahhee"
-          className="h-12 md:h-14 w-auto"
-        />
+        <Link
+          href="/"
+          aria-label="Sam Ahhee — home"
+          className="font-display text-white text-2xl md:text-3xl leading-[0.95] tracking-[-0.02em] hover:opacity-80 transition-opacity"
+        >
+          Sam
+          <br />
+          Ahhee
+        </Link>
         <nav className="flex items-center gap-6 md:gap-8 text-white font-display text-sm md:text-base pt-2">
           <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
             Work
