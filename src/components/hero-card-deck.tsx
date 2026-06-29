@@ -31,6 +31,7 @@ export function HeroCardDeck({
   const shown = useMemo(() => cards.slice(0, maxCards), [cards, maxCards]);
   const N = shown.length;
   const [front, setFront] = useState(0);
+  const [bgColor, setBgColor] = useState("#170a0d");
 
   useEffect(() => {
     if (N <= 1) return;
@@ -42,22 +43,63 @@ export function HeroCardDeck({
     return () => window.clearInterval(t);
   }, [N, shuffleEvery]);
 
+  // Sample the front card's average colour and use it (darkened) as
+  // the page background. Falls back silently to the default mahogany
+  // if the canvas can't read the image (cross-origin without CORS).
+  useEffect(() => {
+    const src = shown[front]?.src;
+    if (!src) return;
+    const img = new window.Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        const W = 16;
+        const H = 16;
+        c.width = W;
+        c.height = H;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, W, H);
+        const data = ctx.getImageData(0, 0, W, H).data;
+        let r = 0, g = 0, b = 0;
+        const n = data.length / 4;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
+        }
+        // Darken (×0.45) so the bg recedes behind the wordmark and
+        // doesn't fight the cards for attention.
+        const f = 0.45;
+        const rr = Math.round((r / n) * f);
+        const gg = Math.round((g / n) * f);
+        const bb = Math.round((b / n) * f);
+        setBgColor(`rgb(${rr}, ${gg}, ${bb})`);
+      } catch {
+        /* tainted canvas — keep current bg */
+      }
+    };
+    img.src = src;
+  }, [front, shown]);
+
   return (
     <div
       className="relative w-full overflow-hidden select-none"
       style={{
         height: "calc(100vh - 56px)",
         minHeight: 640,
-        background: "#170a0d",
+        background: bgColor,
+        transition: "background-color 900ms ease",
       }}
     >
-      {/* Soft mood lighting */}
+      {/* Soft vignette so the centre stays darker than the edges */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at 75% 50%, rgba(140,40,40,0.25) 0%, transparent 65%)",
+            "radial-gradient(ellipse at 50% 60%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%)",
         }}
       />
 
