@@ -212,7 +212,7 @@ export function HeroCardDeck({
             // 45vw on that viewport = 778px, capped at 780. Smaller
             // viewports clamp down via the vw value; min 240px keeps
             // it readable on phones.
-            width: "clamp(240px, 45vw, 780px)",
+            width: "clamp(200px, 38vw, 660px)",
             aspectRatio: "4 / 3",
           }}
         >
