@@ -192,22 +192,30 @@ export function HeroCardDeck({
           lines, fixed centre stack, painted with a gradient between
           the two top accent colours from the front card. */}
       {(() => {
-        // Glass effect — very faint white fill so the gradient
-        // beneath bleeds through, a brighter stroke for the glass
-        // edge, and layered text-shadows: bright top highlight,
-        // subtle bottom edge, soft outer glow, deep drop shadow.
+        // Glass + type settings translated from the Figma reference:
+        //   Fill opacity 20 % white
+        //   Stroke 1.4 px white, outside (text-stroke)
+        //   Light @ -45° / 80 %  → upper-left highlight shadow
+        //   Depth 292 / Frost 292 → soft drop shadow + outer bloom
+        //   Line-height 53 %, alignment middle/centre
+        // Backdrop-filter on the wrapping container approximates the
+        // "frost" by softly blurring the gradient behind the wordmark.
         const baseType: React.CSSProperties = {
           fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
           fontSize: "clamp(18rem, 68vw, 65rem)",
-          lineHeight: 0.78,
-          letterSpacing: "-0.04em",
-          color: "rgba(255, 255, 255, 0.08)",
-          WebkitTextStroke: "0.6px rgba(255, 255, 255, 0.55)",
+          lineHeight: 0.53,
+          letterSpacing: "0em",
+          color: "rgba(255, 255, 255, 0.20)",
+          WebkitTextStroke: "1.4px rgba(255, 255, 255, 1)",
           textShadow: [
-            "0 1px 0 rgba(255, 255, 255, 0.45)",
-            "0 -1px 0 rgba(255, 255, 255, 0.18)",
-            "0 0 30px rgba(255, 255, 255, 0.14)",
-            "0 10px 28px rgba(0, 0, 0, 0.28)",
+            // -45° highlight (up + left), Light 80 %
+            "-2px -2px 0 rgba(255, 255, 255, 0.55)",
+            // Soft inner glow opposite the light direction
+            "3px 3px 8px rgba(0, 0, 0, 0.18)",
+            // Depth 292 → big diffuse drop shadow
+            "0 28px 56px rgba(0, 0, 0, 0.30)",
+            // Frost 292 → outer bloom
+            "0 0 48px rgba(255, 255, 255, 0.18)",
           ].join(", "),
         };
         return (
