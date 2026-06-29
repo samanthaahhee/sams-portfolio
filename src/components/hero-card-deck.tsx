@@ -89,20 +89,22 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Fanned deck — absolutely positioned right of centre so it
-          can't push the wordmark or get clipped by the column edge. */}
+      {/* ── Fanned deck — anchored to a fixed point in the right
+          half of the viewport (centred at 72% across, 50% down) so
+          it sits naturally between the wordmark and the edge with
+          even breathing room. */}
       <div
         className="hidden md:flex absolute z-20 items-center justify-center"
         style={{
-          right: "8vw",
+          left: "72%",
           top: "50%",
-          transform: "translateY(-50%)",
+          transform: "translate(-50%, -50%)",
         }}
       >
         <div
           className="relative"
           style={{
-            width: "min(30vw, 340px)",
+            width: "min(28vw, 320px)",
             aspectRatio: "3 / 4",
           }}
         >
@@ -110,10 +112,12 @@ export function HeroCardDeck({
               const slot = (i - front + N) % N;
               const t = N === 1 ? 0 : slot / (N - 1);
               const direction = slot % 2 === 0 ? 1 : -1;
-              const rot = direction * (3 + slot * 4);
-              const xPct = direction * (slot * 6);
-              const yPct = slot * 2.2;
-              const scale = 1 - slot * 0.035;
+              // Tighter fan — small rotation + small offset per slot
+              // so the deck reads as one stack with peek-out edges.
+              const rot = direction * (2 + slot * 2.5);
+              const xPct = direction * (slot * 3.5);
+              const yPct = slot * 1.5;
+              const scale = 1 - slot * 0.025;
               return (
                 <Link
                   key={`${c.href}-${i}`}
@@ -164,27 +168,26 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Decorative pink squiggle, layered on top ─────────────── */}
+      {/* ── Decorative pink squiggle — one long smooth bezier ──── */}
       <svg
         aria-hidden
         className="absolute inset-0 w-full h-full pointer-events-none z-10"
         viewBox="0 0 1600 900"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid slice"
         style={{ overflow: "visible" }}
       >
         <path
           d="
-            M 540 -20
-            C 540 180, 760 240, 920 280
-            S 1080 110, 1240 280
-            S 1480 560, 1620 640
-            C 1700 700, 1700 820, 1620 920
+            M 560 -40
+            C 760 320, 1380 280, 1320 560
+            S 1620 880, 1720 980
           "
           fill="none"
           stroke={PINK}
-          strokeWidth="9"
+          strokeWidth="8"
           strokeLinecap="round"
-          opacity="0.85"
+          strokeLinejoin="round"
+          opacity="0.9"
         />
       </svg>
 
