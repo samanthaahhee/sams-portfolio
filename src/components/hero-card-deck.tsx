@@ -39,9 +39,13 @@ export function HeroCardDeck({
   const [front, setFront] = useState(0);
   const [bgColor, setBgColor] = useState("#170a0d");
   const [accentColor, setAccentColor] = useState(PINK);
-  // Secondary accent — second-most-saturated colour in the image, used
-  // as the bottom stop of the wordmark's gradient fill.
-  const [accentSecondary, setAccentSecondary] = useState("#9b6fb6");
+  // Three-stop gradient sampled from the most-saturated, well-spaced
+  // pixels in the front card. Drives the wordmark fill.
+  const [accentGradient, setAccentGradient] = useState<string[]>([
+    PINK,
+    "#c97cc2",
+    "#9b6fb6",
+  ]);
 
   useEffect(() => {
     if (N <= 1) return;
@@ -86,14 +90,10 @@ export function HeroCardDeck({
         // Average pixel — used (darkened) for the section background.
         let r = 0, g = 0, b = 0;
         const n = data.length / 4;
-        // Track the two most saturated, medium-bright pixels — first
-        // pop drives the wordmark's accent, second drives the gradient
-        // bottom-stop. Skip near-duplicates of the first so the
-        // gradient actually shows variation.
-        let bestScore = -1;
-        let aR = 244, aG = 184, aB = 208; // PINK fallback (primary)
-        let secondScore = -1;
-        let sR = 155, sG = 111, sB = 182; // soft violet fallback
+        // Pass 1 — sum every pixel for the bg average + collect a
+        // candidate list of saturated, medium-bright pixels.
+        type Candidate = { r: number; g: number; b: number; score: number };
+        const candidates: Candidate[] = [];
         for (let i = 0; i < data.length; i += 4) {
           const pr = data[i], pg = data[i + 1], pb = data[i + 2];
           r += pr;
@@ -103,25 +103,29 @@ export function HeroCardDeck({
           const mn = Math.min(pr, pg, pb);
           if (mx === 0) continue;
           const sat = (mx - mn) / mx;
-          const light = (mx + mn) / 510; // 0..1
+          const light = (mx + mn) / 510;
           const score = sat * (1 - Math.abs(light - 0.55) * 1.1);
-          if (score > bestScore) {
-            // Demote previous best to second slot.
-            secondScore = bestScore;
-            sR = aR; sG = aG; sB = aB;
-            bestScore = score;
-            aR = pr; aG = pg; aB = pb;
-          } else if (score > secondScore) {
-            // Reject if too close to primary (Euclidean distance in
-            // RGB) — gradient with near-identical stops reads as a
-            // flat colour.
-            const dist = Math.hypot(pr - aR, pg - aG, pb - aB);
-            if (dist > 60) {
-              secondScore = score;
-              sR = pr; sG = pg; sB = pb;
-            }
-          }
+          if (score > 0.05) candidates.push({ r: pr, g: pg, b: pb, score });
         }
+        // Pick the top 3 well-separated candidates so the gradient
+        // shows real variation rather than three near-identical hues.
+        candidates.sort((a, b) => b.score - a.score);
+        const picked: Candidate[] = [];
+        const FALLBACK: Candidate[] = [
+          { r: 244, g: 184, b: 208, score: 0 }, // pink
+          { r: 201, g: 124, b: 194, score: 0 }, // magenta
+          { r: 155, g: 111, b: 182, score: 0 }, // violet
+        ];
+        for (const c of candidates) {
+          if (picked.length >= 3) break;
+          const tooClose = picked.some(
+            (p) => Math.hypot(p.r - c.r, p.g - c.g, p.b - c.b) < 55,
+          );
+          if (!tooClose) picked.push(c);
+        }
+        while (picked.length < 3) picked.push(FALLBACK[picked.length]);
+        const [c0, c1, c2] = picked;
+        const aR = c0.r, aG = c0.g, aB = c0.b;
 
         // Per-card overrides win — only apply auto values where the
         // override is unset.
@@ -131,22 +135,17 @@ export function HeroCardDeck({
             `rgb(${Math.round((r / n) * f)}, ${Math.round((g / n) * f)}, ${Math.round((b / n) * f)})`,
           );
         }
+        const boost = (n: number) => Math.min(255, Math.round(n * 1.15));
         if (!card.accentColor) {
-          const boost = 1.18;
-          const ar = Math.min(255, Math.round(aR * boost));
-          const ag = Math.min(255, Math.round(aG * boost));
-          const ab = Math.min(255, Math.round(aB * boost));
-          setAccentColor(`rgb(${ar}, ${ag}, ${ab})`);
+          setAccentColor(`rgb(${boost(aR)}, ${boost(aG)}, ${boost(aB)})`);
         }
-        // Always update the secondary — there's no per-card override
-        // for the gradient bottom-stop (yet).
-        {
-          const boost = 1.05;
-          const sr = Math.min(255, Math.round(sR * boost));
-          const sg = Math.min(255, Math.round(sG * boost));
-          const sb = Math.min(255, Math.round(sB * boost));
-          setAccentSecondary(`rgb(${sr}, ${sg}, ${sb})`);
-        }
+        // Build the 3-stop gradient. We always update this — there's
+        // no per-card override slot for it yet.
+        setAccentGradient([
+          `rgb(${boost(c0.r)}, ${boost(c0.g)}, ${boost(c0.b)})`,
+          `rgb(${boost(c1.r)}, ${boost(c1.g)}, ${boost(c1.b)})`,
+          `rgb(${boost(c2.r)}, ${boost(c2.g)}, ${boost(c2.b)})`,
+        ]);
       } catch {
         /* tainted canvas — keep current bg */
       }
@@ -181,10 +180,10 @@ export function HeroCardDeck({
       {(() => {
         const baseType: React.CSSProperties = {
           fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
-          fontSize: "clamp(14rem, 52vw, 50rem)",
+          fontSize: "clamp(18rem, 68vw, 65rem)",
           lineHeight: 0.78,
           letterSpacing: "-0.04em",
-          backgroundImage: `linear-gradient(180deg, ${accentColor} 0%, ${accentSecondary} 100%)`,
+          backgroundImage: `linear-gradient(180deg, ${accentGradient[0]} 0%, ${accentGradient[1]} 50%, ${accentGradient[2]} 100%)`,
           WebkitBackgroundClip: "text",
           backgroundClip: "text",
           WebkitTextFillColor: "transparent",
