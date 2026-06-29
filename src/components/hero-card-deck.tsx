@@ -187,20 +187,17 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* Faint white grid — subtle architectural lines for depth */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-          maskImage:
-            "radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%)",
-          WebkitMaskImage:
-            "radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%)",
-        }}
-      />
+      {/* Faint serif Sam Ahhee — sits behind everything as texture */}
+      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center select-none">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero/sam-ahhee.png"
+          alt=""
+          aria-hidden
+          className="w-full h-full object-contain"
+          style={{ opacity: 0.16, transform: "scale(1.15)" }}
+        />
+      </div>
 
       {/* ── Top bar — SAM AHHEE monogram (left) + nav (right) ──── */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-7 md:pt-9">
@@ -239,16 +236,12 @@ export function HeroCardDeck({
             lineHeight: 1.18,
           }}
         >
-          Hey I&rsquo;m Sam, a Visual Communication
+          Hey I&rsquo;m Sam.
           <br />
-          Designer, translating complex
+          I&rsquo;m a visual communication designer,
           <br />
-          ideas into clear storytelling.
+          translating complex ideas into clear storytelling.
         </h1>
-        <p className="mt-4 md:mt-6 text-white/70 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] mx-auto">
-          13+ years across FMCG, fintech and consumer tech sitting at
-          the intersection between brand and product.
-        </p>
       </div>
 
       {/* ── Fanned deck — lower half, centred horizontally. */}
