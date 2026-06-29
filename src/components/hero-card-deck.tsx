@@ -236,11 +236,9 @@ export function HeroCardDeck({
             lineHeight: 1.35,
           }}
         >
-          Hey I&rsquo;m Sam.
+          Hey I&rsquo;m Sam. I&rsquo;m a visual communication
           <br />
-          I&rsquo;m a visual communication designer,
-          <br />
-          translating complex ideas into clear storytelling.
+          designer, translating complex ideas into clear storytelling.
         </h1>
       </div>
 
@@ -256,7 +254,7 @@ export function HeroCardDeck({
             // 45vw on that viewport = 778px, capped at 780. Smaller
             // viewports clamp down via the vw value; min 240px keeps
             // it readable on phones.
-            width: "clamp(190px, 35vw, 600px)",
+            width: "clamp(220px, 40vw, 690px)",
             aspectRatio: "4 / 3",
           }}
         >
