@@ -32,6 +32,7 @@ export function HeroCardDeck({
   const N = shown.length;
   const [front, setFront] = useState(0);
   const [bgColor, setBgColor] = useState("#170a0d");
+  const [accentColor, setAccentColor] = useState(PINK);
 
   useEffect(() => {
     if (N <= 1) return;
@@ -62,20 +63,48 @@ export function HeroCardDeck({
         if (!ctx) return;
         ctx.drawImage(img, 0, 0, W, H);
         const data = ctx.getImageData(0, 0, W, H).data;
+
+        // Average pixel — used (darkened) for the section background.
         let r = 0, g = 0, b = 0;
         const n = data.length / 4;
+        // Track the most saturated, medium-bright pixel — used as the
+        // wordmark accent so it always reads as the image's "pop".
+        let bestScore = -1;
+        let aR = 244, aG = 184, aB = 208; // PINK fallback
         for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
+          const pr = data[i], pg = data[i + 1], pb = data[i + 2];
+          r += pr;
+          g += pg;
+          b += pb;
+          const mx = Math.max(pr, pg, pb);
+          const mn = Math.min(pr, pg, pb);
+          if (mx === 0) continue;
+          const sat = (mx - mn) / mx;
+          const light = (mx + mn) / 510; // 0..1
+          // Prefer saturated, not too dark or washed out.
+          const score = sat * (1 - Math.abs(light - 0.55) * 1.1);
+          if (score > bestScore) {
+            bestScore = score;
+            aR = pr;
+            aG = pg;
+            aB = pb;
+          }
         }
-        // Darken (×0.45) so the bg recedes behind the wordmark and
-        // doesn't fight the cards for attention.
-        const f = 0.45;
-        const rr = Math.round((r / n) * f);
-        const gg = Math.round((g / n) * f);
-        const bb = Math.round((b / n) * f);
-        setBgColor(`rgb(${rr}, ${gg}, ${bb})`);
+
+        // Background — 30% brighter than the previous darkening
+        // factor (0.45 → 0.585).
+        const f = 0.585;
+        setBgColor(
+          `rgb(${Math.round((r / n) * f)}, ${Math.round((g / n) * f)}, ${Math.round((b / n) * f)})`,
+        );
+
+        // Accent — boost brightness a touch so it pops against the
+        // darkened background.
+        const boost = 1.18;
+        const ar = Math.min(255, Math.round(aR * boost));
+        const ag = Math.min(255, Math.round(aG * boost));
+        const ab = Math.min(255, Math.round(aB * boost));
+        setAccentColor(`rgb(${ar}, ${ag}, ${ab})`);
       } catch {
         /* tainted canvas — keep current bg */
       }
@@ -110,7 +139,8 @@ export function HeroCardDeck({
             className="font-display leading-[0.85] tracking-[-0.03em] mb-8 md:mb-10"
             style={{
               fontSize: "clamp(3.5rem, 12vw, 11rem)",
-              color: PINK,
+              color: accentColor,
+              transition: "color 900ms ease",
             }}
           >
             Sam
