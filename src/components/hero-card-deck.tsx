@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { CrossGridTexture } from "./cross-grid-texture";
 
 export type DeckCard = {
   href: string;
@@ -159,6 +160,30 @@ export function HeroCardDeck({
             between.
           </p>
         </div>
+      </div>
+
+      {/* ── Cross-grid texture sitting BEHIND the deck. Slightly
+          larger than the cards so the texture reads as a field the
+          cards float on. */}
+      <div
+        aria-hidden
+        className="hidden md:block absolute z-10 pointer-events-none"
+        style={{
+          left: "72%",
+          top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "min(58vw, 720px)",
+          aspectRatio: "3 / 4",
+        }}
+      >
+        <CrossGridTexture
+          cols={18}
+          rows={24}
+          focusX={0.55}
+          focusY={0.65}
+          color="rgba(255,255,255,0.32)"
+          className="w-full h-full"
+        />
       </div>
 
       {/* ── Fanned deck — anchored to a fixed point in the right
