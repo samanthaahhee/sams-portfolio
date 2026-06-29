@@ -197,6 +197,7 @@ export function HeroCardDeck({
           src="/hero/sam-ahhee.png"
           alt="Sam Ahhee"
           className="w-full h-full object-contain"
+          style={{ opacity: 0.8, transform: "scale(1.1)" }}
         />
       </div>
 
