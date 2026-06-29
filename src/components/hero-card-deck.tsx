@@ -227,13 +227,13 @@ export function HeroCardDeck({
         </nav>
       </div>
 
-      {/* ── Upper centred type block — headline + descriptor ───── */}
-      <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center text-white" style={{ top: "16%" }}>
+      {/* ── Upper centred headline (3 fixed lines). ──────────────── */}
+      <div className="absolute left-0 right-0 z-30 px-[var(--spacing-page)] text-center text-white" style={{ top: "12%" }}>
         <h1
           className="font-display font-bold tracking-[-0.02em] mx-auto"
           style={{
-            fontSize: "clamp(1.35rem, 2.4vw, 2.25rem)",
-            lineHeight: 1.18,
+            fontSize: "clamp(0.95rem, 1.5vw, 1.4rem)",
+            lineHeight: 1.35,
           }}
         >
           Hey I&rsquo;m Sam.
@@ -244,10 +244,10 @@ export function HeroCardDeck({
         </h1>
       </div>
 
-      {/* ── Fanned deck — lower half, centred horizontally. */}
+      {/* ── Fanned deck — sits in the lower-middle, centred. */}
       <div
         className="absolute z-20 flex items-center justify-center left-1/2"
-        style={{ top: "68%", transform: "translate(-50%, -50%)" }}
+        style={{ top: "60%", transform: "translate(-50%, -50%)" }}
       >
         <div
           className="relative"
