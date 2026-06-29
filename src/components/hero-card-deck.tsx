@@ -187,44 +187,18 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Wordmark layer — Jacquard 12 at extreme scale so the
-          pixel grid reads as texture rather than legible type. Two
-          lines, fixed centre stack, painted with a gradient between
-          the two top accent colours from the front card. */}
-      {(() => {
-        // Glass + type settings translated from the Figma reference:
-        //   Fill opacity 20 % white
-        //   Stroke 1.4 px white, outside (text-stroke)
-        //   Light @ -45° / 80 %  → upper-left highlight shadow
-        //   Depth 292 / Frost 292 → soft drop shadow + outer bloom
-        //   Line-height 53 %, alignment middle/centre
-        // Backdrop-filter on the wrapping container approximates the
-        // "frost" by softly blurring the gradient behind the wordmark.
-        // Stroke + all the glass layers render at full strength,
-        // then the whole h1 is faded to 30 % via `opacity` so the
-        // wordmark sits as a single quiet shape behind the deck.
-        const baseType: React.CSSProperties = {
-          fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
-          fontSize: "clamp(18rem, 68vw, 65rem)",
-          lineHeight: 0.53,
-          letterSpacing: "0em",
-          color: "transparent",
-          WebkitTextStroke: "2.5px rgba(255, 255, 255, 1)",
-          textShadow: [
-            "-2px -2px 0 rgba(255, 255, 255, 0.55)",
-            "3px 3px 8px rgba(0, 0, 0, 0.18)",
-            "0 28px 56px rgba(0, 0, 0, 0.30)",
-            "0 0 48px rgba(255, 255, 255, 0.18)",
-          ].join(", "),
-          opacity: 0.3,
-        };
-        return (
-          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
-            <h1 style={baseType}>Sam</h1>
-            <h1 style={{ ...baseType, marginTop: "-0.12em" }}>Ahhee</h1>
-          </div>
-        );
-      })()}
+      {/* ── Wordmark — Figma-exported SVG with the glass / outline
+          effect baked in (opacity 0.2 inside the SVG). Sits behind
+          the deck. We don't apply additional CSS effects so the
+          visual exactly matches Figma. */}
+      <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center select-none">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero/sam-ahhee-wider.svg"
+          alt="Sam Ahhee"
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {/* ── Fanned deck — centred over the wordmark. */}
       <div
