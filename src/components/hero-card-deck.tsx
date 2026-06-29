@@ -187,19 +187,6 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Faint background wordmark — Figma PNG, sits behind
-          everything for texture. ────────────────────────────────── */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center select-none">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero/sam-ahhee.png"
-          alt=""
-          aria-hidden
-          className="w-full h-full object-contain"
-          style={{ opacity: 0.21, transform: "translateY(-10px) scale(1.15)" }}
-        />
-      </div>
-
       {/* ── Top — centred nav. */}
       <nav className="absolute top-0 left-0 right-0 z-30 pt-8 md:pt-10 flex justify-center items-center gap-8 md:gap-12 text-white font-display text-sm md:text-base">
         <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
@@ -222,7 +209,7 @@ export function HeroCardDeck({
           below has room. */}
       <div
         className="absolute z-20 flex items-center justify-center top-[38%] left-1/2"
-        style={{ transform: "translate(-50%, -50%)" }}
+        style={{ transform: "translate(-50%, calc(-50% - 20px))" }}
       >
         <div
           className="relative"
