@@ -194,7 +194,7 @@ export function HeroCardDeck({
       <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center select-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hero/sam-ahhee-logo.svg"
+          src="/hero/sam-ahhee.png"
           alt="Sam Ahhee"
           className="w-full h-full object-contain"
         />
