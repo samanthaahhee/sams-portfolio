@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { HeroNav } from "./hero-nav";
 
 export type DeckCard = {
   href: string;
@@ -200,38 +201,9 @@ export function HeroCardDeck({
         />
       </div>
 
-      {/* ── Top — title (left) + nav (right) ────────────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between gap-6 px-[var(--spacing-page)] pt-8 md:pt-10 text-white">
-        <Link href="/" className="hover:opacity-80 transition-opacity">
-          <h1
-            className="font-display font-bold tracking-[-0.02em] leading-none"
-            style={{ fontSize: "clamp(1.5rem, 2.2vw, 2rem)" }}
-          >
-            Sam Ahhee
-          </h1>
-          <p className="mt-1.5 text-white/75 text-xs md:text-sm">
-            Visual Comms Designer
-          </p>
-        </Link>
-        <nav className="flex items-center gap-6 md:gap-10 font-display text-sm md:text-base">
-          <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
-            Work
-          </Link>
-          <a
-            href="/files/Sam-ahhee-Schneider-CV.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:opacity-70 transition-opacity"
-          >
-            Experience
-          </a>
-          <Link href="/about-me" className="hover:opacity-70 transition-opacity">
-            About
-          </Link>
-          <Link href="/contact" className="hover:opacity-70 transition-opacity">
-            Contact
-          </Link>
-        </nav>
+      {/* ── Top — shared HeroNav (title left + nav right). ─────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 px-[var(--spacing-page)] pt-8 md:pt-10">
+        <HeroNav tone="dark" />
       </div>
 
       {/* ── Fanned deck — dead centre on the viewport. */}
