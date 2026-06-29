@@ -104,7 +104,7 @@ export function HeroCardDeck({
         <div
           className="relative"
           style={{
-            width: "min(28vw, 320px)",
+            width: "min(36vw, 420px)",
             aspectRatio: "3 / 4",
           }}
         >
@@ -168,28 +168,6 @@ export function HeroCardDeck({
         </div>
       </div>
 
-      {/* ── Decorative pink squiggle — one long smooth bezier ──── */}
-      <svg
-        aria-hidden
-        className="absolute inset-0 w-full h-full pointer-events-none z-10"
-        viewBox="0 0 1600 900"
-        preserveAspectRatio="xMidYMid slice"
-        style={{ overflow: "visible" }}
-      >
-        <path
-          d="
-            M 560 -40
-            C 760 320, 1380 280, 1320 560
-            S 1620 880, 1720 980
-          "
-          fill="none"
-          stroke={PINK}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.9"
-        />
-      </svg>
 
       {/* ── Bottom info strip ───────────────────────────────────── */}
       <div className="absolute left-0 right-0 bottom-0 px-[var(--spacing-page)] pb-5 md:pb-8 font-mono text-[10px] md:text-[11px] uppercase tracking-[0.14em] text-white/80 z-20">
