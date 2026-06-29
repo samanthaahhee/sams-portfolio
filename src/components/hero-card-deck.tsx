@@ -61,10 +61,9 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Two-column body ──────────────────────────────────────── */}
+      {/* ── Left column — name + tagline + bio ─────────────────── */}
       <div className="relative h-full grid grid-cols-12 gap-4 px-[var(--spacing-page)] pt-10 md:pt-16 pb-24 md:pb-28">
-        {/* LEFT — name + tagline + bio */}
-        <div className="relative z-20 col-span-12 md:col-span-6 lg:col-span-7 flex flex-col justify-center text-white">
+        <div className="relative z-20 col-span-12 md:col-span-7 flex flex-col justify-center text-white">
           <h1
             className="font-display leading-[0.85] tracking-[-0.03em] mb-8 md:mb-10"
             style={{
@@ -88,16 +87,25 @@ export function HeroCardDeck({
             between.
           </p>
         </div>
+      </div>
 
-        {/* RIGHT — fanned deck */}
-        <div className="relative col-span-12 md:col-span-6 lg:col-span-5 flex items-center justify-center md:justify-end">
-          <div
-            className="relative"
-            style={{
-              width: "min(34vw, 360px)",
-              aspectRatio: "3 / 4",
-            }}
-          >
+      {/* ── Fanned deck — absolutely positioned right of centre so it
+          can't push the wordmark or get clipped by the column edge. */}
+      <div
+        className="hidden md:flex absolute z-20 items-center justify-center"
+        style={{
+          right: "8vw",
+          top: "50%",
+          transform: "translateY(-50%)",
+        }}
+      >
+        <div
+          className="relative"
+          style={{
+            width: "min(30vw, 340px)",
+            aspectRatio: "3 / 4",
+          }}
+        >
             {shown.map((c, i) => {
               const slot = (i - front + N) % N;
               const t = N === 1 ? 0 : slot / (N - 1);
@@ -111,7 +119,7 @@ export function HeroCardDeck({
                   key={`${c.href}-${i}`}
                   href={c.href}
                   aria-label={c.title}
-                  className="absolute inset-0 rounded-md overflow-hidden shadow-[0_30px_70px_-20px_rgba(0,0,0,0.7)]"
+                  className="group absolute inset-0 rounded-md overflow-hidden shadow-[0_30px_70px_-20px_rgba(0,0,0,0.7)]"
                   style={{
                     zIndex: 100 - slot,
                     transform: `translate(${xPct}%, ${yPct}%) rotate(${rot}deg) scale(${scale})`,
@@ -130,15 +138,17 @@ export function HeroCardDeck({
                     decoding="async"
                     className="absolute inset-0 w-full h-full object-cover"
                   />
+                  {/* Darken on hover so the title reads */}
                   <span
                     aria-hidden
-                    className="absolute inset-0"
+                    className="absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100"
                     style={{
                       background:
-                        "linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.45) 100%)",
+                        "linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0) 70%)",
                     }}
                   />
-                  <div className="absolute top-3 left-3 right-3 text-white">
+                  {/* Title — hidden by default, fades in on hover */}
+                  <div className="absolute top-3 left-3 right-3 text-white transition-opacity duration-300 opacity-0 group-hover:opacity-100">
                     {c.client && (
                       <p className="font-display italic text-[11px] md:text-[12px] mb-0.5 text-white/85 leading-tight">
                         {c.client}
@@ -148,14 +158,9 @@ export function HeroCardDeck({
                       {c.title}
                     </p>
                   </div>
-                  <span className="absolute bottom-3 right-3 font-mono text-[9px] uppercase tracking-[0.18em] text-white/70 px-2 py-1 rounded-full bg-white/10 backdrop-blur-sm">
-                    {String(i + 1).padStart(2, "0")} /{" "}
-                    {String(N).padStart(2, "0")}
-                  </span>
                 </Link>
               );
             })}
-          </div>
         </div>
       </div>
 
