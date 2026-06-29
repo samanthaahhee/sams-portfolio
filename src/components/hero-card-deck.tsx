@@ -192,12 +192,23 @@ export function HeroCardDeck({
           lines, fixed centre stack, painted with a gradient between
           the two top accent colours from the front card. */}
       {(() => {
+        // Glass effect — very faint white fill so the gradient
+        // beneath bleeds through, a brighter stroke for the glass
+        // edge, and layered text-shadows: bright top highlight,
+        // subtle bottom edge, soft outer glow, deep drop shadow.
         const baseType: React.CSSProperties = {
           fontFamily: "var(--font-jacquard), 'Plus Jakarta Sans', system-ui, sans-serif",
           fontSize: "clamp(18rem, 68vw, 65rem)",
           lineHeight: 0.78,
           letterSpacing: "-0.04em",
-          color: "rgba(255, 255, 255, 0.30)",
+          color: "rgba(255, 255, 255, 0.08)",
+          WebkitTextStroke: "0.6px rgba(255, 255, 255, 0.55)",
+          textShadow: [
+            "0 1px 0 rgba(255, 255, 255, 0.45)",
+            "0 -1px 0 rgba(255, 255, 255, 0.18)",
+            "0 0 30px rgba(255, 255, 255, 0.14)",
+            "0 10px 28px rgba(0, 0, 0, 0.28)",
+          ].join(", "),
         };
         return (
           <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-center items-center text-center select-none">
