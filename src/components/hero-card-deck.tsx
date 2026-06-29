@@ -213,12 +213,9 @@ export function HeroCardDeck({
         </nav>
       </div>
 
-      {/* ── Bottom-left tagline + bottom-right bio ───────────────── */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 px-[var(--spacing-page)] pb-6 md:pb-10 text-white">
-        <p className="font-display text-lg md:text-2xl font-semibold self-end">
-          Thinker. Maker. Doer.
-        </p>
-        <p className="text-white/75 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] md:justify-self-end md:text-right">
+      {/* ── Bottom-right bio (tagline moved to its own block below) */}
+      <div className="absolute bottom-0 right-0 z-30 px-[var(--spacing-page)] pb-6 md:pb-10 text-white">
+        <p className="text-white/75 text-[12px] md:text-[13px] leading-relaxed max-w-[52ch] text-right">
           Art director and visual communicator with 13+ years of
           experience helping people understand and connect with brands
           through visual storytelling, across campaigns, digital,
