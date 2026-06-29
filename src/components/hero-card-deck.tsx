@@ -149,10 +149,9 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Wordmark layer — "Sam" pinned top-right-ish, "Ahhee"
-          pinned bottom-left-ish behind the deck. Fixed composition
-          matching the reference; only the colour transitions on
-          shuffle. */}
+      {/* ── Wordmark layer — "Sam" on top, "Ahhee" on bottom, both
+          centred horizontally and stacked vertically behind the
+          deck. Only the colour transitions on shuffle. */}
       {(() => {
         const baseType = {
           fontSize: "clamp(5rem, 22vw, 18rem)",
@@ -162,23 +161,11 @@ export function HeroCardDeck({
           transition: "color 900ms ease",
         } as const;
         return (
-          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between py-4 md:py-8 px-[var(--spacing-page)] text-white">
-            <h1
-              className="font-display"
-              style={{
-                ...baseType,
-                transform: "translateX(10vw)",
-              }}
-            >
+          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between items-center py-4 md:py-8 px-[var(--spacing-page)] text-white text-center">
+            <h1 className="font-display" style={baseType}>
               Sam
             </h1>
-            <h1
-              className="font-display"
-              style={{
-                ...baseType,
-                transform: "translateX(-6vw)",
-              }}
-            >
+            <h1 className="font-display" style={baseType}>
               Ahhee
             </h1>
           </div>
