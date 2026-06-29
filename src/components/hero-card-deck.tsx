@@ -237,10 +237,10 @@ export function HeroCardDeck({
         />
       </div>
 
-      {/* ── Fanned deck — centred over the wordmark. */}
+      {/* ── Fanned deck — centred over the wordmark, nudged 10px up. */}
       <div
         className="absolute z-20 flex items-center justify-center top-1/2 left-1/2"
-        style={{ transform: "translate(-50%, -50%)" }}
+        style={{ transform: "translate(-50%, calc(-50% - 10px))" }}
       >
         <div
           className="relative"
