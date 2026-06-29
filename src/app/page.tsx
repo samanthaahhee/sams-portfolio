@@ -54,10 +54,13 @@ export default async function Home() {
         id="selected-work"
         className="px-[var(--spacing-page)] pt-12 md:pt-16 scroll-mt-20"
       >
-        <div className="mb-10 md:mb-14 max-w-2xl">
+        <div className="mb-10 md:mb-14 text-center">
           <p
             className="font-display"
-            style={{ fontSize: "var(--text-d3)", lineHeight: 1.0 }}
+            style={{
+              fontSize: "clamp(1.25rem, 3.2vw, 2.8rem)",
+              lineHeight: 1.0,
+            }}
           >
             Selected work.
           </p>
