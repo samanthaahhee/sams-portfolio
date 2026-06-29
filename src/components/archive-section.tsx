@@ -45,10 +45,6 @@ export function ArchiveSection({ projects }: { projects: Project[] }) {
         >
           Additional Projects.
         </p>
-        <p className="mt-4 md:mt-5 text-base md:text-lg leading-relaxed text-[color:var(--ink-soft)]">
-          A collection of work spanning brand, digital, packaging and
-          illustration.
-        </p>
       </div>
 
       {/* ── Filter chips ─────────────────────────────────────────── */}

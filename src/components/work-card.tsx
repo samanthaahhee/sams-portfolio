@@ -99,15 +99,6 @@ export function WorkCard({ study, index }: { study: CaseStudy; index: number }) 
           </div>
         </article>
 
-        {/* ── External: Role + Descriptor stack ────────────────────── */}
-        <div className="mt-4 space-y-2">
-          <p className="font-mono text-[color:var(--meta)]">
-            Role · {study.primaryRole}
-          </p>
-          <p className="text-[color:var(--ink-soft)] leading-relaxed">
-            {study.summary}
-          </p>
-        </div>
       </Link>
     </motion.div>
   );
