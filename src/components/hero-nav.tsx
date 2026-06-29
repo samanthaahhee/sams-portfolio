@@ -35,7 +35,7 @@ export function HeroNav({
         </p>
       </Link>
 
-      <nav className="flex items-center gap-6 md:gap-10 font-display font-light text-sm md:text-base">
+      <nav className="flex items-center gap-6 md:gap-10 font-sans font-normal text-sm md:text-base">
         <Link
           href="/#selected-work"
           className="hover:opacity-70 transition-opacity"

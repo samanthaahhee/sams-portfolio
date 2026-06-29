@@ -209,7 +209,7 @@ export function HeroCardDeck({
             className="h-11 md:h-14 w-auto"
           />
         </Link>
-        <nav className="flex items-center gap-8 md:gap-12 text-white font-display font-light text-sm md:text-base">
+        <nav className="flex items-center gap-8 md:gap-12 text-white font-sans font-normal text-sm md:text-base">
           <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
             Work
           </Link>
