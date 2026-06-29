@@ -187,18 +187,9 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Top bar — wordmark (left) + nav (right) ─────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-6 md:pt-8">
-        <Link
-          href="/"
-          aria-label="Sam Ahhee — home"
-          className="font-display text-white text-2xl md:text-3xl leading-[0.95] tracking-[-0.02em] hover:opacity-80 transition-opacity"
-        >
-          Sam
-          <br />
-          Ahhee
-        </Link>
-        <nav className="flex items-center gap-6 md:gap-8 text-white font-display text-sm md:text-base pt-2">
+      {/* ── Top bar — nav only (no corner logo) ─────────────────── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-end px-[var(--spacing-page)] pt-6 md:pt-8">
+        <nav className="flex items-center gap-6 md:gap-10 text-white font-display text-sm md:text-base">
           <Link href="/#selected-work" className="hover:opacity-70 transition-opacity">
             Work
           </Link>
@@ -216,25 +207,44 @@ export function HeroCardDeck({
         </nav>
       </div>
 
-
-      {/* ── Wordmark — Figma-exported SVG with the glass / outline
-          effect baked in (opacity 0.2 inside the SVG). Sits behind
-          the deck. We don't apply additional CSS effects so the
-          visual exactly matches Figma. */}
-      <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center select-none">
+      {/* ── Faint background wordmark — Figma PNG, sits behind
+          everything for texture. ────────────────────────────────── */}
+      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center select-none">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/hero/sam-ahhee.png"
-          alt="Sam Ahhee"
+          alt=""
+          aria-hidden
           className="w-full h-full object-contain"
-          style={{ opacity: 0.8, transform: "translateY(-10px) scale(1.1)" }}
+          style={{ opacity: 0.18, transform: "translateY(-10px) scale(1.15)" }}
         />
       </div>
 
-      {/* ── Fanned deck — centred over the wordmark, nudged 10px up. */}
+      {/* ── Left column — huge Sam / Ahhee wordmark, tagline, bio. */}
+      <div className="absolute z-20 top-1/2 left-[var(--spacing-page)] -translate-y-1/2 max-w-[40vw] text-white">
+        <h1
+          className="font-display font-bold leading-[0.86] tracking-[-0.03em]"
+          style={{ fontSize: "clamp(3.5rem, 7vw, 7rem)" }}
+        >
+          Sam
+          <br />
+          Ahhee
+        </h1>
+        <p className="mt-7 md:mt-9 font-display text-base md:text-lg font-semibold">
+          Thinker. Maker. Doer.
+        </p>
+        <p className="mt-3 text-white/70 text-[12px] md:text-[13px] leading-relaxed max-w-[42ch]">
+          Art director and visual communicator with 13+ years of
+          experience helping people understand and connect with brands
+          through visual storytelling, across campaigns, digital,
+          print, events, and everything in between.
+        </p>
+      </div>
+
+      {/* ── Fanned deck — right of centre, vertically centred. */}
       <div
-        className="absolute z-20 flex items-center justify-center top-1/2 left-1/2"
-        style={{ transform: "translate(-50%, calc(-50% - 10px))" }}
+        className="absolute z-20 flex items-center justify-center top-1/2 left-[68%]"
+        style={{ transform: "translate(-50%, -50%)" }}
       >
         <div
           className="relative"

@@ -48,20 +48,7 @@ export default async function HeroPreview() {
     <div className="bg-[#1a0d10] text-white">
       <HeroCardDeck cards={cards} />
 
-      {/* Tagline + descriptor — own block below the hero */}
-      <section className="px-[var(--spacing-page)] py-16 md:py-24 text-center">
-        <p className="font-display text-2xl md:text-4xl font-semibold text-white">
-          Thinker. Maker. Doer.
-        </p>
-        <p className="mt-5 md:mt-6 text-white/70 text-[13px] md:text-[14px] leading-relaxed max-w-[58ch] mx-auto">
-          Art director and visual communicator with 13+ years of
-          experience helping people understand and connect with brands
-          through visual storytelling, across campaigns, digital,
-          print, events, and everything in between.
-        </p>
-      </section>
-
-      <div className="px-[var(--spacing-page)] pb-12 md:pb-16 text-center">
+      <div className="px-[var(--spacing-page)] py-12 md:py-16 text-center">
         <p className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em]">
           Preview · not linked publicly. Edit deck at{" "}
           <a href="/admin/hero" className="underline">
