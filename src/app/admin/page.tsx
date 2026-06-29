@@ -18,12 +18,20 @@ export default async function AdminHome() {
             Dashboard
           </h1>
         </div>
-        <Link
-          href="/admin/settings"
-          className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
-        >
-          Site settings
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/admin/hero"
+            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+          >
+            Hero deck
+          </Link>
+          <Link
+            href="/admin/settings"
+            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+          >
+            Site settings
+          </Link>
+        </div>
       </header>
 
       {/* Projects */}

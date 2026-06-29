@@ -15,6 +15,12 @@ export type DeckCard = {
   src: string;
   title: string;
   client?: string | null;
+  /** Optional override — used as the wordmark colour when this card
+   *  is at the front of the deck. Falls back to auto-sampled accent. */
+  accentColor?: string | null;
+  /** Optional override — used as the section background when this
+   *  card is at the front. Falls back to auto-sampled background. */
+  bgColor?: string | null;
 };
 
 const PINK = "#f4b8d0";
@@ -45,10 +51,20 @@ export function HeroCardDeck({
   }, [N, shuffleEvery]);
 
   // Sample the front card's average colour and use it (darkened) as
-  // the page background. Falls back silently to the default mahogany
-  // if the canvas can't read the image (cross-origin without CORS).
+  // the page background. Per-card overrides (accentColor / bgColor)
+  // win if present — we still kick off a sample for any side that's
+  // unspecified so the override mixes with auto for the other.
   useEffect(() => {
-    const src = shown[front]?.src;
+    const card = shown[front];
+    if (!card) return;
+    // Apply overrides immediately so there's no flash of auto colour.
+    if (card.bgColor) setBgColor(card.bgColor);
+    if (card.accentColor) setAccentColor(card.accentColor);
+
+    // If both are overridden, no need to sample at all.
+    if (card.bgColor && card.accentColor) return;
+
+    const src = card.src;
     if (!src) return;
     const img = new window.Image();
     img.crossOrigin = "anonymous";
@@ -91,20 +107,21 @@ export function HeroCardDeck({
           }
         }
 
-        // Background — 30% brighter than the previous darkening
-        // factor (0.45 → 0.585).
-        const f = 0.585;
-        setBgColor(
-          `rgb(${Math.round((r / n) * f)}, ${Math.round((g / n) * f)}, ${Math.round((b / n) * f)})`,
-        );
-
-        // Accent — boost brightness a touch so it pops against the
-        // darkened background.
-        const boost = 1.18;
-        const ar = Math.min(255, Math.round(aR * boost));
-        const ag = Math.min(255, Math.round(aG * boost));
-        const ab = Math.min(255, Math.round(aB * boost));
-        setAccentColor(`rgb(${ar}, ${ag}, ${ab})`);
+        // Per-card overrides win — only apply auto values where the
+        // override is unset.
+        if (!card.bgColor) {
+          const f = 0.585;
+          setBgColor(
+            `rgb(${Math.round((r / n) * f)}, ${Math.round((g / n) * f)}, ${Math.round((b / n) * f)})`,
+          );
+        }
+        if (!card.accentColor) {
+          const boost = 1.18;
+          const ar = Math.min(255, Math.round(aR * boost));
+          const ag = Math.min(255, Math.round(aG * boost));
+          const ab = Math.min(255, Math.round(aB * boost));
+          setAccentColor(`rgb(${ar}, ${ag}, ${ab})`);
+        }
       } catch {
         /* tainted canvas — keep current bg */
       }
@@ -176,8 +193,8 @@ export function HeroCardDeck({
         <div
           className="relative"
           style={{
-            width: "min(36vw, 420px)",
-            aspectRatio: "3 / 4",
+            width: "min(40vw, 520px)",
+            aspectRatio: "4 / 3",
           }}
         >
             {shown.map((c, i) => {

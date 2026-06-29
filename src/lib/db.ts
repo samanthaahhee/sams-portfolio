@@ -603,6 +603,115 @@ export async function setExperienceOrder(slugs: string[]) {
   }
 }
 
+/* ── Hero deck — landing page card stack, editable in admin ─────── */
+
+export type HeroCard = {
+  id: number;
+  imageUrl: string;
+  title: string;
+  href: string;
+  client: string | null;
+  accentColor: string | null;
+  bgColor: string | null;
+  position: number;
+};
+
+type HeroCardRow = {
+  id: number;
+  image_url: string;
+  title: string;
+  href: string;
+  client: string | null;
+  accent_color: string | null;
+  bg_color: string | null;
+  position: number;
+};
+
+function rowToHeroCard(r: HeroCardRow): HeroCard {
+  return {
+    id: r.id,
+    imageUrl: r.image_url,
+    title: r.title,
+    href: r.href,
+    client: r.client,
+    accentColor: r.accent_color,
+    bgColor: r.bg_color,
+    position: r.position,
+  };
+}
+
+export async function getHeroCards(): Promise<HeroCard[]> {
+  if (!dbConfigured()) return [];
+  try {
+    const { rows } = await sql<HeroCardRow>`
+      SELECT id, image_url, title, href, client, accent_color, bg_color, position
+        FROM hero_cards
+       ORDER BY position ASC, id ASC
+    `;
+    return rows.map(rowToHeroCard);
+  } catch {
+    return [];
+  }
+}
+
+export async function getHeroCard(id: number): Promise<HeroCard | null> {
+  if (!dbConfigured()) return null;
+  try {
+    const { rows } = await sql<HeroCardRow>`
+      SELECT id, image_url, title, href, client, accent_color, bg_color, position
+        FROM hero_cards
+       WHERE id = ${id}
+       LIMIT 1
+    `;
+    return rows[0] ? rowToHeroCard(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function insertHeroCard(card: Omit<HeroCard, "id" | "position">) {
+  const { rows: maxRows } = await sql<{ max: number | null }>`
+    SELECT MAX(position) AS max FROM hero_cards
+  `;
+  const position = (maxRows[0]?.max ?? -1) + 1;
+  const { rows } = await sql<{ id: number }>`
+    INSERT INTO hero_cards
+      (image_url, title, href, client, accent_color, bg_color, position)
+    VALUES
+      (${card.imageUrl}, ${card.title}, ${card.href}, ${card.client},
+       ${card.accentColor}, ${card.bgColor}, ${position})
+    RETURNING id
+  `;
+  return rows[0].id;
+}
+
+export async function updateHeroCard(
+  id: number,
+  card: Omit<HeroCard, "id" | "position">,
+) {
+  await sql`
+    UPDATE hero_cards
+       SET image_url    = ${card.imageUrl},
+           title        = ${card.title},
+           href         = ${card.href},
+           client       = ${card.client},
+           accent_color = ${card.accentColor},
+           bg_color     = ${card.bgColor},
+           updated_at   = NOW()
+     WHERE id = ${id}
+  `;
+}
+
+export async function deleteHeroCard(id: number) {
+  await sql`DELETE FROM hero_cards WHERE id = ${id}`;
+}
+
+export async function setHeroCardsOrder(ids: number[]) {
+  for (let i = 0; i < ids.length; i++) {
+    await sql`UPDATE hero_cards SET position = ${i}, updated_at = NOW() WHERE id = ${ids[i]}`;
+  }
+}
+
 /* ── Site settings — generic key/value, editable from admin ───────── */
 
 export const DEFAULT_CV_URL = "/files/Sam-ahhee-Schneider-CV.pdf";

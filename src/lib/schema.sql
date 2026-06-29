@@ -122,6 +122,27 @@ CREATE TABLE IF NOT EXISTS case_studies (
 
 CREATE INDEX IF NOT EXISTS case_studies_position_idx ON case_studies (position);
 
+-- Hero-deck cards — curated separately from case studies / projects
+-- so the landing-hero deck can be its own editorial set with
+-- optional per-card colour overrides.
+CREATE TABLE IF NOT EXISTS hero_cards (
+  id            SERIAL PRIMARY KEY,
+  image_url     TEXT NOT NULL,
+  title         TEXT NOT NULL,
+  href          TEXT NOT NULL DEFAULT '#',
+  client        TEXT,
+  accent_color  TEXT,
+  bg_color      TEXT,
+  position      INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS hero_cards_position_idx ON hero_cards (position);
+
+-- Hero global colour fallbacks live in site_settings under keys
+-- 'hero_accent_color' and 'hero_bg_color' (see site_settings table).
+
 -- Generic key/value bag for site-wide settings the admin can edit.
 -- e.g. cv_url — overrides the static /files/Sam-ahhee-Schneider-CV.pdf
 -- when set. Empty string means "use the static default".
