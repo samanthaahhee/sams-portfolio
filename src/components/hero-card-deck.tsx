@@ -237,7 +237,7 @@ export function HeroCardDeck({
       {/* ── Fanned deck — dead centre on the viewport. */}
       <div
         className="absolute z-20 flex items-center justify-center top-1/2 left-1/2"
-        style={{ transform: "translate(-50%, calc(-50% + 16px))" }}
+        style={{ transform: "translate(-50%, calc(-50% - 4px))" }}
       >
         <div
           className="relative"
