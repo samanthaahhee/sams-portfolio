@@ -8,14 +8,21 @@
 
 import { useEffect, useRef } from "react";
 
+/**
+ * Each blob carries two stops: a hot highlight that biases toward
+ * the top-left of the circle (faux specular) and a deep saturated
+ * core for body. The goo filter merges them into one shape while
+ * the gradients persist inside, giving the merged blob real
+ * dimensionality instead of reading as a flat silhouette.
+ */
 const BLOBS = [
-  { size: 26, x: 18, y: 30, dx: 18, dy: 22, dur: 11, color: "#e89478" },
-  { size: 32, x: 60, y: 25, dx: -22, dy: 28, dur: 13, color: "#d4684a" },
-  { size: 22, x: 78, y: 65, dx: -18, dy: -24, dur: 9, color: "#d4a04a" },
-  { size: 28, x: 35, y: 70, dx: 24, dy: -20, dur: 14, color: "#b8807a" },
-  { size: 18, x: 50, y: 50, dx: -16, dy: 18, dur: 8, color: "#e89478" },
-  { size: 24, x: 88, y: 32, dx: -28, dy: 14, dur: 12, color: "#d4684a" },
-  { size: 20, x: 8, y: 70, dx: 22, dy: -22, dur: 10, color: "#d4a04a" },
+  { size: 26, x: 18, y: 30, dx: 18, dy: 22, dur: 11, hi: "#ffd0a8", lo: "#c84a18" },
+  { size: 32, x: 60, y: 25, dx: -22, dy: 28, dur: 13, hi: "#ffba70", lo: "#a83410" },
+  { size: 22, x: 78, y: 65, dx: -18, dy: -24, dur: 9, hi: "#ffd66a", lo: "#b46a14" },
+  { size: 28, x: 35, y: 70, dx: 24, dy: -20, dur: 14, hi: "#ffb088", lo: "#8c2a14" },
+  { size: 18, x: 50, y: 50, dx: -16, dy: 18, dur: 8, hi: "#ffd6a0", lo: "#d04820" },
+  { size: 24, x: 88, y: 32, dx: -28, dy: 14, dur: 12, hi: "#ffc080", lo: "#a23a12" },
+  { size: 20, x: 8, y: 70, dx: 22, dy: -22, dur: 10, hi: "#ffe09a", lo: "#aa5810" },
 ] as const;
 
 export function HeroBlobs() {
@@ -81,13 +88,17 @@ export function HeroBlobs() {
       style={{
         height: "calc(100vh - 56px)",
         minHeight: 560,
-        background: "#1f0f0c",
+        // Warm radial ambient — lighter glow at the middle, dropping
+        // to deep mahogany at the corners. Sets the mood the blobs
+        // sit inside.
+        background:
+          "radial-gradient(ellipse at 50% 55%, #4a1c10 0%, #2a0e08 55%, #150705 100%)",
         cursor: "none",
       }}
     >
-      {/* SVG goo filter — heavy gaussian blur followed by an alpha
-          threshold matrix glues overlapping circles into one organic
-          shape with smooth edges (the lava-lamp / metaball trick). */}
+      {/* SVG filters — goo glues circles into one shape; specular
+          lighting paints a 3D highlight onto the merged surface; a
+          soft drop shadow adds depth underneath. */}
       <svg
         aria-hidden
         width="0"
@@ -95,7 +106,7 @@ export function HeroBlobs() {
         style={{ position: "absolute" }}
       >
         <defs>
-          <filter id="hp-goo">
+          <filter id="hp-goo" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="blur" />
             <feColorMatrix
               in="blur"
@@ -103,12 +114,42 @@ export function HeroBlobs() {
               values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"
               result="goo"
             />
-            <feBlend in="SourceGraphic" in2="goo" />
+            {/* Specular highlight pass — paints a glossy sheen across
+                the merged blob surface. Light positioned upper-left. */}
+            <feSpecularLighting
+              in="goo"
+              surfaceScale="6"
+              specularConstant="1.05"
+              specularExponent="22"
+              lightingColor="#ffe4b8"
+              result="spec"
+            >
+              <fePointLight x="-40" y="-60" z="240" />
+            </feSpecularLighting>
+            <feComposite in="spec" in2="goo" operator="in" result="spec-clipped" />
+            <feComposite
+              in="SourceGraphic"
+              in2="spec-clipped"
+              operator="arithmetic"
+              k1="0"
+              k2="1"
+              k3="0.9"
+              k4="0"
+              result="lit"
+            />
+            {/* Soft warm glow underneath — anchored on the lit blob */}
+            <feGaussianBlur in="goo" stdDeviation="14" result="glow" />
+            <feFlood floodColor="#ff7a30" floodOpacity="0.45" result="glow-color" />
+            <feComposite in="glow-color" in2="glow" operator="in" result="glow-shape" />
+            <feMerge>
+              <feMergeNode in="glow-shape" />
+              <feMergeNode in="lit" />
+            </feMerge>
           </filter>
         </defs>
       </svg>
 
-      {/* Gooey blob layer */}
+      {/* Lava layer */}
       <div
         aria-hidden
         className="absolute inset-0"
@@ -123,7 +164,10 @@ export function HeroBlobs() {
               top: `${b.y}%`,
               width: `${b.size}vmin`,
               height: `${b.size}vmin`,
-              background: b.color,
+              // Radial gradient on each circle: hot highlight biased
+              // upper-left, deep saturated core, near-black halo so
+              // the goo's alpha threshold reads a clean edge.
+              background: `radial-gradient(circle at 32% 30%, ${b.hi} 0%, ${b.lo} 55%, ${b.lo} 75%, rgba(0,0,0,0.92) 100%)`,
               ["--dx" as string]: `${b.dx}vmin`,
               ["--dy" as string]: `${b.dy}vmin`,
               ["--dur" as string]: `${b.dur}s`,
@@ -133,13 +177,13 @@ export function HeroBlobs() {
         ))}
       </div>
 
-      {/* Vignette */}
+      {/* Vignette deepens corners and frames the lit blob area */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 30%, rgba(20,8,6,0.78) 95%)",
+            "radial-gradient(ellipse at center, transparent 25%, rgba(15,5,3,0.78) 95%)",
         }}
       />
 
