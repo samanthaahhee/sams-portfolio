@@ -149,41 +149,62 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* ── Left column — name + tagline + bio ─────────────────── */}
-      <div className="relative h-full grid grid-cols-12 gap-4 px-[var(--spacing-page)] pt-10 md:pt-16 pb-24 md:pb-28">
-        <div className="relative z-20 col-span-12 md:col-span-7 flex flex-col justify-center text-white">
-          <h1
-            className="font-display leading-[0.85] tracking-[-0.03em] mb-8 md:mb-10"
-            style={{
-              fontSize: "clamp(3.5rem, 12vw, 11rem)",
-              color: accentColor,
-              transition: "color 900ms ease",
-            }}
-          >
-            Sam
-            <br />
-            Ahhee
-          </h1>
+      {/* ── Wordmark layer — "Sam" pinned top, "Ahhee" pinned
+          bottom, both behind the deck. Each word's horizontal
+          alignment shifts whenever the deck shuffles, so the type
+          re-composes itself around the cards. */}
+      {(() => {
+        // Eight choreographed alignment pairs cycled by `front`.
+        // Sam and Ahhee are deliberately offset asymmetrically so
+        // the composition never reads as a static logo.
+        const LAYOUTS: { sam: number; ahhee: number }[] = [
+          { sam: -8, ahhee: 10 },
+          { sam: 12, ahhee: -8 },
+          { sam: -14, ahhee: -4 },
+          { sam: 6, ahhee: 14 },
+          { sam: 16, ahhee: -14 },
+          { sam: -6, ahhee: 6 },
+          { sam: 0, ahhee: -12 },
+          { sam: -16, ahhee: 4 },
+        ];
+        const layout = LAYOUTS[front % LAYOUTS.length];
+        const baseType = {
+          fontSize: "clamp(5rem, 22vw, 18rem)",
+          color: accentColor,
+          lineHeight: 0.85,
+          letterSpacing: "-0.03em",
+        } as const;
+        const ease =
+          "transform 1100ms cubic-bezier(.22,.61,.36,1), color 900ms ease";
+        return (
+          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col justify-between py-4 md:py-8 px-[var(--spacing-page)] text-white">
+            <h1
+              className="font-display"
+              style={{
+                ...baseType,
+                transform: `translateX(${layout.sam}vw)`,
+                transition: ease,
+              }}
+            >
+              Sam
+            </h1>
+            <h1
+              className="font-display"
+              style={{
+                ...baseType,
+                transform: `translateX(${layout.ahhee}vw)`,
+                transition: ease,
+              }}
+            >
+              Ahhee
+            </h1>
+          </div>
+        );
+      })()}
 
-          <p className="font-display text-lg md:text-2xl mb-3 text-white/95">
-            Thinker. Maker. Doer.
-          </p>
-
-          <p className="text-white/65 text-[13px] md:text-[14px] leading-relaxed max-w-[46ch]">
-            Art director and visual communicator with 13+ years of
-            experience helping people understand products and brands
-            across campaigns, digital, print, events and everything in
-            between.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Fanned deck — pinned to the right half on desktop and
-          to the lower middle on mobile so it never gets clipped or
-          stacked oddly under the bio. Width clamps so it shrinks
-          gracefully on narrow viewports. */}
+      {/* ── Fanned deck — centred over the wordmark. */}
       <div
-        className="absolute z-20 flex items-center justify-center top-[68%] left-1/2 md:top-1/2 md:left-[66%]"
+        className="absolute z-20 flex items-center justify-center top-1/2 left-1/2"
         style={{ transform: "translate(-50%, -50%)" }}
       >
         <div
