@@ -1,207 +1,236 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
-/* ── Default copy ─────────────────────────────────────────────────── */
+/* ── Copy text ────────────────────────────────────────────────────── */
 
-const DEFAULT_COPY_A =
-  "Hey I'm Sam.\nI'm a visual communication\ndesigner, translating complex\nideas into clear storytelling.";
-const DEFAULT_COPY_B =
-  "With 13 years of experience,\nI have found I enjoy sitting\nat the intersection of\nproduct & brand.";
+const COPY_A = "Hey I'm Sam. I'm a visual communication designer, translating complex ideas into clear storytelling.";
+const COPY_B = "With 13 years of experience, I have found I enjoy sitting at the intersection of product & brand.";
 
-/* ── Local bento images — replaced per slot once real assets uploaded */
-/* Slots 2, 4, 7 are placeholders — see TODO comments. */
+/* ── Local images — TODO slots 2, 4, 7 need real files ───────────── */
 const LOCAL: Record<string, string> = {
-  "1": "/images/bento/slot-1.jpg", // BOS yellow lemon — correct
-  "2": "/images/bento/slot-2.png", // TODO: replace with Walkrr laptop image
-  "3": "/images/bento/slot-3.png", // Small Stitch 3D shop — correct
-  "4": "/images/bento/slot-4.jpg", // TODO: replace with BOS outdoor tuk-tuk activation
-  "5": "/images/bento/slot-5.png", // Temper phones dark green — correct
-  "6": "/images/bento/slot-6.png", // Recharge website — correct
-  "7": "/images/bento/slot-7.jpg", // TODO: replace with BOS ICE TEA Original colorful can
+  "1": "/images/bento/slot-1.jpg",
+  "2": "/images/bento/slot-2.png", // TODO: Walkrr laptop
+  "3": "/images/bento/slot-3.png",
+  "4": "/images/bento/slot-4.jpg", // TODO: BOS outdoor tuk-tuk
+  "5": "/images/bento/slot-5.png",
+  "6": "/images/bento/slot-6.png",
+  "7": "/images/bento/slot-7.jpg", // TODO: BOS ICE TEA original
 };
 
-/* ── Animation phases ─────────────────────────────────────────────── */
+const NAV_H = 56; // must match PortfolioNav height
 
-type Phase = "show-a" | "hiding-a" | "gap" | "show-b" | "hiding-b" | "gap2";
+/* ── Word-by-word copy reveal ────────────────────────────────────── */
 
-const DURATION: Record<Phase, number> = {
-  "show-a": 3500,
-  "hiding-a": 700,
-  "gap": 800,
-  "show-b": 3500,
-  "hiding-b": 700,
-  "gap2": 800,
-};
-
-const NEXT: Record<Phase, Phase> = {
-  "show-a": "hiding-a",
-  "hiding-a": "gap",
-  "gap": "show-b",
-  "show-b": "hiding-b",
-  "hiding-b": "gap2",
-  "gap2": "show-a",
-};
+function WordReveal({ text, onComplete }: { text: string; onComplete?: () => void }) {
+  const words = text.split(" ");
+  return (
+    <span aria-label={text}>
+      {words.map((word, i) => (
+        <motion.span
+          key={`${word}-${i}`}
+          className="inline-block mr-[0.28em]"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: i * 0.07,
+            duration: 0.3,
+            ease: "easeOut",
+          }}
+          onAnimationComplete={i === words.length - 1 ? onComplete : undefined}
+        >
+          {word}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
 
 /* ── Main component ───────────────────────────────────────────────── */
 
 export function HomepageBento({
   media,
-  copyA = DEFAULT_COPY_A,
-  copyB = DEFAULT_COPY_B,
+  copyA = COPY_A,
+  copyB = COPY_B,
 }: {
   media: PortfolioMedia[];
   copyA?: string;
   copyB?: string;
 }) {
-  // DB-uploaded media wins over local files
   const bySlot = Object.fromEntries(media.map((m) => [m.slotId ?? "", m]));
+  function src(id: string) { return bySlot[id]?.url ?? LOCAL[id] ?? ""; }
+  function mtype(id: string): "image" | "gif" | "mp4" {
+    return (bySlot[id]?.type ?? "image") as "image" | "gif" | "mp4";
+  }
 
   const [pref, setPref] = useState(false);
   useEffect(() => {
     setPref(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, []);
 
-  // Start with copy A showing
-  const [phase, setPhase] = useState<Phase>("show-a");
+  // tile1 state: "expanded" = covers copy area | "collapsed" = copy visible
+  const [tile1, setTile1] = useState<"expanded" | "collapsed">("collapsed");
+  // copy state: which text is showing, or null = hidden
+  const [copySlot, setCopySlot] = useState<"a" | "b" | null>("a");
+  // controls: run copy reveal after tile1 collapses
+  const [revealReady, setRevealReady] = useState(false);
+
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const nextCopy = useRef<"a" | "b">("a");
+
+  function clear() { if (timer.current) clearTimeout(timer.current); }
 
   useEffect(() => {
     if (pref) return;
-    function schedule(p: Phase) {
+
+    function cycle() {
+      // 1. Show copy for 3.5 s, then hide it and expand tile1
+      clear();
       timer.current = setTimeout(() => {
-        const next = NEXT[p];
-        setPhase(next);
-        schedule(next);
-      }, DURATION[p]);
+        setCopySlot(null);     // fade copy out
+        setRevealReady(false);
+        // 2. After copy fades (300ms), expand tile1
+        clear();
+        timer.current = setTimeout(() => {
+          setTile1("expanded");
+          // 3. tile1 expansion = 700ms. Then hold 600ms, then collapse.
+          clear();
+          timer.current = setTimeout(() => {
+            setTile1("collapsed");
+            // 4. Tile1 collapse = 700ms. After it settles, wait 350ms then reveal words.
+            clear();
+            timer.current = setTimeout(() => {
+              nextCopy.current = nextCopy.current === "a" ? "b" : "a";
+              setCopySlot(nextCopy.current);
+              setRevealReady(true);
+              cycle(); // schedule next cycle from here
+            }, 1050); // 700ms collapse + 350ms delay
+          }, 1300); // hold expanded
+        }, 300); // wait for copy to fade
+      }, 3500); // hold copy visible
     }
-    // Small delay before the first hide so the copy is readable first
-    schedule("show-a");
-    return () => { if (timer.current) clearTimeout(timer.current); };
+
+    // Start: copy A is already showing (revealReady triggers words)
+    setRevealReady(true);
+    cycle();
+
+    return clear;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pref]);
 
-  const isB = phase === "show-b" || phase === "hiding-b";
-  const tile1Expanded = phase === "hiding-a" || phase === "gap" || phase === "hiding-b" || phase === "gap2";
-  const copyVisible = phase === "show-a" || phase === "show-b";
-  const activeText = isB ? copyB : copyA;
-
-  function src(id: string) {
-    const m = bySlot[id];
-    return m?.url ?? LOCAL[id] ?? "";
-  }
-  function type(id: string): "image" | "gif" | "mp4" {
-    return (bySlot[id]?.type ?? "image") as "image" | "gif" | "mp4";
-  }
+  const currentText = copySlot === "a" ? copyA : copySlot === "b" ? copyB : null;
+  const tile1Expanded = tile1 === "expanded";
 
   return (
     <div
       style={{
+        height: `calc(100vh - ${NAV_H}px)`,
         display: "grid",
+        // 3 equal columns
         gridTemplateColumns: "1fr 1fr 1fr",
-        gridTemplateRows: "auto auto auto",
-        gap: 12,
-        padding: "0 24px 24px",
-        maxWidth: 1400,
-        margin: "0 auto",
+        // rows: col1 rows 1+2 carry tile1 + copy, col2 rows 1+2 carry tile2 + tile3
+        gridTemplateRows: "1fr 1fr 1.1fr",
+        gap: 10,
+        padding: "10px 20px 20px",
+        boxSizing: "border-box",
       }}
     >
-      {/* ── Column 1 (rows 1+2): tile1 shrinks/grows + copy ──── */}
+      {/* ── Col 1, Row 1: tile1 (animates to cover row 2) ──────── */}
+      <motion.div
+        className="overflow-hidden rounded-xl"
+        style={{
+          gridColumn: 1,
+          gridRow: tile1Expanded ? "1 / 3" : "1 / 2",
+          zIndex: tile1Expanded ? 2 : 1,
+          position: "relative",
+        }}
+        layout
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Media
+          src={src("1")}
+          type={mtype("1")}
+          className="w-full h-full object-cover"
+        />
+      </motion.div>
+
+      {/* ── Col 1, Row 2: copy text ──────────────────────────────── */}
       <div
         style={{
           gridColumn: 1,
-          gridRow: "1 / 3",
+          gridRow: "2 / 3",
+          zIndex: 1,
           display: "flex",
-          flexDirection: "column",
-          gap: 12,
+          alignItems: "flex-start",
+          paddingTop: 4,
         }}
       >
-        {/* Tile 1 — grows to fill when copy is hidden */}
-        <motion.div
-          className="overflow-hidden rounded-xl bg-neutral-100"
-          animate={{ flex: tile1Expanded ? "1 1 100%" : "0 0 auto" }}
-          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-          style={{ aspectRatio: tile1Expanded ? undefined : "14 / 9", minHeight: 80 }}
-        >
-          <Media src={src("1")} type={type("1")} className="w-full h-full object-cover" />
-        </motion.div>
-
-        {/* Copy slot — shown by default, hidden when tile1 is expanded */}
-        <div className="flex-1 flex items-start">
-          <AnimatePresence mode="wait">
-            {(copyVisible || pref) && (
-              <motion.p
-                key={pref ? "static" : activeText.slice(0, 10)}
-                className="font-lore whitespace-pre-line select-none leading-snug"
-                style={{
-                  fontSize: "clamp(1rem, 1.6vw, 1.5rem)",
-                  color: "#1a1a1a",
-                  lineHeight: 1.3,
-                }}
-                initial={pref ? {} : { clipPath: "inset(0% 100% 0% 0%)" }}
-                animate={{ clipPath: "inset(0% 0% 0% 0%)" }}
-                exit={pref ? {} : { opacity: 0, transition: { duration: 0.25 } }}
-                transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {pref ? copyA : activeText}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
+        <AnimatePresence mode="wait">
+          {revealReady && currentText && (
+            <motion.p
+              key={copySlot}
+              className="font-lore"
+              style={{
+                fontSize: "clamp(0.95rem, 1.55vw, 1.35rem)",
+                lineHeight: 1.35,
+                color: "#1a1a1a",
+              }}
+              initial={{}}
+              exit={{ opacity: 0, transition: { duration: 0.25 } }}
+            >
+              {pref ? currentText : (
+                <WordReveal text={currentText} />
+              )}
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── Column 2 (rows 1+2): tile2 + tile3 stacked ──────── */}
+      {/* ── Col 2, Row 1: tile2 ──────────────────────────────────── */}
       <div
-        style={{
-          gridColumn: 2,
-          gridRow: "1 / 3",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-        }}
+        className="overflow-hidden rounded-xl"
+        style={{ gridColumn: 2, gridRow: "1 / 2" }}
       >
-        <div
-          className="overflow-hidden rounded-xl bg-neutral-100 flex-none"
-          style={{ aspectRatio: "7 / 5" }}
-        >
-          <Media src={src("2")} type={type("2")} className="w-full h-full object-cover" />
-        </div>
-        <div
-          className="overflow-hidden rounded-xl bg-neutral-100 flex-none"
-          style={{ aspectRatio: "1 / 1" }}
-        >
-          <Media src={src("3")} type={type("3")} className="w-full h-full object-cover" />
-        </div>
+        <Media src={src("2")} type={mtype("2")} className="w-full h-full object-cover" />
       </div>
 
-      {/* ── Column 3 (rows 1+2): tile4 tall portrait ─────────── */}
+      {/* ── Col 2, Row 2: tile3 ──────────────────────────────────── */}
       <div
-        className="overflow-hidden rounded-xl bg-neutral-100"
+        className="overflow-hidden rounded-xl"
+        style={{ gridColumn: 2, gridRow: "2 / 3" }}
+      >
+        <Media src={src("3")} type={mtype("3")} className="w-full h-full object-cover" />
+      </div>
+
+      {/* ── Col 3, Rows 1+2: tile4 tall portrait ─────────────────── */}
+      <div
+        className="overflow-hidden rounded-xl"
         style={{ gridColumn: 3, gridRow: "1 / 3" }}
       >
-        <Media src={src("4")} type={type("4")} className="w-full h-full object-cover" />
+        <Media src={src("4")} type={mtype("4")} className="w-full h-full object-cover" />
       </div>
 
-      {/* ── Row 3: tile5 + tile6 + tile7 ─────────────────────── */}
+      {/* ── Row 3: tile5 + tile6 + tile7 ─────────────────────────── */}
       <div
-        className="overflow-hidden rounded-xl bg-neutral-100"
-        style={{ gridColumn: 1, gridRow: 3, aspectRatio: "6 / 5" }}
+        className="overflow-hidden rounded-xl"
+        style={{ gridColumn: 1, gridRow: "3 / 4" }}
       >
-        <Media src={src("5")} type={type("5")} className="w-full h-full object-cover" />
+        <Media src={src("5")} type={mtype("5")} className="w-full h-full object-cover" />
       </div>
       <div
-        className="overflow-hidden rounded-xl bg-neutral-100"
-        style={{ gridColumn: 2, gridRow: 3, aspectRatio: "7 / 5" }}
+        className="overflow-hidden rounded-xl"
+        style={{ gridColumn: 2, gridRow: "3 / 4" }}
       >
-        <Media src={src("6")} type={type("6")} className="w-full h-full object-cover" />
+        <Media src={src("6")} type={mtype("6")} className="w-full h-full object-cover" />
       </div>
       <div
-        className="overflow-hidden rounded-xl bg-neutral-100"
-        style={{ gridColumn: 3, gridRow: 3, aspectRatio: "16 / 9" }}
+        className="overflow-hidden rounded-xl"
+        style={{ gridColumn: 3, gridRow: "3 / 4" }}
       >
-        <Media src={src("7")} type={type("7")} className="w-full h-full object-cover" />
+        <Media src={src("7")} type={mtype("7")} className="w-full h-full object-cover" />
       </div>
     </div>
   );

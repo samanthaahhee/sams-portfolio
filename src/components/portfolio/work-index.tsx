@@ -53,7 +53,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const coverType = (displayed.coverType ?? "image") as "image" | "gif" | "mp4";
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-80px)] overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] overflow-hidden">
 
       {/* ── Left — focused project ─────────────────────────────── */}
       <div className="relative flex flex-col justify-between flex-1 min-w-0 p-6 md:p-10">

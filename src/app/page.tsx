@@ -14,16 +14,15 @@ export default async function Home() {
     getPortfolioSettings(),
   ]);
 
-  const copyA = settings["homepage_copy_a"] || undefined;
-  const copyB = settings["homepage_copy_b"] || undefined;
-
   return (
-    <div className="min-h-screen bg-white font-portfolio-sans">
+    /* overflow-hidden stops any layout-animation overshoot from scrolling */
+    <div className="h-screen overflow-hidden bg-white font-portfolio-sans">
       <PortfolioNav />
-      {/* Nav height offset */}
-      <div className="pt-20 md:pt-24">
-        <HomepageBento media={media} copyA={copyA} copyB={copyB} />
-      </div>
+      <HomepageBento
+        media={media}
+        copyA={settings["homepage_copy_a"] || undefined}
+        copyB={settings["homepage_copy_b"] || undefined}
+      />
     </div>
   );
 }

@@ -1,27 +1,29 @@
 import Link from "next/link";
 
 export function PortfolioNav({ active }: { active?: "work" | "about" | "contact" }) {
-  const link = (href: string, label: string, key: typeof active) => (
-    <Link
-      href={href}
-      className={`text-sm tracking-[0.04em] transition-opacity hover:opacity-70 ${active === key ? "font-semibold" : "font-normal"}`}
-    >
-      {label}
-    </Link>
-  );
-
   return (
-    <header className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-10 py-5">
+    <header
+      className="flex items-center justify-between bg-white"
+      style={{ height: 56, padding: "0 24px" }}
+    >
       <Link
         href="/"
-        className="font-lore text-xl md:text-2xl leading-none tracking-tight hover:opacity-70 transition-opacity"
+        className="font-lore font-bold leading-none hover:opacity-70 transition-opacity"
+        style={{ fontSize: 18 }}
       >
         SAM AHHEE
       </Link>
-      <nav className="flex items-center gap-7 md:gap-10 font-portfolio-sans text-[color:var(--ink)]">
-        {link("/work", "Work", "work")}
-        {link("/about", "About me", "about")}
-        {link("/contact", "Contact", "contact")}
+      <nav className="flex items-center gap-8 font-portfolio-sans" style={{ fontSize: 14 }}>
+        {(["work", "about", "contact"] as const).map((key) => (
+          <Link
+            key={key}
+            href={key === "about" ? "/about" : `/${key}`}
+            className="hover:opacity-60 transition-opacity"
+            style={{ fontWeight: active === key ? 700 : 400, color: "#1a1a1a" }}
+          >
+            {key === "about" ? "About me" : key.charAt(0).toUpperCase() + key.slice(1)}
+          </Link>
+        ))}
       </nav>
     </header>
   );

@@ -10,11 +10,9 @@ export const metadata = {
 export default async function WorkPage() {
   const projects = await getPortfolioProjects();
   return (
-    <div className="min-h-screen bg-white font-portfolio-sans overflow-hidden">
+    <div className="h-screen overflow-hidden bg-white font-portfolio-sans">
       <PortfolioNav active="work" />
-      <div className="pt-20 md:pt-24 h-screen">
-        <WorkIndex projects={projects} />
-      </div>
+      <WorkIndex projects={projects} />
     </div>
   );
 }
