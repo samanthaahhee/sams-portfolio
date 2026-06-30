@@ -214,10 +214,11 @@ export function HeroCardDeck({
         src="/hero/sam-ahhee.png"
         alt=""
         aria-hidden
-        className="absolute top-0 left-0 z-0 pointer-events-none select-none"
+        className="absolute top-0 z-0 pointer-events-none select-none"
         style={{
-          width: "100%",
+          width: "140%",
           height: "auto",
+          left: "-20%",
           opacity: 1,
         }}
       />

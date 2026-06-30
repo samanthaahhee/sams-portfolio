@@ -80,7 +80,6 @@ export default async function Home() {
       </section>
 
       {/* ── Additional Projects ─────────────────────────────────── */}
-      <div className="rule mx-[var(--spacing-page)] mt-16 md:mt-24" />
       <ArchiveSection projects={projects} />
 
       <SiteFooter />
