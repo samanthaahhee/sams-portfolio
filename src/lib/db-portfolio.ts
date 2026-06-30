@@ -65,6 +65,143 @@ export async function getPortfolioMedia(
   }
 }
 
+/* ── Projects ────────────────────────────────────────────────────── */
+
+export type PortfolioProject = {
+  id: number;
+  slug: string;
+  title: string;
+  discipline: string;
+  client: string;
+  role: string;
+  year: string;
+  orderIndex: number;
+  visible: boolean;
+  workGridTemplate: string | null;
+  coverUrl: string | null;
+  coverType: MediaType | null;
+};
+
+type ProjectRow = {
+  id: number;
+  slug: string;
+  title: string;
+  discipline: string;
+  client: string;
+  role: string;
+  year: string;
+  order_index: number;
+  visible: boolean;
+  work_grid_template: string | null;
+  cover_url: string | null;
+  cover_type: string | null;
+};
+
+function projectFromRow(r: ProjectRow): PortfolioProject {
+  return {
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    discipline: r.discipline,
+    client: r.client,
+    role: r.role,
+    year: r.year,
+    orderIndex: r.order_index,
+    visible: r.visible,
+    workGridTemplate: r.work_grid_template,
+    coverUrl: r.cover_url,
+    coverType: r.cover_type as MediaType | null,
+  };
+}
+
+/** All visible projects ordered for the work index, with their first
+ *  carousel media joined as a cover image. */
+export async function getPortfolioProjects(): Promise<PortfolioProject[]> {
+  try {
+    const { rows } = await sql<ProjectRow>`
+      SELECT p.*,
+             m.url  AS cover_url,
+             m.type AS cover_type
+      FROM   portfolio_projects p
+      LEFT JOIN LATERAL (
+        SELECT url, type FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'carousel'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) m ON true
+      WHERE  p.visible = true
+      ORDER  BY p.order_index ASC, p.id ASC
+    `;
+    return rows.map(projectFromRow);
+  } catch {
+    return [];
+  }
+}
+
+export async function getPortfolioProjectBySlug(slug: string): Promise<PortfolioProject | null> {
+  try {
+    const { rows } = await sql<ProjectRow>`
+      SELECT p.*,
+             m.url  AS cover_url,
+             m.type AS cover_type
+      FROM   portfolio_projects p
+      LEFT JOIN LATERAL (
+        SELECT url, type FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'carousel'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) m ON true
+      WHERE  p.slug = ${slug}
+      LIMIT  1
+    `;
+    return rows[0] ? projectFromRow(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** All media for one project + surface, ordered for display. */
+export async function getProjectMedia(
+  projectId: number,
+  surface: PortfolioMedia["surface"],
+): Promise<PortfolioMedia[]> {
+  try {
+    const { rows } = await sql<MediaRow>`
+      SELECT * FROM portfolio_media
+      WHERE  project_id = ${projectId} AND surface = ${surface}
+      ORDER  BY order_index ASC, id ASC
+    `;
+    return rows.map(mediaFromRow);
+  } catch {
+    return [];
+  }
+}
+
+export async function upsertPortfolioProject(p: Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number }) {
+  if (p.id) {
+    await sql`
+      UPDATE portfolio_projects SET
+        slug = ${p.slug}, title = ${p.title}, discipline = ${p.discipline},
+        client = ${p.client}, role = ${p.role}, year = ${p.year},
+        order_index = ${p.orderIndex}, visible = ${p.visible},
+        work_grid_template = ${p.workGridTemplate}, updated_at = NOW()
+      WHERE id = ${p.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO portfolio_projects
+        (slug, title, discipline, client, role, year, order_index, visible, work_grid_template)
+      VALUES
+        (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
+         ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate})
+    `;
+  }
+}
+
+export async function deletePortfolioProject(id: number) {
+  await sql`DELETE FROM portfolio_projects WHERE id = ${id}`;
+}
+
 /** Key/value settings bag — homepage copy A/B, contact ambient copy,
  *  email, phone, cv_pdf_url, etc. */
 export async function getPortfolioSettings(): Promise<Record<string, string>> {
