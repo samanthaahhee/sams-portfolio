@@ -90,18 +90,8 @@ export default async function TemperCaseStudyPage() {
           </Link>
         </div>
 
-        {/* Cover */}
-        <section className="px-[var(--spacing-page)] pt-8 md:pt-12">
-          <HalftoneCover
-            no={META.no}
-            title={META.title}
-            client={META.client}
-            year={META.year}
-          />
-        </section>
-
         {/* Meta column + tabbed body */}
-        <section className="px-[var(--spacing-page)] pt-16 md:pt-24">
+        <section className="px-[var(--spacing-page)] pt-10 md:pt-14">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-12 md:col-span-3 md:col-start-2 space-y-6 mb-10 md:mb-0">
               <div>
