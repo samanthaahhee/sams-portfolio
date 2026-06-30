@@ -209,7 +209,7 @@ export function HeroCardDeck({
           alt=""
           aria-hidden
           className="w-full h-full object-contain"
-          style={{ opacity: 1, transform: "scale(1.15)" }}
+          style={{ opacity: 1 }}
         />
       </div>
 
