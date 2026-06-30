@@ -9,7 +9,7 @@ export function PortfolioNav({ active }: { active?: "work" | "about" | "contact"
       <Link
         href="/"
         className="font-lore font-bold leading-none hover:opacity-70 transition-opacity"
-        style={{ fontSize: 18 }}
+        style={{ fontSize: 18, color: "#1a1a1a" }}
       >
         SAM AHHEE
       </Link>
