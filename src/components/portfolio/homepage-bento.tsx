@@ -5,10 +5,21 @@ import { motion, AnimatePresence } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
-/* ── Copy ─────────────────────────────────────────────────────────── */
+/* ── Copy — phrase-based with bold finale ────────────────────────── */
 
-const COPY_A = "Hey I'm Sam. I'm a visual communication designer, translating complex ideas into clear storytelling.";
-const COPY_B = "With 13 years of experience, I have found I enjoy sitting at the intersection of product & brand.";
+type Phrase = { text: string; bold?: true; pauseBefore?: number };
+
+const COPY_A: Phrase[] = [
+  { text: "Hey I'm Sam." },
+  { text: "I'm a visual communication designer,", pauseBefore: 500 },
+  { text: "translating complex ideas into clear storytelling.", bold: true, pauseBefore: 500 },
+];
+
+const COPY_B: Phrase[] = [
+  { text: "With 13 years of experience," },
+  { text: "I have found I enjoy sitting", pauseBefore: 500 },
+  { text: "at the intersection of product & brand.", bold: true, pauseBefore: 500 },
+];
 
 /* ── Local images ────────────────────────────────────────────────── */
 const LOCAL: Record<string, string> = {
@@ -25,127 +36,145 @@ const NAV_H = 56;
 
 /* ── Timing (ms) ─────────────────────────────────────────────────── */
 const T = {
-  initialDelay: 2000,   // before first words appear
-  showCopy: 4000,       // hold copy visible after words finish
-  boxExpand: 1400,      // tile animates to cover copy (slow)
-  boxCollapse: 1400,    // tile animates to reveal copy (slow)
-  gap: 700,             // pause between phases
-  betweenDelay: 2000,   // delay after box settles before words appear
+  initialDelay: 2000,
+  showCopy: 4500,
+  boxAnim: 1600,   // slow expand / collapse
+  gap: 700,
+  betweenDelay: 2000,
 };
 
-/* ── Phase state machine ─────────────────────────────────────────── */
-// Sequence:
-//   a-delay → a-show → a-hiding → ab-gap → b-entry → b-delay
-//   → b-show → b-hiding → ba-gap → a-entry → a-delay → ...
-
+/* ── Phase machine ───────────────────────────────────────────────── */
 type Phase =
-  | "a-delay"   // tile1 short, tile4 tall — waiting 2s
-  | "a-show"    // copy A words appearing + showing
-  | "a-hiding"  // tile1 expanding to cover copy A
-  | "ab-gap"    // brief pause
-  | "b-entry"   // tile4 collapsing to expose col3-row2
-  | "b-delay"   // tile4 short — waiting 2s
-  | "b-show"    // copy B words appearing + showing
-  | "b-hiding"  // tile4 expanding to cover copy B
-  | "ba-gap"    // brief pause
-  | "a-entry";  // tile1 collapsing back to row1 only
+  | "a-delay" | "a-show" | "a-hiding" | "ab-gap"
+  | "b-entry" | "b-delay" | "b-show" | "b-hiding"
+  | "ba-gap"  | "a-entry";
 
 const DURATION: Record<Phase, number> = {
   "a-delay":  T.initialDelay,
   "a-show":   T.showCopy,
-  "a-hiding": T.boxExpand,
+  "a-hiding": T.boxAnim,
   "ab-gap":   T.gap,
-  "b-entry":  T.boxCollapse,
+  "b-entry":  T.boxAnim,
   "b-delay":  T.betweenDelay,
   "b-show":   T.showCopy,
-  "b-hiding": T.boxExpand,
+  "b-hiding": T.boxAnim,
   "ba-gap":   T.gap,
-  "a-entry":  T.boxCollapse,
+  "a-entry":  T.boxAnim,
 };
 
-const NEXT_PHASE: Record<Phase, Phase> = {
-  "a-delay":  "a-show",
-  "a-show":   "a-hiding",
-  "a-hiding": "ab-gap",
-  "ab-gap":   "b-entry",
-  "b-entry":  "b-delay",
-  "b-delay":  "b-show",
-  "b-show":   "b-hiding",
-  "b-hiding": "ba-gap",
-  "ba-gap":   "a-entry",
-  "a-entry":  "a-delay",
+const NEXT: Record<Phase, Phase> = {
+  "a-delay":  "a-show",  "a-show":   "a-hiding",
+  "a-hiding": "ab-gap",  "ab-gap":   "b-entry",
+  "b-entry":  "b-delay", "b-delay":  "b-show",
+  "b-show":   "b-hiding","b-hiding": "ba-gap",
+  "ba-gap":   "a-entry", "a-entry":  "a-delay",
 };
 
-/* Derive visual state from phase */
-function tile1Tall(p: Phase) {
-  return ["a-hiding", "ab-gap", "b-entry", "b-delay", "b-show", "b-hiding", "ba-gap"].includes(p);
-}
-function tile4Short(p: Phase) {
-  return ["b-entry", "b-delay", "b-show", "b-hiding"].includes(p);
-}
+const T1_TALL_PHASES: Phase[] = ["a-hiding","ab-gap","b-entry","b-delay","b-show","b-hiding","ba-gap"];
+const T4_SHORT_PHASES: Phase[] = ["b-entry","b-delay","b-show","b-hiding"];
 
-/* ── Word-by-word reveal ─────────────────────────────────────────── */
+/* ── Phrase reveal ───────────────────────────────────────────────── */
 
-function WordReveal({ text }: { text: string }) {
+function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
+  // Calculate cumulative delay per phrase
+  const WORD_STEP = 0.09;    // seconds between words
+  const PHRASE_PAUSE = 0.5;  // seconds between phrases (overridden by pauseBefore)
+
+  let cursor = 0; // running delay in seconds
+
   return (
-    <>
-      {text.split(" ").map((word, i) => (
-        <motion.span
-          key={`${word}-${i}`}
-          className="inline-block"
-          style={{ marginRight: "0.28em" }}
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.09, duration: 0.45, ease: "easeOut" }}
-        >
-          {word}
-        </motion.span>
-      ))}
-    </>
+    <span>
+      {phrases.map((phrase, pi) => {
+        const words = phrase.text.split(" ");
+        const phraseStart = cursor + (phrase.pauseBefore ? phrase.pauseBefore / 1000 : pi === 0 ? 0 : PHRASE_PAUSE);
+        cursor = phraseStart + words.length * WORD_STEP;
+
+        return (
+          <span
+            key={pi}
+            style={{
+              display: "block",
+              fontWeight: phrase.bold ? 700 : 400,
+              marginTop: pi > 0 ? "0.15em" : 0,
+            }}
+          >
+            {words.map((word, wi) => (
+              <motion.span
+                key={`${pi}-${wi}`}
+                className="inline-block"
+                style={{ marginRight: "0.28em" }}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  delay: phraseStart + wi * WORD_STEP,
+                  duration: 0.45,
+                  ease: "easeOut",
+                }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </span>
+        );
+      })}
+    </span>
   );
 }
 
-/* ── Shared copy slot ────────────────────────────────────────────── */
+/* ── Copy slot ───────────────────────────────────────────────────── */
 
-function CopySlot({
-  visible,
-  text,
-  phaseKey,
-  pref,
-}: {
-  visible: boolean;
-  text: string;
-  phaseKey: string;
-  pref: boolean;
+function CopySlot({ visible, phrases, phaseKey, pref }: {
+  visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean;
 }) {
   return (
     <div
       style={{
-        width: "100%",
-        height: "100%",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        padding: "0 4px",
+        width: "100%", height: "100%",
+        display: "flex", alignItems: "center",
+        padding: "0 8px",
       }}
     >
       <AnimatePresence mode="wait">
         {visible && (
-          <motion.p
+          <motion.div
             key={phaseKey}
             className="font-lore"
-            style={{
-              fontSize: "clamp(0.9rem, 1.4vw, 1.25rem)",
-              lineHeight: 1.4,
-              color: "#1a1a1a",
-            }}
+            style={{ fontSize: "clamp(0.85rem, 1.3vw, 1.15rem)", lineHeight: 1.45, color: "#1a1a1a" }}
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
           >
-            {pref ? text : <WordReveal text={text} />}
-          </motion.p>
+            {pref
+              ? phrases.map((p, i) => (
+                  <span key={i} style={{ display: "block", fontWeight: p.bold ? 700 : 400 }}>
+                    {p.text}
+                  </span>
+                ))
+              : <PhraseReveal phrases={phrases} />}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/* ── Tile wrapper — image stays put, just reveals more on expand ─── */
+
+function Tile({
+  id, src, type, scaleWhenSmall,
+}: {
+  id: string; src: string; type: "image" | "gif" | "mp4"; scaleWhenSmall: boolean;
+}) {
+  return (
+    /* overflow hidden is on the parent grid cell */
+    <motion.div
+      className="w-full h-full"
+      /* Subtle zoom: image is slightly enlarged when container is small,
+         zooms back to 1× as container grows — image centre stays fixed. */
+      animate={{ scale: scaleWhenSmall ? 1.04 : 1.0 }}
+      transition={{ duration: T.boxAnim / 1000, ease: [0.22, 1, 0.36, 1] }}
+      style={{ transformOrigin: "center center" }}
+    >
+      <Media src={src} type={type} className="w-full h-full object-cover object-center" />
+    </motion.div>
   );
 }
 
@@ -153,13 +182,15 @@ function CopySlot({
 
 export function HomepageBento({
   media,
-  copyA = COPY_A,
-  copyB = COPY_B,
+  copyA,
+  copyB,
 }: {
   media: PortfolioMedia[];
-  copyA?: string;
+  copyA?: string; // unused — copy is hardcoded per design; kept for settings API compat
   copyB?: string;
 }) {
+  void copyA; void copyB;
+
   const bySlot = Object.fromEntries(media.map((m) => [m.slotId ?? "", m]));
   const src = (id: string) => bySlot[id]?.url ?? LOCAL[id] ?? "";
   const mtype = (id: string) => (bySlot[id]?.type ?? "image") as "image" | "gif" | "mp4";
@@ -176,7 +207,7 @@ export function HomepageBento({
     if (pref) return;
     function schedule(p: Phase) {
       timer.current = setTimeout(() => {
-        const next = NEXT_PHASE[p];
+        const next = NEXT[p];
         setPhase(next);
         schedule(next);
       }, DURATION[p]);
@@ -185,13 +216,12 @@ export function HomepageBento({
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [pref]);
 
-  const t1Tall = tile1Tall(phase);
-  const t4Short = tile4Short(phase);
-  const showA = phase === "a-show";
-  const showB = phase === "b-show";
+  const t1Tall  = T1_TALL_PHASES.includes(phase);
+  const t4Short = T4_SHORT_PHASES.includes(phase);
+  const showA   = phase === "a-show";
+  const showB   = phase === "b-show";
 
-  // Framer Motion layout transition — slow, matches box expand speed
-  const layoutTransition = { duration: T.boxExpand / 1000, ease: [0.22, 1, 0.36, 1] as const };
+  const layoutTrans = { duration: T.boxAnim / 1000, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
     <div
@@ -205,65 +235,47 @@ export function HomepageBento({
         boxSizing: "border-box",
       }}
     >
-      {/* ── Tile 1 — expands to cover copy A ──────────────────────── */}
+      {/* Tile 1 — expands to cover copy A */}
       <motion.div
         layout
         className="overflow-hidden rounded-xl"
-        style={{
-          gridColumn: 1,
-          gridRow: t1Tall ? "1 / 3" : "1 / 2",
-          zIndex: t1Tall ? 10 : 1,
-        }}
-        transition={layoutTransition}
+        style={{ gridColumn: 1, gridRow: t1Tall ? "1 / 3" : "1 / 2", zIndex: t1Tall ? 10 : 1 }}
+        transition={layoutTrans}
       >
-        <Media src={src("1")} type={mtype("1")} className="w-full h-full object-cover" />
+        <Tile id="1" src={src("1")} type={mtype("1")} scaleWhenSmall={!t1Tall} />
       </motion.div>
 
-      {/* ── Copy A — col 1, row 2 (vertically centred) ───────────── */}
+      {/* Copy A — col 1 row 2, vertically centred */}
       <div style={{ gridColumn: 1, gridRow: "2 / 3", zIndex: 1 }}>
-        <CopySlot
-          visible={showA || (pref)}
-          text={copyA}
-          phaseKey="a"
-          pref={pref}
-        />
+        <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} />
       </div>
 
-      {/* ── Tile 2 — col 2, row 1 ────────────────────────────────── */}
+      {/* Tile 2 */}
       <div className="overflow-hidden rounded-xl" style={{ gridColumn: 2, gridRow: "1 / 2" }}>
         <Media src={src("2")} type={mtype("2")} className="w-full h-full object-cover" />
       </div>
 
-      {/* ── Tile 3 — col 2, row 2 (Small Stitch square) ──────────── */}
+      {/* Tile 3 */}
       <div className="overflow-hidden rounded-xl" style={{ gridColumn: 2, gridRow: "2 / 3" }}>
         <Media src={src("3")} type={mtype("3")} className="w-full h-full object-cover" />
       </div>
 
-      {/* ── Tile 4 — collapses to expose copy B ──────────────────── */}
+      {/* Tile 4 — collapses to expose copy B */}
       <motion.div
         layout
         className="overflow-hidden rounded-xl"
-        style={{
-          gridColumn: 3,
-          gridRow: t4Short ? "1 / 2" : "1 / 3",
-          zIndex: t4Short ? 1 : 10,
-        }}
-        transition={layoutTransition}
+        style={{ gridColumn: 3, gridRow: t4Short ? "1 / 2" : "1 / 3", zIndex: t4Short ? 1 : 10 }}
+        transition={layoutTrans}
       >
-        <Media src={src("4")} type={mtype("4")} className="w-full h-full object-cover" />
+        <Tile id="4" src={src("4")} type={mtype("4")} scaleWhenSmall={t4Short} />
       </motion.div>
 
-      {/* ── Copy B — col 3, row 2 (vertically centred) ───────────── */}
+      {/* Copy B — col 3 row 2, vertically centred */}
       <div style={{ gridColumn: 3, gridRow: "2 / 3", zIndex: 1 }}>
-        <CopySlot
-          visible={showB}
-          text={copyB}
-          phaseKey="b"
-          pref={pref}
-        />
+        <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} />
       </div>
 
-      {/* ── Row 3 ─────────────────────────────────────────────────── */}
+      {/* Row 3 */}
       <div className="overflow-hidden rounded-xl" style={{ gridColumn: 1, gridRow: "3 / 4" }}>
         <Media src={src("5")} type={mtype("5")} className="w-full h-full object-cover" />
       </div>
