@@ -12,6 +12,7 @@ import { BackToTop } from "@/components/back-to-top";
 import { CaseStudySections } from "@/components/case-study-sections";
 import { getCaseStudies, getCaseStudyBySlug } from "@/lib/db";
 import { customColorsToStyle } from "@/lib/palette";
+import type { VisualItem } from "@/lib/projects";
 import type { Metadata } from "next";
 
 export async function generateStaticParams() {
@@ -115,6 +116,11 @@ export default async function CaseStudyPage({
           </div>
         </section>
 
+        {/* ── First visual — shown between descriptor and sections ─── */}
+        {study.visuals && study.visuals.length > 0 && (
+          <VisualsList visuals={study.visuals.slice(0, 1)} title={study.title} offset={0} />
+        )}
+
         {/* ── Tabbed body sections ───────────────────────────────────── */}
         <CaseStudySections
           context={study.context}
@@ -125,82 +131,9 @@ export default async function CaseStudyPage({
           reflection={study.reflection}
         />
 
-        {/* ── Visuals (images + before/after sliders, one ordered list) */}
-        {study.visuals && study.visuals.length > 0 && (
-          <section className="px-[var(--spacing-page)] pt-16 md:pt-24">
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 md:col-span-10 md:col-start-2 space-y-8 md:space-y-12 md:px-[5%]">
-                {study.visuals.map((v, i) => {
-                  const figLabel = `Fig. ${String(i + 1).padStart(2, "0")}`;
-                  const cap = v.caption
-                    ? `${figLabel} — ${v.caption}`
-                    : figLabel;
-                  if (v.kind === "compare") {
-                    return (
-                      <BeforeAfterSlider
-                        key={`v-${i}`}
-                        before={v.before}
-                        after={v.after}
-                        caption={cap}
-                      />
-                    );
-                  }
-                  if (v.kind === "grid") {
-                    return (
-                      <ImageGrid key={`v-${i}`} images={v.images} caption={cap} />
-                    );
-                  }
-                  if (v.kind === "stack") {
-                    return (
-                      <ImageStack key={`v-${i}`} images={v.images} caption={cap} />
-                    );
-                  }
-                  if (v.kind === "media") {
-                    return (
-                      <MediaRow
-                        key={`v-${i}`}
-                        images={v.images}
-                        layout={v.layout}
-                        caption={cap}
-                      />
-                    );
-                  }
-                  if (v.kind === "video") {
-                    return (
-                      <YouTubeEmbed
-                        key={`v-${i}`}
-                        url={v.url}
-                        caption={cap}
-                      />
-                    );
-                  }
-                  return (
-                    <figure key={`v-${i}-${v.url}`} className="space-y-2">
-                      <div
-                        className="relative overflow-hidden rounded-sm"
-                        style={{
-                          background: "transparent",
-                          aspectRatio: "16 / 10",
-                        }}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={v.url}
-                          alt={v.caption ?? `${study.title} plate ${i + 1}`}
-                          loading="lazy"
-                          decoding="async"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-                      </div>
-                      <figcaption className="font-mono text-[color:var(--meta)]">
-                        {cap}
-                      </figcaption>
-                    </figure>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+        {/* ── Remaining visuals ─────────────────────────────────────── */}
+        {study.visuals && study.visuals.length > 1 && (
+          <VisualsList visuals={study.visuals.slice(1)} title={study.title} offset={1} />
         )}
 
         {/* ── Next ───────────────────────────────────────────────────── */}
@@ -243,6 +176,56 @@ export default async function CaseStudyPage({
 
       <SiteFooter />
     </div>
+  );
+}
+
+function VisualsList({
+  visuals,
+  title,
+  offset,
+}: {
+  visuals: VisualItem[];
+  title: string;
+  offset: number;
+}) {
+  return (
+    <section className="px-[var(--spacing-page)] pt-16 md:pt-24">
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 md:col-span-10 md:col-start-2 space-y-8 md:space-y-12 md:px-[5%]">
+          {visuals.map((v, idx) => {
+            const i = offset + idx;
+            const figLabel = `Fig. ${String(i + 1).padStart(2, "0")}`;
+            const cap = v.caption ? `${figLabel} — ${v.caption}` : figLabel;
+            if (v.kind === "compare") {
+              return (
+                <BeforeAfterSlider key={`v-${i}`} before={v.before} after={v.after} caption={cap} />
+              );
+            }
+            if (v.kind === "grid") {
+              return <ImageGrid key={`v-${i}`} images={v.images} caption={cap} />;
+            }
+            if (v.kind === "stack") {
+              return <ImageStack key={`v-${i}`} images={v.images} caption={cap} />;
+            }
+            if (v.kind === "media") {
+              return <MediaRow key={`v-${i}`} images={v.images} layout={v.layout} caption={cap} />;
+            }
+            if (v.kind === "video") {
+              return <YouTubeEmbed key={`v-${i}`} url={v.url} caption={cap} />;
+            }
+            return (
+              <figure key={`v-${i}-${v.url}`} className="space-y-2">
+                <div className="relative overflow-hidden rounded-sm" style={{ background: "transparent", aspectRatio: "16 / 10" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={v.url} alt={v.caption ?? `${title} plate ${i + 1}`} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+                </div>
+                <figcaption className="font-mono text-[color:var(--meta)]">{cap}</figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
