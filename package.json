@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "tsx scripts/migrate.ts",
+    "db:migrate:portfolio": "tsx scripts/migrate-portfolio.ts",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

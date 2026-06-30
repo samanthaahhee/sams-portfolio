@@ -26,13 +26,21 @@ export default async function HeroAdminPage() {
             background colours are all editable per card.
           </p>
         </div>
-        <Link
-          href="/admin/hero/new"
-          className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
-          style={{ background: "var(--ink)", color: "var(--paper)" }}
-        >
-          + New card
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/admin/hero/batch"
+            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+          >
+            Batch upload
+          </Link>
+          <Link
+            href="/admin/hero/new"
+            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
+            style={{ background: "var(--ink)", color: "var(--paper)" }}
+          >
+            + New card
+          </Link>
+        </div>
       </header>
 
       {cards.length === 0 ? (

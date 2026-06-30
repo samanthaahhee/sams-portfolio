@@ -12,6 +12,13 @@
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-mono-sometype);
 
+  /* 2026 rebuild (staging/rebuild) — separate tokens so the legacy
+     site's --font-sans/--font-display stay untouched. `font-lore` is
+     a stand-in (Caveat) until the real LORE TTFs land; see
+     lib/fonts-portfolio.ts. */
+  --font-lore: var(--font-lore);
+  --font-portfolio-sans: var(--font-jakarta-portfolio);
+
   /* Editorial spacing scale (multiples of 4) */
   --spacing-page: clamp(1.5rem, 4vw, 4rem);
   --spacing-gutter: clamp(1rem, 2.5vw, 2rem);

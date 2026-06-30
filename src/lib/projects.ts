@@ -137,7 +137,7 @@ export const projects: Project[] = [
     tags: ["Product"],
     palette: "lavender-ochre",
     cover: ph("walkrr-platform"),
-    description: "Visual guide for the Walkrr platform — typography, components, and UI patterns documented for the product team. Placeholder description.",
+    description: "",
     gallery: galObjs("walkrr"),
   },
   {

@@ -1,0 +1,109 @@
+-- Schema for the 2026 portfolio rebuild (staging/rebuild branch).
+-- Entirely additive — every table is namespaced `portfolio_` so it
+-- cannot collide with the live placeholder site's existing tables
+-- (projects, case_studies, hero_cards, experience_entries, site_settings).
+-- Run via: npm run db:migrate:portfolio
+
+CREATE TABLE IF NOT EXISTS portfolio_projects (
+  id                 SERIAL PRIMARY KEY,
+  slug               TEXT UNIQUE NOT NULL,
+  title              TEXT NOT NULL,
+  discipline         TEXT NOT NULL DEFAULT '',
+  client             TEXT NOT NULL DEFAULT '',
+  role               TEXT NOT NULL DEFAULT '',
+  year               TEXT NOT NULL DEFAULT '',
+  order_index        INTEGER NOT NULL DEFAULT 0,
+  visible            BOOLEAN NOT NULL DEFAULT TRUE,
+  work_grid_template TEXT, -- e.g. 'mosaic-a' | 'mosaic-b' | 'single-hero' | 'two-up' | NULL (auto)
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_projects_order_idx ON portfolio_projects (order_index);
+
+-- Every media slot across the site — homepage bento tiles, work-index
+-- carousel items, a project's "The Work" grid, and "The Thinking"
+-- stacked blocks. `project_id` is nullable because homepage tiles
+-- aren't always tied to a single project.
+CREATE TABLE IF NOT EXISTS portfolio_media (
+  id            SERIAL PRIMARY KEY,
+  project_id    INTEGER REFERENCES portfolio_projects(id) ON DELETE CASCADE,
+  surface       TEXT NOT NULL, -- 'homepage' | 'work_grid' | 'thinking' | 'carousel'
+  slot_id       TEXT,          -- e.g. homepage bento slot '1'..'7'; NULL for ordered lists
+  type          TEXT NOT NULL, -- 'image' | 'gif' | 'mp4'
+  url           TEXT NOT NULL,
+  width         INTEGER,
+  height        INTEGER,
+  aspect_ratio  TEXT,          -- e.g. '14:9'
+  order_index   INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_media_surface_idx ON portfolio_media (surface, order_index);
+CREATE INDEX IF NOT EXISTS portfolio_media_project_idx ON portfolio_media (project_id);
+
+-- CV / timeline entries for /about.
+CREATE TABLE IF NOT EXISTS portfolio_jobs (
+  id            SERIAL PRIMARY KEY,
+  company       TEXT NOT NULL,
+  title         TEXT NOT NULL,
+  date_range    TEXT NOT NULL DEFAULT '',
+  descriptor    TEXT NOT NULL DEFAULT '',
+  role          TEXT NOT NULL DEFAULT '',
+  clients       JSONB NOT NULL DEFAULT '[]',
+  scope         JSONB NOT NULL DEFAULT '[]',
+  tools         JSONB NOT NULL DEFAULT '[]',
+  period_label  TEXT NOT NULL DEFAULT '', -- tab label, e.g. '2026' or '2022-25'
+  order_index   INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_jobs_order_idx ON portfolio_jobs (order_index);
+
+-- Optional recommendation letter per job — nullable 1:1, so most jobs
+-- simply have no row here.
+CREATE TABLE IF NOT EXISTS portfolio_recommendations (
+  id            SERIAL PRIMARY KEY,
+  job_id        INTEGER UNIQUE NOT NULL REFERENCES portfolio_jobs(id) ON DELETE CASCADE,
+  body          TEXT NOT NULL DEFAULT '',
+  author        TEXT NOT NULL DEFAULT '',
+  date          TEXT NOT NULL DEFAULT '',
+  relationship  TEXT NOT NULL DEFAULT '',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Floating "interests" copy on /about — grouped label + items.
+CREATE TABLE IF NOT EXISTS portfolio_interests (
+  id            SERIAL PRIMARY KEY,
+  group_label   TEXT NOT NULL,
+  items         JSONB NOT NULL DEFAULT '[]',
+  side          TEXT NOT NULL DEFAULT 'left', -- 'left' | 'right'
+  position      INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_interests_position_idx ON portfolio_interests (position);
+
+-- Contact-page paper strips.
+CREATE TABLE IF NOT EXISTS portfolio_contact_strips (
+  id            SERIAL PRIMARY KEY,
+  label         TEXT NOT NULL,
+  type          TEXT NOT NULL, -- 'email' | 'cv-download' | 'phone' | 'quote' | 'message'
+  content       TEXT NOT NULL DEFAULT '', -- for 'quote'/'message' with multiple values, store JSON in content
+  order_index   INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_contact_strips_order_idx ON portfolio_contact_strips (order_index);
+
+-- Generic key/value bag — homepage copy A/B, work-index intro line,
+-- contact ambient copy, email, phone, cv_pdf_url, etc.
+CREATE TABLE IF NOT EXISTS portfolio_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL DEFAULT '',
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

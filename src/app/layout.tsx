@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { jacquard, jakarta, sometype } from "@/lib/fonts";
+import { lore, jakarta as jakartaPortfolio } from "@/lib/fonts-portfolio";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -41,7 +42,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jakarta.variable} ${sometype.variable} ${jacquard.variable}`}
+      className={`${jakarta.variable} ${sometype.variable} ${jacquard.variable} ${lore.variable} ${jakartaPortfolio.variable}`}
     >
       <head>
         <script
