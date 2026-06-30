@@ -140,6 +140,10 @@ CREATE TABLE IF NOT EXISTS hero_cards (
 
 CREATE INDEX IF NOT EXISTS hero_cards_position_idx ON hero_cards (position);
 
+-- Per-card background gradient override (3-stop). When set, the hero
+-- uses these stops instead of sampling colours from the image.
+ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS bg_gradient JSONB;
+
 -- Hero global colour fallbacks live in site_settings under keys
 -- 'hero_accent_color' and 'hero_bg_color' (see site_settings table).
 

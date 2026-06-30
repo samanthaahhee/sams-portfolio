@@ -24,6 +24,7 @@ export default async function Home() {
     client: c.client,
     accentColor: c.accentColor,
     bgColor: c.bgColor,
+    bgGradient: c.bgGradient,
   }));
   if (cards.length === 0) {
     cards = [

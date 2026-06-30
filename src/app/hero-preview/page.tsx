@@ -20,6 +20,7 @@ export default async function HeroPreview() {
     client: c.client,
     accentColor: c.accentColor,
     bgColor: c.bgColor,
+    bgGradient: c.bgGradient,
   }));
 
   // Fallback — populate from existing work if the curated set is empty.

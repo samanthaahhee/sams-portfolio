@@ -613,6 +613,9 @@ export type HeroCard = {
   client: string | null;
   accentColor: string | null;
   bgColor: string | null;
+  /** Optional 3-stop gradient ["#start", "#mid", "#end"]. When set,
+   *  the hero uses these stops instead of sampling from the image. */
+  bgGradient: string[] | null;
   position: number;
 };
 
@@ -624,8 +627,21 @@ type HeroCardRow = {
   client: string | null;
   accent_color: string | null;
   bg_color: string | null;
+  bg_gradient: string[] | string | null;
   position: number;
 };
+
+function parseGradient(v: unknown): string[] | null {
+  if (!v) return null;
+  if (Array.isArray(v)) return v.filter((s) => typeof s === "string");
+  if (typeof v === "string") {
+    try {
+      const parsed = JSON.parse(v);
+      if (Array.isArray(parsed)) return parsed.filter((s) => typeof s === "string");
+    } catch {}
+  }
+  return null;
+}
 
 function rowToHeroCard(r: HeroCardRow): HeroCard {
   return {
@@ -636,6 +652,7 @@ function rowToHeroCard(r: HeroCardRow): HeroCard {
     client: r.client,
     accentColor: r.accent_color,
     bgColor: r.bg_color,
+    bgGradient: parseGradient(r.bg_gradient),
     position: r.position,
   };
 }
@@ -674,12 +691,13 @@ export async function insertHeroCard(card: Omit<HeroCard, "id" | "position">) {
     SELECT MAX(position) AS max FROM hero_cards
   `;
   const position = (maxRows[0]?.max ?? -1) + 1;
+  const grad = card.bgGradient ? JSON.stringify(card.bgGradient) : null;
   const { rows } = await sql<{ id: number }>`
     INSERT INTO hero_cards
-      (image_url, title, href, client, accent_color, bg_color, position)
+      (image_url, title, href, client, accent_color, bg_color, bg_gradient, position)
     VALUES
       (${card.imageUrl}, ${card.title}, ${card.href}, ${card.client},
-       ${card.accentColor}, ${card.bgColor}, ${position})
+       ${card.accentColor}, ${card.bgColor}, ${grad}::jsonb, ${position})
     RETURNING id
   `;
   return rows[0].id;
@@ -689,6 +707,7 @@ export async function updateHeroCard(
   id: number,
   card: Omit<HeroCard, "id" | "position">,
 ) {
+  const grad = card.bgGradient ? JSON.stringify(card.bgGradient) : null;
   await sql`
     UPDATE hero_cards
        SET image_url    = ${card.imageUrl},
@@ -697,6 +716,7 @@ export async function updateHeroCard(
            client       = ${card.client},
            accent_color = ${card.accentColor},
            bg_color     = ${card.bgColor},
+           bg_gradient  = ${grad}::jsonb,
            updated_at   = NOW()
      WHERE id = ${id}
   `;

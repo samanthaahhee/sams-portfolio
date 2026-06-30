@@ -21,6 +21,9 @@ export type DeckCard = {
   /** Optional override — used as the section background when this
    *  card is at the front. Falls back to auto-sampled background. */
   bgColor?: string | null;
+  /** Optional 3-stop gradient. When set, replaces the auto-sampled
+   *  gradient while this card is at the front. */
+  bgGradient?: string[] | null;
 };
 
 const PINK = "#f4b8d0";
@@ -67,9 +70,18 @@ export function HeroCardDeck({
     // Apply overrides immediately so there's no flash of auto colour.
     if (card.bgColor) setBgColor(card.bgColor);
     if (card.accentColor) setAccentColor(card.accentColor);
+    if (card.bgGradient && card.bgGradient.length >= 2) {
+      // Normalise to 3 stops so the renderer's template literal is stable.
+      const g = card.bgGradient;
+      setBgGradient([
+        g[0],
+        g[1] ?? g[Math.floor(g.length / 2)] ?? g[0],
+        g[g.length - 1],
+      ]);
+    }
 
-    // If both are overridden, no need to sample at all.
-    if (card.bgColor && card.accentColor) return;
+    // If everything's overridden, no need to sample at all.
+    if (card.bgColor && card.accentColor && card.bgGradient) return;
 
     const src = card.src;
     if (!src) return;
@@ -151,7 +163,9 @@ export function HeroCardDeck({
           const ch = (c: number) => Math.round((avg + (c - avg) * sat) * bri);
           return `rgb(${ch(cR)}, ${ch(cG)}, ${ch(cB)})`;
         };
-        if (!card.bgColor) {
+        // Auto-sampled gradient — skipped entirely if the card has a
+        // per-card gradient override set.
+        if (!card.bgColor && !card.bgGradient) {
           setBgGradient([
             mute(c0.r, c0.g, c0.b),
             mute(c1.r, c1.g, c1.b),
