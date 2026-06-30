@@ -1,37 +1,27 @@
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
-import { CopyEmailButton } from "@/components/copy-email-button";
+import { getPortfolioContactStrips, getPortfolioSettings } from "@/lib/db-portfolio";
+import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
+import { ContactPage as ContactPageComponent } from "@/components/portfolio/contact-page";
 
-const EMAIL = "samantha.ahhee@gmail.com";
+export const metadata = {
+  title: "Contact — Sam Ahhee",
+  description: "Get in touch with Sam Ahhee — visual communication designer based in Amsterdam.",
+};
 
-export const metadata = { title: "Contact" };
-
-export default function ContactPage() {
+export default async function ContactPage() {
+  const [strips, settings] = await Promise.all([
+    getPortfolioContactStrips(),
+    getPortfolioSettings(),
+  ]);
   return (
-    <div
-      data-pair="butter-slate"
-      className="text-white"
-      style={{
-        background: "#000000",
-        minHeight: "100vh",
-      }}
-    >
-      <SiteHeader tone="dark" />
-      <main className="relative px-[var(--spacing-page)] py-20 md:py-32 flex flex-col items-center text-center">
-        <div className="mb-12">
-          <CopyEmailButton
-            email={EMAIL}
-            variant="title"
-            label="Let’s connect."
-          />
-        </div>
-        <p className="max-w-xl text-lg md:text-xl leading-relaxed text-white/80">
-          If you’ve got something brewing, a project to shape, an
-          idea you’re still figuring out, a collaboration in mind,
-          I’d love to hear about it. My inbox is open.
-        </p>
-      </main>
-      <SiteFooter />
+    <div className="font-portfolio-sans">
+      <PortfolioNav active="contact" />
+      <div className="h-screen pt-20">
+        <ContactPageComponent
+          strips={strips}
+          ambientLeft={settings["contact_ambient_left"] || undefined}
+          ambientRight={settings["contact_ambient_right"] || undefined}
+        />
+      </div>
     </div>
   );
 }

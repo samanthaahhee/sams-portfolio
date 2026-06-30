@@ -245,3 +245,154 @@ export async function upsertPortfolioMedia(m: Omit<PortfolioMedia, "id"> & { id?
 export async function deletePortfolioMedia(id: number) {
   await sql`DELETE FROM portfolio_media WHERE id = ${id}`;
 }
+
+/* ── Jobs / timeline ─────────────────────────────────────────────── */
+
+export type PortfolioRecommendation = {
+  id: number;
+  body: string;
+  author: string;
+  date: string;
+  relationship: string;
+};
+
+export type PortfolioJob = {
+  id: number;
+  company: string;
+  title: string;
+  dateRange: string;
+  descriptor: string;
+  role: string;
+  clients: string[];
+  scope: string[];
+  tools: string[];
+  periodLabel: string;
+  orderIndex: number;
+  recommendation: PortfolioRecommendation | null;
+};
+
+type JobRow = {
+  id: number;
+  company: string;
+  title: string;
+  date_range: string;
+  descriptor: string;
+  role: string;
+  clients: string[] | string;
+  scope: string[] | string;
+  tools: string[] | string;
+  period_label: string;
+  order_index: number;
+  rec_id: number | null;
+  rec_body: string | null;
+  rec_author: string | null;
+  rec_date: string | null;
+  rec_relationship: string | null;
+};
+
+function parseJsonArray(v: string[] | string): string[] {
+  if (Array.isArray(v)) return v;
+  try { return JSON.parse(v); } catch { return []; }
+}
+
+function jobFromRow(r: JobRow): PortfolioJob {
+  return {
+    id: r.id,
+    company: r.company,
+    title: r.title,
+    dateRange: r.date_range,
+    descriptor: r.descriptor,
+    role: r.role,
+    clients: parseJsonArray(r.clients),
+    scope: parseJsonArray(r.scope),
+    tools: parseJsonArray(r.tools),
+    periodLabel: r.period_label,
+    orderIndex: r.order_index,
+    recommendation: r.rec_id
+      ? { id: r.rec_id, body: r.rec_body!, author: r.rec_author!, date: r.rec_date!, relationship: r.rec_relationship! }
+      : null,
+  };
+}
+
+export async function getPortfolioJobs(): Promise<PortfolioJob[]> {
+  try {
+    const { rows } = await sql<JobRow>`
+      SELECT j.*,
+             r.id           AS rec_id,
+             r.body         AS rec_body,
+             r.author       AS rec_author,
+             r.date         AS rec_date,
+             r.relationship AS rec_relationship
+      FROM   portfolio_jobs j
+      LEFT JOIN portfolio_recommendations r ON r.job_id = j.id
+      ORDER  BY j.order_index ASC, j.id ASC
+    `;
+    return rows.map(jobFromRow);
+  } catch {
+    return [];
+  }
+}
+
+/* ── Interests ───────────────────────────────────────────────────── */
+
+export type PortfolioInterest = {
+  id: number;
+  groupLabel: string;
+  items: string[];
+  side: "left" | "right";
+  position: number;
+};
+
+type InterestRow = {
+  id: number;
+  group_label: string;
+  items: string[] | string;
+  side: string;
+  position: number;
+};
+
+export async function getPortfolioInterests(): Promise<PortfolioInterest[]> {
+  try {
+    const { rows } = await sql<InterestRow>`
+      SELECT * FROM portfolio_interests ORDER BY position ASC, id ASC
+    `;
+    return rows.map((r) => ({
+      id: r.id,
+      groupLabel: r.group_label,
+      items: parseJsonArray(r.items),
+      side: r.side as "left" | "right",
+      position: r.position,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/* ── Contact strips ──────────────────────────────────────────────── */
+
+export type ContactStripType = "email" | "cv-download" | "phone" | "quote" | "message";
+
+export type PortfolioContactStrip = {
+  id: number;
+  label: string;
+  type: ContactStripType;
+  content: string;
+  orderIndex: number;
+};
+
+export async function getPortfolioContactStrips(): Promise<PortfolioContactStrip[]> {
+  try {
+    const { rows } = await sql<{
+      id: number; label: string; type: string; content: string; order_index: number;
+    }>`SELECT * FROM portfolio_contact_strips ORDER BY order_index ASC, id ASC`;
+    return rows.map((r) => ({
+      id: r.id,
+      label: r.label,
+      type: r.type as ContactStripType,
+      content: r.content,
+      orderIndex: r.order_index,
+    }));
+  } catch {
+    return [];
+  }
+}
