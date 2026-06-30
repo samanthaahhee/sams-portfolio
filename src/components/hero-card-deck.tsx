@@ -181,7 +181,7 @@ export function HeroCardDeck({
 
   return (
     <div
-      className="relative w-full overflow-hidden select-none"
+      className="relative w-full select-none"
       style={{
         height: "100vh",
         minHeight: 640,
@@ -189,6 +189,9 @@ export function HeroCardDeck({
         // the colour fades transition smoothly between cards.
         background: `linear-gradient(160deg, ${bgGradient[0]} 0%, ${bgGradient[1]} 55%, ${bgGradient[2]} 100%), ${bgColor}`,
         transition: "background 900ms ease",
+        // Allow the PNG backdrop to extend below the hero — it's
+        // covered by the next section's bg, no need to clip it here.
+        overflow: "clip visible",
       }}
     >
       {/* Soft vignette so the centre stays darker than the edges */}
@@ -201,17 +204,23 @@ export function HeroCardDeck({
         }}
       />
 
-      {/* Faint serif Sam Ahhee — sits behind everything as texture */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center select-none">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero/sam-ahhee.png"
-          alt=""
-          aria-hidden
-          className="w-full h-full object-contain"
-          style={{ opacity: 1 }}
-        />
-      </div>
+      {/* Faint serif Sam Ahhee — sits behind everything. Rendered at
+          its natural aspect ratio (fills viewport width, height
+          auto) so nothing is cropped; vertical overflow extends out
+          the bottom of the hero and is covered by the next section
+          below. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/hero/sam-ahhee.png"
+        alt=""
+        aria-hidden
+        className="absolute top-0 left-0 z-0 pointer-events-none select-none"
+        style={{
+          width: "100%",
+          height: "auto",
+          opacity: 1,
+        }}
+      />
 
       {/* ── Top bar — SAM AHHEE monogram (left) + nav (right) ──── */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-[var(--spacing-page)] pt-7 md:pt-9">
