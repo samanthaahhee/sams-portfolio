@@ -269,7 +269,7 @@ export function HeroCardDeck({
       {/* ── Fanned deck — sits in the lower-middle, centred. */}
       <div
         className="absolute z-20 flex items-center justify-center left-1/2"
-        style={{ top: "60%", transform: "translate(-50%, calc(-50% - 38px))" }}
+        style={{ top: "58%", transform: "translate(-50%, -50%)" }}
       >
         <div
           className="relative"
@@ -278,7 +278,7 @@ export function HeroCardDeck({
             // 45vw on that viewport = 778px, capped at 780. Smaller
             // viewports clamp down via the vw value; min 240px keeps
             // it readable on phones.
-            width: "clamp(220px, 40vw, 690px)",
+            width: "clamp(340px, 62vw, 1000px)",
             aspectRatio: "4 / 3",
           }}
         >
