@@ -2,6 +2,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { WorkCard } from "@/components/work-card";
 import { ArchiveSection } from "@/components/archive-section";
 import { HeroCardDeck, type DeckCard } from "@/components/hero-card-deck";
+import { ScrollTopOnMount } from "@/components/scroll-top-on-mount";
 import {
   getProjects,
   getCaseStudies,
@@ -45,6 +46,10 @@ export default async function Home() {
 
   return (
     <div data-pair="butter-slate">
+      {/* Force the page to land at the top on every visit, even
+          when arriving via a stale `#selected-work` hash from a nav
+          click. */}
+      <ScrollTopOnMount />
       {/* ── Landing hero — kinetic card deck, owns its own nav.
           No SiteHeader on this page; the deck's top bar replaces it. */}
       <HeroCardDeck cards={cards} />
