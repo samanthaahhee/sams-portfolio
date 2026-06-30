@@ -1,33 +1,46 @@
-import { Caveat, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
+import { Plus_Jakarta_Sans } from "next/font/google";
 
 /**
- * STAND-IN for LORE until the real TTFs land (Regular / Bold /
- * RegularAlternates / BoldAlternates — see
- * `sam-ahhee-portfolio-brief.md`). Caveat is the closest free
- * Google Font to the handwritten reference screens.
+ * LORE — the portfolio's handwritten/display typeface, self-hosted.
+ * Four weights: Regular (400), Bold (700), and their Alternate cuts.
+ * Used for: nav wordmark, heading display, floating interests copy,
+ * hand-written body lines, paper-strip labels.
  *
- * Swap-in once the files arrive — replace this whole export with:
- *
- *   import localFont from "next/font/local";
- *   export const lore = localFont({
- *     variable: "--font-lore",
- *     src: [
- *       { path: "../../public/fonts/LORE-Regular.ttf", weight: "400", style: "normal" },
- *       { path: "../../public/fonts/LORE-Bold.ttf", weight: "700", style: "normal" },
- *     ],
- *     display: "swap",
- *   });
- *
- * Nothing else in the app needs to change — every usage references
- * the `--font-lore` CSS variable, not this file directly.
+ * Wired up as --font-lore CSS variable so every component references
+ * the variable, not this file directly. Tailwind utility: `font-lore`.
  */
-export const lore = Caveat({
-  subsets: ["latin"],
+export const lore = localFont({
   variable: "--font-lore",
-  weight: ["500", "700"],
   display: "swap",
+  src: [
+    {
+      path: "../../public/fonts/LORE-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/LORE-RegularAlternates.ttf",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../public/fonts/LORE-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../../public/fonts/LORE-BoldAlternates.ttf",
+      weight: "700",
+      style: "italic",
+    },
+  ],
 });
 
+/**
+ * Plus Jakarta Sans — the functional UI typeface.
+ * Used for: nav links, meta labels, body copy, dashboard.
+ */
 export const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta-portfolio",
