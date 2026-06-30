@@ -107,20 +107,6 @@ export default async function TemperCaseStudyPage() {
                 <p className="font-mono text-[color:var(--meta)] mb-2">Role</p>
                 <p>{META.role}</p>
               </div>
-              <div>
-                <p className="font-mono text-[color:var(--meta)] mb-2">
-                  Constraint
-                </p>
-                <p>{META.constraint}</p>
-              </div>
-              <div>
-                <p className="font-mono text-[color:var(--meta)] mb-2">Tags</p>
-                <ul className="space-y-1">
-                  {META.tags.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              </div>
             </div>
             {study.summary && (
               <div className="col-span-12 md:col-span-6 md:col-start-6">
