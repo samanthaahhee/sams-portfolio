@@ -1,4 +1,4 @@
-import { HeroNav } from "@/components/hero-nav";
+import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PosterCollage } from "@/components/poster-collage";
 import { FloatingConfetti } from "@/components/floating-confetti";
@@ -14,9 +14,7 @@ export const metadata = {
 export default function AboutMePage() {
   return (
     <div data-pair="butter-slate" className="text-[color:var(--ink)]">
-      <div className="px-[var(--spacing-page)] pt-8 md:pt-10">
-        <HeroNav tone="light" />
-      </div>
+      <SiteHeader />
 
       <main className="relative">
         {/* ── Top — meta label + huge heading + portrait ─────────── */}

@@ -1,70 +1,63 @@
 import Link from "next/link";
-import { ThemeToggle } from "./theme-toggle";
 import { getCvUrl } from "@/lib/db";
 
-export async function SiteHeader({ pageNo = "00" }: { pageNo?: string }) {
+/**
+ * Universal site header — same composition as the landing-hero nav
+ * (SAM AHHEE monogram top-left, Work · Experience · Contact top-right)
+ * so every page reads with one consistent menu bar.
+ *
+ * The hero on `/` renders its own copy of this layout (white over a
+ * dark gradient). This file is the light-canvas version used on
+ * every other page.
+ */
+export async function SiteHeader(_props: { pageNo?: string } = {}) {
   const cvUrl = await getCvUrl();
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-[color:var(--paper)]/80 border-b border-[color:var(--rule)]">
+    <header
+      className="sticky top-0 z-50 backdrop-blur-md bg-[color:var(--paper)]/85 border-b border-[color:var(--rule)]"
+    >
       <div
-        className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-[var(--spacing-page)] py-4"
-        style={{ minHeight: 56 }}
+        className="flex items-center justify-between gap-6 px-[var(--spacing-page)] py-4"
+        style={{ minHeight: 64 }}
       >
         <Link
           href="/"
-          className="hidden md:inline font-mono text-[color:var(--meta)] hover:text-[color:var(--ink)] transition-colors"
+          aria-label="Sam Ahhee — home"
+          className="hover:opacity-75 transition-opacity"
         >
-          My portfolio
+          {/* Source SVG is mid-grey (#D9D9D9); brightness(0) inverts
+              the fill to solid ink so it reads on the paper canvas. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero/sam-ahhee-logo.svg"
+            alt="Sam Ahhee"
+            className="h-10 md:h-12 w-auto"
+            style={{ filter: "brightness(0)" }}
+          />
         </Link>
-        <nav className="font-mono flex items-center gap-6 text-[color:var(--ink-soft)]">
+        <nav className="flex items-center gap-8 md:gap-12 font-sans font-normal text-sm md:text-base text-[color:var(--ink)]">
           <Link
-            href="/"
-            className="hover:text-[color:var(--ink)] transition-colors"
+            href="/#selected-work"
+            className="hover:opacity-70 transition-opacity"
           >
             Work
           </Link>
-          {/* Experience → opens the CV PDF in a new tab so the
-              browser's built-in viewer can render it. */}
           <a
             href={cvUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 hover:text-[color:var(--ink)] transition-colors"
+            className="hover:opacity-70 transition-opacity"
           >
             Experience
-            <ExternalIcon />
           </a>
           <Link
             href="/contact"
-            className="hover:text-[color:var(--ink)] transition-colors"
+            className="hover:opacity-70 transition-opacity"
           >
             Contact
           </Link>
         </nav>
-        <div className="flex items-center justify-end gap-6">
-          <ThemeToggle />
-        </div>
       </div>
     </header>
-  );
-}
-
-function ExternalIcon() {
-  return (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M14 3h7v7" />
-      <path d="M10 14L21 3" />
-      <path d="M19 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" />
-    </svg>
   );
 }
