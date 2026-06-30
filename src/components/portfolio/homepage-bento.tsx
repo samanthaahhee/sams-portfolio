@@ -235,7 +235,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
           anchor="bottom"
           height={swapped ? "100%" : "53.5%"}
           transition={boxTrans}
-          borderRadius="0 0 10px 10px"
+          borderRadius="10px"
         />
       </div>
 
@@ -262,7 +262,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
           anchor="top"
           height={swapped ? "50%" : "100%"}
           transition={boxTrans}
-          borderRadius="10px 10px 0 0"
+          borderRadius="10px"
         />
 
         {/* Copy B — fixed at bottom, 50% of zone height */}
