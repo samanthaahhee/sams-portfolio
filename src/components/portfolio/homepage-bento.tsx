@@ -215,7 +215,10 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
     <div style={{
       height: `calc(100vh - ${NAV_H}px)`,
       display: "grid",
-      gridTemplateColumns: "1fr 1fr 1fr",
+      // Middle column narrowed + right column widened so the bottom-middle
+      // tile (Recharge) reads as a square and the bottom-right (BOS) as a
+      // wide rectangle. Row heights unchanged so grid alignment holds.
+      gridTemplateColumns: "1fr 0.7fr 1.4fr",
       gridTemplateRows: "1fr 1fr 1.15fr",
       gap: 10,
       padding: "10px 20px 20px",
