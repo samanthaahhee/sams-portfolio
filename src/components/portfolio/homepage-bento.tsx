@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "motion/react";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
 /* ── Copy ─────────────────────────────────────────────────────────── */
-type Phrase = { text: string; bold?: true; pauseBefore?: number; inline?: true };
+type Phrase = { text: string; bold?: true; pauseBefore?: number; inline?: true; big?: true };
 
 const COPY_A: Phrase[] = [
-  { text: "Hey I'm Sam." },
+  { text: "Hey I'm Sam.", big: true },
   { text: "I'm a", pauseBefore: 500 },
   { text: "visual communication designer,", bold: true, inline: true },
   { text: "translating complex ideas into clear storytelling.", inline: true, pauseBefore: 200 },
@@ -68,7 +68,7 @@ function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
         // If this phrase OR the next phrase is inline, render inline so they flow on one line
         const isInline = phrase.inline || phrases[pi + 1]?.inline;
         return (
-          <span key={pi} style={{ display: isInline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, marginTop: pi > 0 && !isInline ? "0.12em" : 0 }}>
+          <span key={pi} style={{ display: isInline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, fontSize: phrase.big ? "1.5em" : undefined, marginTop: pi > 0 && !isInline ? "0.12em" : 0, marginBottom: phrase.big ? "0.25em" : undefined }}>
             {words.map((word, wi) => (
               <motion.span
                 key={`${pi}-${wi}`}
@@ -86,11 +86,11 @@ function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
   );
 }
 
-function CopySlot({ visible, phrases, phaseKey, pref, pl = 8 }: {
-  visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean; pl?: number;
+function CopySlot({ visible, phrases, phaseKey, pref, pl = 8, pr = 14 }: {
+  visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean; pl?: number; pr?: number;
 }) {
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: 14, boxSizing: "border-box" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: pr, boxSizing: "border-box" }}>
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div key={phaseKey} className="font-lore"
@@ -100,7 +100,7 @@ function CopySlot({ visible, phrases, phaseKey, pref, pl = 8 }: {
             {pref
               ? phrases.map((p, i) => {
                   const isInline = p.inline || phrases[i + 1]?.inline;
-                  return <span key={i} style={{ display: isInline ? "inline" : "block", fontWeight: p.bold ? 700 : 400 }}>{p.text}{isInline ? " " : ""}</span>;
+                  return <span key={i} style={{ display: isInline ? "inline" : "block", fontWeight: p.bold ? 700 : 400, fontSize: p.big ? "1.5em" : undefined }}>{p.text}{isInline ? " " : ""}</span>;
                 })
               : <PhraseReveal phrases={phrases} />
             }
@@ -136,12 +136,14 @@ function AnimatedClip({
   height,
   anchor,
   transition,
+  borderRadius = "10px",
   style,
 }: {
   src: string;
   height: string;
   anchor: "top" | "bottom";
   transition: object;
+  borderRadius?: string;
   style?: React.CSSProperties;
 }) {
   return (
@@ -154,6 +156,7 @@ function AnimatedClip({
         right: 0,
         ...(anchor === "top" ? { top: 0 } : { bottom: 0 }),
         overflow: "hidden",
+        borderRadius,
         ...style,
       }}
     >
@@ -229,7 +232,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
         {/* Copy A — fixed at top, 55% of zone height */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55%" }}>
-          <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} pl={4} />
+          <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} pl={4} pr={24} />
         </div>
 
         {/* Tile5 clip — grows upward from bottom to cover copy A */}
@@ -268,7 +271,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
 
         {/* Copy B — fixed at bottom, 55% of zone height */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%" }}>
-          <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} />
+          <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} />
         </div>
       </div>
 
