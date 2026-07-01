@@ -15,7 +15,7 @@ type Line =
   | { kind?: "line"; indent?: number; toks: Tok[] }
   | { kind: "cluster"; indent?: number; left: string[]; conj: string; right: string[] };
 
-const BIG = 1.7; // size multiplier for the emphasised bold words
+const BIG = 1.5; // size multiplier for the emphasised bold words
 
 const COPY_A: Line[] = [
   { indent: 0,   toks: [{ t: "I'm Sam, I am a senior" }] },
@@ -44,28 +44,35 @@ const LOCAL: Record<string, string> = {
 const NAV_H = 56;
 
 const T = {
-  initialDelay: 2000,
-  showCopy: 7500,  // ~2.5s animation + 4s reading pause
-  boxAnim: 1500,
-  gap: 500,
-  betweenDelay: 2000,
+  copyDelay: 1800,  // pause before the copy appears (both A and B)
+  showCopy: 7500,   // copy visible + reading time
+  hideDelay: 1000,  // pause after copy disappears before the boxes scale
+  boxAnim: 1500,    // box height animation
 };
 
-type Phase = "a-delay" | "a-show" | "switching" | "b-delay" | "b-show" | "restoring";
+// Flow: rest → wait → show copy A → hide → scale boxes → wait → show copy B
+//       → hide → scale boxes back → loop
+type Phase =
+  | "a-delay" | "a-show" | "a-hide" | "switching"
+  | "b-delay" | "b-show" | "b-hide" | "restoring";
 
 const DURATION: Record<Phase, number> = {
-  "a-delay": T.initialDelay,
+  "a-delay": T.copyDelay,
   "a-show": T.showCopy,
-  "switching": T.boxAnim + T.gap,
-  "b-delay": T.betweenDelay,
+  "a-hide": T.hideDelay,
+  "switching": T.boxAnim,
+  "b-delay": T.copyDelay,
   "b-show": T.showCopy,
-  "restoring": T.boxAnim + T.gap,
+  "b-hide": T.hideDelay,
+  "restoring": T.boxAnim,
 };
 const NEXT: Record<Phase, Phase> = {
-  "a-delay": "a-show", "a-show": "switching", "switching": "b-delay",
-  "b-delay": "b-show", "b-show": "restoring", "restoring": "a-delay",
+  "a-delay": "a-show", "a-show": "a-hide", "a-hide": "switching", "switching": "b-delay",
+  "b-delay": "b-show", "b-show": "b-hide", "b-hide": "restoring", "restoring": "a-delay",
 };
-const SWAPPED: Phase[] = ["switching", "b-delay", "b-show", "restoring"];
+// Boxes are in the swapped position (tile5 up, tile4 collapsed) from the moment
+// they start scaling (switching) until they start scaling back (restoring).
+const SWAPPED: Phase[] = ["switching", "b-delay", "b-show", "b-hide"];
 
 /* ── Word reveal ─────────────────────────────────────────────────────
    Each word fades/rises in on mount with a staggered delay. A running index
@@ -272,7 +279,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
         {/* Copy A — fixed at top, occupies row2 (1fr of the 2.15fr zone = 46.5%) */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46.5%" }}>
-          <CopySlot visible={showA || pref} lines={COPY_A} phaseKey="a" pref={pref} pl={4} pr={24} instant={debugInstant} />
+          <CopySlot visible={showA || pref} lines={COPY_A} phaseKey="a" pref={pref} instant={debugInstant} center />
         </div>
 
         {/* Tile5 clip — collapsed height = row3 (1.15fr of 2.15fr = 53.5%),
