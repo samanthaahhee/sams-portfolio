@@ -27,7 +27,7 @@ const COPY_B: Line[] = [
   { indent: 3,   toks: [{ t: "13 years of experience" }] },
   { indent: 0.5, toks: [{ t: "has taught me that I do my" }] },
   { indent: 2,   toks: [{ t: "best work" }, { t: "bridging", b: true, s: BIG }] },
-  { kind: "cluster", indent: 1.5, left: ["product", "experience"], conj: "and", right: ["brand", "storytelling"] },
+  { kind: "cluster", indent: 2.8, left: ["product", "experience"], conj: "and", right: ["brand", "storytelling"] },
 ];
 
 /* ── Local images ────────────────────────────────────────────────── */
@@ -100,14 +100,16 @@ function CopyBlock({ lines, instant }: { lines: Line[]; instant?: boolean }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.18em" }}>
       {lines.map((ln, li) => {
         if (ln.kind === "cluster") {
+          // Stacks are bold and sit slightly lower; "and" centres vertically
+          // between the two 2-line bold stacks (alignItems center).
           return (
-            <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", alignItems: "flex-end", gap: "0.7em", marginTop: "0.15em" }}>
+            <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", alignItems: "center", gap: "0.7em", marginTop: "0.5em" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.05 }}>
-                {ln.left.map((w, wi) => <Word key={wi} text={w} delay={nextDelay()} block instant={instant} />)}
+                {ln.left.map((w, wi) => <Word key={wi} text={w} bold delay={nextDelay()} block instant={instant} />)}
               </div>
               <Word text={ln.conj} delay={nextDelay()} instant={instant} />
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.05 }}>
-                {ln.right.map((w, wi) => <Word key={wi} text={w} delay={nextDelay()} block instant={instant} />)}
+                {ln.right.map((w, wi) => <Word key={wi} text={w} bold delay={nextDelay()} block instant={instant} />)}
               </div>
             </div>
           );
