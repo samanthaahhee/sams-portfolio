@@ -277,17 +277,18 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       {/* Col1 rows 2+3 zone — copy A at top, tile5 clips upward from bottom */}
       {/* position:relative is REQUIRED so absolutely-positioned children work */}
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
-        {/* Copy A — fixed at top, occupies row2 (1fr of the 2.15fr zone = 46.5%) */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46.5%" }}>
+        {/* Copy A — white space above tile5 (row2 + the row gap) */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "calc(46.5% + 5px)" }}>
           <CopySlot visible={showA || pref} lines={COPY_A} phaseKey="a" pref={pref} instant={debugInstant} center />
         </div>
 
-        {/* Tile5 clip — collapsed height = row3 (1.15fr of 2.15fr = 53.5%),
-            so its top edge lands exactly on the row2/row3 grid line */}
+        {/* Tile5 clip — collapsed = row3 height. The zone spans rows 2+3 AND
+            the 10px gap between them, so 53.5% overshoots the row2/row3 line by
+            half the gap; subtract 5px so its top edge lands exactly on it. */}
         <AnimatedClip
           src={src("5")}
           anchor="bottom"
-          height={swapped ? "100%" : "53.5%"}
+          height={swapped ? "calc(100% - 0px)" : "calc(53.5% - 5px)"}
           transition={boxTrans}
         />
       </div>
@@ -309,17 +310,18 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
 
       {/* Col3 rows 1+2 zone — tile4 clips down from top, copy B at bottom */}
       <div style={{ gridColumn: 3, gridRow: "1/3", position: "relative", borderRadius: 10, overflow: "hidden" }}>
-        {/* Tile4 clip — collapsed height = row1 (1fr of the 2fr zone = 50%),
-            so its bottom edge lands exactly on the row1/row2 grid line */}
+        {/* Tile4 clip — collapsed = row1 height. Zone spans rows 1+2 AND the
+            10px gap, so 50% overshoots the row1/row2 line by half the gap;
+            subtract 5px so its bottom edge lands exactly on it. */}
         <AnimatedClip
           src={src("4")}
           anchor="top"
-          height={swapped ? "50%" : "100%"}
+          height={swapped ? "calc(50% - 5px)" : "calc(100% - 0px)"}
           transition={boxTrans}
         />
 
-        {/* Copy B — fixed at bottom, occupies row2 (1fr of the 2fr zone = 50%) */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
+        {/* Copy B — white space below tile4 (row2 + the row gap) */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "calc(50% + 5px)" }}>
           <CopySlot visible={showB} lines={COPY_B} phaseKey="b" pref={pref} instant={debugInstant} center />
         </div>
       </div>
