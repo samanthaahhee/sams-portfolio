@@ -4,19 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
-/* ── Copy ─────────────────────────────────────────────────────────── */
-type Phrase = { text: string; bold?: true; pauseBefore?: number; inline?: true; big?: true };
+/* ── Copy ─────────────────────────────────────────────────────────────
+   Art-directed layout: each line carries its own left indent (in em, so it
+   scales with the text), and each token its own size (em multiplier) + weight.
+   `indent` and `s` (size) are the two knobs to tune positioning against the
+   reference mockups. A "cluster" line renders the 3-part PRODUCT / AND / BRAND
+   arrangement. All values are easy to nudge in the live preview.            */
+type Tok = { t: string; b?: true; s?: number };
+type Line =
+  | { kind?: "line"; indent?: number; toks: Tok[] }
+  | { kind: "cluster"; indent?: number; left: string[]; conj: string; right: string[] };
 
-const COPY_A: Phrase[] = [
-  { text: "Hey I'm Sam.", big: true },
-  { text: "I'm a", pauseBefore: 500 },
-  { text: "visual communication designer,", bold: true, inline: true },
-  { text: "translating complex ideas into clear storytelling.", inline: true, pauseBefore: 200 },
+const BIG = 1.7; // size multiplier for the emphasised bold words
+
+const COPY_A: Line[] = [
+  { indent: 0,   toks: [{ t: "I'm Sam, I am a senior" }] },
+  { indent: 1.4, toks: [{ t: "visual communications", b: true, s: BIG }] },
+  { indent: 2.2, toks: [{ t: "designer", b: true, s: BIG }, { t: "translating complex" }] },
+  { indent: 4,   toks: [{ t: "ideas into clear storytelling" }] },
 ];
-const COPY_B: Phrase[] = [
-  { text: "From" },
-  { text: "13 years", bold: true, inline: true, pauseBefore: 150 },
-  { text: "of experience, I have found I enjoy closing the gap between product and brand.", inline: true, pauseBefore: 200 },
+const COPY_B: Line[] = [
+  { indent: 3,   toks: [{ t: "13 years of experience" }] },
+  { indent: 0.5, toks: [{ t: "has taught me that I do my" }] },
+  { indent: 2,   toks: [{ t: "best work" }, { t: "bridging", b: true, s: BIG }] },
+  { kind: "cluster", indent: 1.5, left: ["product", "experience"], conj: "and", right: ["brand", "storytelling"] },
 ];
 
 /* ── Local images ────────────────────────────────────────────────── */
@@ -56,54 +67,77 @@ const NEXT: Record<Phase, Phase> = {
 };
 const SWAPPED: Phase[] = ["switching", "b-delay", "b-show", "restoring"];
 
-/* ── Phrase reveal ───────────────────────────────────────────────── */
-function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
-  let cursor = 0;
+/* ── Word reveal ─────────────────────────────────────────────────────
+   Each word fades/rises in on mount with a staggered delay. A running index
+   (`RevealCtx.i`) is threaded through the whole block so words reveal in
+   reading order across lines and clusters.                                  */
+const STEP = 0.09; // seconds between words
+
+function Word({ text, bold, size, delay, block, instant }: {
+  text: string; bold?: boolean; size?: number; delay: number; block?: boolean; instant?: boolean;
+}) {
   return (
-    <span>
-      {phrases.map((phrase, pi) => {
-        const words = phrase.text.split(" ");
-        const start = cursor + (phrase.pauseBefore ? phrase.pauseBefore / 1000 : pi === 0 ? 0 : 0.4);
-        cursor = start + words.length * 0.09;
-        // If this phrase OR the next phrase is inline, render inline so they flow on one line
-        const isInline = phrase.inline || phrases[pi + 1]?.inline;
-        return (
-          <span key={pi} style={{ display: isInline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, fontSize: phrase.big ? "1.5em" : undefined, marginTop: pi > 0 && !isInline ? "0.12em" : 0, marginBottom: phrase.big ? "0.25em" : undefined }}>
-            {words.map((word, wi) => (
-              <motion.span
-                key={`${pi}-${wi}`}
-                className="inline-block"
-                style={{ marginRight: "0.28em" }}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: start + wi * 0.09, duration: 0.45, ease: "easeOut" }}
-              >{word}</motion.span>
-            ))}
-          </span>
-        );
-      })}
-    </span>
+    <motion.span
+      style={{
+        display: block ? "block" : "inline-block",
+        fontWeight: bold ? 700 : 400,
+        fontSize: size ? `${size}em` : undefined,
+        lineHeight: 1.1,
+      }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: instant ? 0 : delay, duration: instant ? 0 : 0.45, ease: "easeOut" }}
+    >
+      {text}
+    </motion.span>
   );
 }
 
-function CopySlot({ visible, phrases, phaseKey, pref, pl = 8, pr = 14 }: {
-  visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean; pl?: number; pr?: number;
+function CopyBlock({ lines, instant }: { lines: Line[]; instant?: boolean }) {
+  const ctx = { i: 0 };
+  const nextDelay = () => ctx.i++ * STEP;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "0.18em" }}>
+      {lines.map((ln, li) => {
+        if (ln.kind === "cluster") {
+          return (
+            <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", alignItems: "flex-end", gap: "0.7em", marginTop: "0.15em" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.05 }}>
+                {ln.left.map((w, wi) => <Word key={wi} text={w} delay={nextDelay()} block instant={instant} />)}
+              </div>
+              <Word text={ln.conj} delay={nextDelay()} instant={instant} />
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.05 }}>
+                {ln.right.map((w, wi) => <Word key={wi} text={w} delay={nextDelay()} block instant={instant} />)}
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", flexWrap: "wrap", alignItems: "baseline", columnGap: "0.28em", rowGap: 0 }}>
+            {ln.toks.flatMap((tk, ti) =>
+              tk.t.split(" ").map((w, wi) => (
+                <Word key={`${ti}-${wi}`} text={w} bold={tk.b} size={tk.s} delay={nextDelay()} instant={instant} />
+              ))
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CopySlot({ visible, lines, phaseKey, pref, pl = 8, pr = 14, instant }: {
+  visible: boolean; lines: Line[]; phaseKey: string; pref: boolean; pl?: number; pr?: number; instant?: boolean;
 }) {
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: pr, boxSizing: "border-box" }}>
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div key={phaseKey} className="font-lore"
-            style={{ fontSize: "clamp(0.8rem,1.25vw,1.1rem)", lineHeight: 1.4, color: "#1a1a1a" }}
+            style={{ fontSize: "clamp(0.8rem,1.25vw,1.1rem)", lineHeight: 1.3, color: "#1a1a1a" }}
             exit={{ opacity: 0, transition: { duration: 0.35 } }}
           >
-            {pref
-              ? phrases.map((p, i) => {
-                  const isInline = p.inline || phrases[i + 1]?.inline;
-                  return <span key={i} style={{ display: isInline ? "inline" : "block", fontWeight: p.bold ? 700 : 400, fontSize: p.big ? "1.5em" : undefined }}>{p.text}{isInline ? " " : ""}</span>;
-                })
-              : <PhraseReveal phrases={phrases} />
-            }
+            <CopyBlock lines={lines} instant={pref || instant} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -206,9 +240,13 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [pref]);
 
-  const swapped = SWAPPED.includes(phase);
-  const showA = phase === "a-show";
-  const showB = phase === "b-show";
+  // Debug helper: set to "a" or "b" to freeze that copy fully visible for
+  // tuning the typography indents in preview. Leave null in normal operation.
+  const DEBUG_COPY: "a" | "b" | null = null;
+  const swapped = DEBUG_COPY === "b" ? true : DEBUG_COPY === "a" ? false : SWAPPED.includes(phase);
+  const showA = DEBUG_COPY === "a" ? true : phase === "a-show";
+  const showB = DEBUG_COPY === "b" ? true : phase === "b-show";
+  const debugInstant = DEBUG_COPY !== null;
   const boxTrans = { duration: T.boxAnim / 1000, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
@@ -232,7 +270,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
         {/* Copy A — fixed at top, occupies row2 (1fr of the 2.15fr zone = 46.5%) */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46.5%" }}>
-          <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} pl={4} pr={24} />
+          <CopySlot visible={showA || pref} lines={COPY_A} phaseKey="a" pref={pref} pl={4} pr={24} instant={debugInstant} />
         </div>
 
         {/* Tile5 clip — collapsed height = row3 (1.15fr of 2.15fr = 53.5%),
@@ -273,7 +311,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
 
         {/* Copy B — fixed at bottom, occupies row2 (1fr of the 2fr zone = 50%) */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
-          <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} />
+          <CopySlot visible={showB} lines={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} instant={debugInstant} />
         </div>
       </div>
 
