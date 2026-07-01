@@ -10,12 +10,13 @@ type Phrase = { text: string; bold?: true; pauseBefore?: number; inline?: true }
 const COPY_A: Phrase[] = [
   { text: "Hey I'm Sam." },
   { text: "I'm a", pauseBefore: 500 },
-  { text: "visual communication designer,", bold: true, inline: true, pauseBefore: 200 },
+  { text: "visual communication designer,", bold: true, inline: true },
+  { text: "translating complex ideas into clear storytelling.", inline: true, pauseBefore: 200 },
 ];
 const COPY_B: Phrase[] = [
   { text: "From" },
   { text: "13 years", bold: true, inline: true, pauseBefore: 150 },
-  { text: "of experience, I have found I enjoy closing the gap between product and brand.", pauseBefore: 500 },
+  { text: "of experience, I have found I enjoy closing the gap between product and brand.", inline: true, pauseBefore: 200 },
 ];
 
 /* ── Local images ────────────────────────────────────────────────── */
@@ -89,15 +90,18 @@ function CopySlot({ visible, phrases, phaseKey, pref, pl = 8 }: {
   visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean; pl?: number;
 }) {
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: 16, paddingTop: 12, paddingBottom: 12, boxSizing: "border-box", overflow: "hidden" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: 14, boxSizing: "border-box" }}>
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div key={phaseKey} className="font-lore"
-            style={{ fontSize: "clamp(0.85rem,1.3vw,1.15rem)", lineHeight: 1.45, color: "#1a1a1a" }}
+            style={{ fontSize: "clamp(0.8rem,1.25vw,1.1rem)", lineHeight: 1.4, color: "#1a1a1a" }}
             exit={{ opacity: 0, transition: { duration: 0.35 } }}
           >
             {pref
-              ? phrases.map((p, i) => <span key={i} style={{ display: "block", fontWeight: p.bold ? 700 : 400 }}>{p.text}</span>)
+              ? phrases.map((p, i) => {
+                  const isInline = p.inline || phrases[i + 1]?.inline;
+                  return <span key={i} style={{ display: isInline ? "inline" : "block", fontWeight: p.bold ? 700 : 400 }}>{p.text}{isInline ? " " : ""}</span>;
+                })
               : <PhraseReveal phrases={phrases} />
             }
           </motion.div>
@@ -223,8 +227,8 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       {/* Col1 rows 2+3 zone — copy A at top, tile5 clips upward from bottom */}
       {/* position:relative is REQUIRED so absolutely-positioned children work */}
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
-        {/* Copy A — fixed at top, 46.5% of zone height */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46.5%" }}>
+        {/* Copy A — fixed at top, 55% of zone height */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55%" }}>
           <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} pl={4} />
         </div>
 
@@ -232,7 +236,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
         <AnimatedClip
           src={src("5")}
           anchor="bottom"
-          height={swapped ? "100%" : "53.5%"}
+          height={swapped ? "100%" : "45%"}
           transition={boxTrans}
         />
       </div>
@@ -258,12 +262,12 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
         <AnimatedClip
           src={src("4")}
           anchor="top"
-          height={swapped ? "50%" : "100%"}
+          height={swapped ? "45%" : "100%"}
           transition={boxTrans}
         />
 
-        {/* Copy B — fixed at bottom, 50% of zone height */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
+        {/* Copy B — fixed at bottom, 55% of zone height */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%" }}>
           <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} />
         </div>
       </div>
