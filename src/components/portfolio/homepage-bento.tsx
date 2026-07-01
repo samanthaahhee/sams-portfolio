@@ -5,17 +5,17 @@ import { motion, AnimatePresence } from "motion/react";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
 /* ── Copy ─────────────────────────────────────────────────────────── */
-type Phrase = { text: string; bold?: true; pauseBefore?: number };
+type Phrase = { text: string; bold?: true; pauseBefore?: number; inline?: true };
 
 const COPY_A: Phrase[] = [
   { text: "Hey I'm Sam." },
-  { text: "I'm a visual communication designer,", pauseBefore: 500 },
-  { text: "translating complex ideas into clear storytelling.", bold: true, pauseBefore: 500 },
+  { text: "I'm a", pauseBefore: 500 },
+  { text: "visual communication designer,", bold: true, inline: true, pauseBefore: 200 },
 ];
 const COPY_B: Phrase[] = [
-  { text: "With 13 years of experience," },
-  { text: "I have found I enjoy sitting", pauseBefore: 500 },
-  { text: "at the intersection of product & brand.", bold: true, pauseBefore: 500 },
+  { text: "From" },
+  { text: "13 years", bold: true, inline: true, pauseBefore: 150 },
+  { text: "of experience, I have found I enjoy closing the gap between product and brand.", pauseBefore: 500 },
 ];
 
 /* ── Local images ────────────────────────────────────────────────── */
@@ -33,7 +33,7 @@ const NAV_H = 56;
 
 const T = {
   initialDelay: 2000,
-  showCopy: 4500,
+  showCopy: 7500,  // ~2.5s animation + 4s reading pause
   boxAnim: 1500,
   gap: 500,
   betweenDelay: 2000,
@@ -65,7 +65,7 @@ function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
         const start = cursor + (phrase.pauseBefore ? phrase.pauseBefore / 1000 : pi === 0 ? 0 : 0.4);
         cursor = start + words.length * 0.09;
         return (
-          <span key={pi} style={{ display: "block", fontWeight: phrase.bold ? 700 : 400, marginTop: pi > 0 ? "0.12em" : 0 }}>
+          <span key={pi} style={{ display: phrase.inline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, marginTop: pi > 0 && !phrase.inline ? "0.12em" : 0 }}>
             {words.map((word, wi) => (
               <motion.span
                 key={`${pi}-${wi}`}
