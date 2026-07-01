@@ -255,19 +255,9 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
         <Tile src={src("3")} objectPosition="center" />
       </div>
 
-      {/* Bottom row cols 2-3 — Recharge (square) + BOS (wide rectangle).
-          Merged into ONE cell so only this row splits differently; the tiles
-          above in these columns (Walkrr, Small Stitch, the col3 zone) stay
-          equal thirds. */}
-      <div style={{ gridColumn: "2 / 4", gridRow: "3/4", display: "flex", gap: 10, alignItems: "stretch" }}>
-        {/* Recharge — square: height fills the row, aspect-ratio sets width */}
-        <div className="rounded-xl overflow-hidden" style={{ height: "100%", aspectRatio: "1 / 1", flex: "0 0 auto" }}>
-          <Tile src={src("6")} />
-        </div>
-        {/* BOS — fills the remaining width as a wide rectangle */}
-        <div className="rounded-xl overflow-hidden" style={{ height: "100%", flex: "1 1 auto", minWidth: 0 }}>
-          <Tile src={src("7")} />
-        </div>
+      {/* Tile 6 — Recharge */}
+      <div className="rounded-xl overflow-hidden" style={{ gridColumn: 2, gridRow: "3/4" }}>
+        <Tile src={src("6")} />
       </div>
 
       {/* Col3 rows 1+2 zone — tile4 clips down from top, copy B at bottom */}
@@ -285,6 +275,11 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
           <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} />
         </div>
+      </div>
+
+      {/* Tile 7 — BOS ICE TEA */}
+      <div className="rounded-xl overflow-hidden" style={{ gridColumn: 3, gridRow: "3/4" }}>
+        <Tile src={src("7")} />
       </div>
     </div>
   );
