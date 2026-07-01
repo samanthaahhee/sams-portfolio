@@ -64,8 +64,10 @@ function PhraseReveal({ phrases }: { phrases: Phrase[] }) {
         const words = phrase.text.split(" ");
         const start = cursor + (phrase.pauseBefore ? phrase.pauseBefore / 1000 : pi === 0 ? 0 : 0.4);
         cursor = start + words.length * 0.09;
+        // If this phrase OR the next phrase is inline, render inline so they flow on one line
+        const isInline = phrase.inline || phrases[pi + 1]?.inline;
         return (
-          <span key={pi} style={{ display: phrase.inline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, marginTop: pi > 0 && !phrase.inline ? "0.12em" : 0 }}>
+          <span key={pi} style={{ display: isInline ? "inline" : "block", fontWeight: phrase.bold ? 700 : 400, marginTop: pi > 0 && !isInline ? "0.12em" : 0 }}>
             {words.map((word, wi) => (
               <motion.span
                 key={`${pi}-${wi}`}
@@ -87,7 +89,7 @@ function CopySlot({ visible, phrases, phaseKey, pref, pl = 8 }: {
   visible: boolean; phrases: Phrase[]; phaseKey: string; pref: boolean; pl?: number;
 }) {
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: 8 }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: 16, paddingTop: 12, paddingBottom: 12, boxSizing: "border-box", overflow: "hidden" }}>
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div key={phaseKey} className="font-lore"
@@ -130,14 +132,12 @@ function AnimatedClip({
   height,
   anchor,
   transition,
-  borderRadius = "10px",
   style,
 }: {
   src: string;
   height: string;
   anchor: "top" | "bottom";
   transition: object;
-  borderRadius?: string;
   style?: React.CSSProperties;
 }) {
   return (
@@ -150,7 +150,6 @@ function AnimatedClip({
         right: 0,
         ...(anchor === "top" ? { top: 0 } : { bottom: 0 }),
         overflow: "hidden",
-        borderRadius,
         ...style,
       }}
     >
@@ -235,7 +234,6 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
           anchor="bottom"
           height={swapped ? "100%" : "53.5%"}
           transition={boxTrans}
-          borderRadius="10px"
         />
       </div>
 
@@ -262,7 +260,6 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
           anchor="top"
           height={swapped ? "50%" : "100%"}
           transition={boxTrans}
-          borderRadius="10px"
         />
 
         {/* Copy B — fixed at bottom, 50% of zone height */}
