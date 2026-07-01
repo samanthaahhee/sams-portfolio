@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import type { PortfolioMedia } from "@/lib/db-portfolio";
 
@@ -28,6 +29,31 @@ const COPY_B: Line[] = [
   { indent: 0.5, toks: [{ t: "has taught me that I do my" }] },
   { indent: 2,   toks: [{ t: "best work" }, { t: "bridging", b: true, s: 1.45 }] },
   { kind: "cluster", indent: 2.8, left: ["product", "experience"], conj: "and", right: ["brand", "storytelling"] },
+];
+
+/* ── Mobile copy ──────────────────────────────────────────────────────
+   Mobile is copy-only (no bento). Lines are centred; `mt` adds an em of
+   space above a line for the paragraph breaks in the mockup.            */
+type MobileLine = { toks: Tok[]; mt?: number };
+
+const M_COPY_A: MobileLine[] = [
+  { toks: [{ t: "I'm Sam," }] },
+  { toks: [{ t: "I am a senior" }], mt: 1.1 },
+  { toks: [{ t: "visual comms", b: true, s: BIG }], mt: 0.2 },
+  { toks: [{ t: "designer", b: true, s: BIG }] },
+  { toks: [{ t: "translating complex" }], mt: 0.35 },
+  { toks: [{ t: "ideas into clear" }] },
+  { toks: [{ t: "storytelling." }] },
+];
+const M_COPY_B: MobileLine[] = [
+  { toks: [{ t: "13 years" }] },
+  { toks: [{ t: "of experience" }] },
+  { toks: [{ t: "has taught me that" }] },
+  { toks: [{ t: "I do my best work" }] },
+  { toks: [{ t: "bridging", b: true, s: BIG }], mt: 0.35 },
+  { toks: [{ t: "product experience", b: true }], mt: 0.2 },
+  { toks: [{ t: "and" }, { t: "brand", b: true }] },
+  { toks: [{ t: "storytelling", b: true }] },
 ];
 
 /* ── Local images ────────────────────────────────────────────────── */
@@ -154,6 +180,83 @@ function CopySlot({ visible, lines, phaseKey, pref, pl = 8, pr = 14, instant, ce
   );
 }
 
+/* ── Mobile copy block — centred lines, same word reveal ──────────── */
+function MobileCopyBlock({ lines, instant }: { lines: MobileLine[]; instant?: boolean }) {
+  const ctx = { i: 0 };
+  const nextDelay = () => ctx.i++ * STEP;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+      {lines.map((ln, li) => (
+        <div key={li} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "baseline", columnGap: "0.28em", rowGap: 0, marginTop: ln.mt ? `${ln.mt}em` : 0 }}>
+          {ln.toks.flatMap((tk, ti) =>
+            tk.t.split(" ").map((w, wi) => (
+              <Word key={`${ti}-${wi}`} text={w} bold={tk.b} size={tk.s} delay={nextDelay()} instant={instant} />
+            ))
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Mobile hero — copy only, A ↔ B on a reading rhythm ───────────── */
+const MOBILE_SHOW = 6500; // reveal (~2s) + ~4s reading hold before it swaps
+
+function MobileHero({ pref }: { pref: boolean }) {
+  const [idx, setIdx] = useState(0); // 0 = message A, 1 = message B
+  useEffect(() => {
+    if (pref) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % 2), MOBILE_SHOW);
+    return () => clearInterval(t);
+  }, [pref]);
+
+  return (
+    <div
+      style={{
+        minHeight: `calc(100vh - ${NAV_H}px)`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0 28px 40px",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ minHeight: "9.5em", display: "flex", alignItems: "center" }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={idx}
+            className="font-lore"
+            style={{ fontSize: "clamp(1.05rem, 5vw, 1.5rem)", lineHeight: 1.25, color: "#1a1a1a" }}
+            exit={{ opacity: 0, transition: { duration: 0.35 } }}
+          >
+            <MobileCopyBlock lines={idx === 0 ? M_COPY_A : M_COPY_B} instant={pref} />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <Link
+        href="/work"
+        className="font-portfolio-sans hover:opacity-70 transition-opacity"
+        style={{
+          marginTop: "3rem",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          border: "1.5px solid #1a1a1a",
+          borderRadius: 9999,
+          padding: "14px 26px",
+          fontSize: 16,
+          color: "#1a1a1a",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Let&rsquo;s take a look <span aria-hidden>→</span>
+      </Link>
+    </div>
+  );
+}
+
 /* ── Simple tile: normal img, fills container ────────────────────── */
 function Tile({ src, objectPosition = "center top" }: { src: string; objectPosition?: string }) {
   return (
@@ -234,20 +337,29 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
   const src = (id: string) => bySlot[id]?.url ?? LOCAL[id] ?? "";
 
   const [pref, setPref] = useState(false);
+  // mounted guards against SSR/hydration mismatch; isMobile picks the layout.
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     setPref(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    setMounted(true);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   const [phase, setPhase] = useState<Phase>("a-delay");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (pref) return;
+    if (pref || isMobile) return; // desktop-only box/copy loop
     function schedule(p: Phase) {
       timer.current = setTimeout(() => { const next = NEXT[p]; setPhase(next); schedule(next); }, DURATION[p]);
     }
     schedule("a-delay");
     return () => { if (timer.current) clearTimeout(timer.current); };
-  }, [pref]);
+  }, [pref, isMobile]);
 
   // Debug helper: set to "a" or "b" to freeze that copy fully visible for
   // tuning the typography indents in preview. Leave null in normal operation.
@@ -257,6 +369,11 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
   const showB = DEBUG_COPY === "b" ? true : phase === "b-show";
   const debugInstant = DEBUG_COPY !== null;
   const boxTrans = { duration: T.boxAnim / 1000, ease: [0.22, 1, 0.36, 1] as const };
+
+  // Hold layout until we know the viewport, to avoid a flash of the wrong one.
+  if (!mounted) return <div style={{ height: `calc(100vh - ${NAV_H}px)` }} />;
+  // Mobile: copy-only hero, no bento grid.
+  if (isMobile) return <MobileHero pref={pref} />;
 
   return (
     <div style={{
