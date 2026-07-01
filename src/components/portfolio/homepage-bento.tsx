@@ -38,10 +38,10 @@ type MobileLine = { toks: Tok[]; mt?: number };
 
 const M_COPY_A: MobileLine[] = [
   { toks: [{ t: "I'm Sam," }] },
-  { toks: [{ t: "I am a senior" }], mt: 1.1 },
-  { toks: [{ t: "visual comms", b: true, s: BIG }], mt: 0.2 },
+  { toks: [{ t: "I am a senior" }], mt: 0.7 },
+  { toks: [{ t: "visual comms", b: true, s: BIG }], mt: 0.15 },
   { toks: [{ t: "designer", b: true, s: BIG }] },
-  { toks: [{ t: "translating complex" }], mt: 0.35 },
+  { toks: [{ t: "translating complex" }], mt: 0.25 },
   { toks: [{ t: "ideas into clear" }] },
   { toks: [{ t: "storytelling." }] },
 ];
@@ -185,7 +185,7 @@ function MobileCopyBlock({ lines, instant }: { lines: MobileLine[]; instant?: bo
   const ctx = { i: 0 };
   const nextDelay = () => ctx.i++ * STEP;
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "0.45em" }}>
       {lines.map((ln, li) => (
         <div key={li} style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "baseline", columnGap: "0.28em", rowGap: 0, marginTop: ln.mt ? `${ln.mt}em` : 0 }}>
           {ln.toks.flatMap((tk, ti) =>
@@ -217,17 +217,29 @@ function MobileHero({ pref }: { pref: boolean }) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        padding: "0 28px 40px",
+        paddingTop: "13vh", // nudged down, like the reference
+        paddingLeft: 28,
+        paddingRight: 28,
+        paddingBottom: "6vh",
         boxSizing: "border-box",
       }}
     >
-      <div style={{ minHeight: "9.5em", display: "flex", alignItems: "center" }}>
+      {/* Fixed-height copy area (font +20%) so the button lands in the SAME
+          place for both messages regardless of their line count. */}
+      <div
+        style={{
+          fontSize: "clamp(1.26rem, 6vw, 1.8rem)",
+          height: "14em",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={idx}
             className="font-lore"
-            style={{ fontSize: "clamp(1.05rem, 5vw, 1.5rem)", lineHeight: 1.25, color: "#1a1a1a" }}
+            style={{ lineHeight: 1.4, color: "#1a1a1a" }}
             exit={{ opacity: 0, transition: { duration: 0.35 } }}
           >
             <MobileCopyBlock lines={idx === 0 ? M_COPY_A : M_COPY_B} instant={pref} />
@@ -239,19 +251,19 @@ function MobileHero({ pref }: { pref: boolean }) {
         href="/work"
         className="font-portfolio-sans hover:opacity-70 transition-opacity"
         style={{
-          marginTop: "3rem",
+          marginTop: "2.5rem",
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
           border: "1.5px solid #1a1a1a",
           borderRadius: 9999,
-          padding: "14px 26px",
-          fontSize: 16,
+          padding: "15px 28px",
+          fontSize: 17,
           color: "#1a1a1a",
           whiteSpace: "nowrap",
         }}
       >
-        Let&rsquo;s take a look <span aria-hidden>→</span>
+        Explore my archive <span aria-hidden>→</span>
       </Link>
     </div>
   );
