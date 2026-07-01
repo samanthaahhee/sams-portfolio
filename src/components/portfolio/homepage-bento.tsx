@@ -26,7 +26,7 @@ const COPY_A: Line[] = [
 const COPY_B: Line[] = [
   { indent: 3,   toks: [{ t: "13 years of experience" }] },
   { indent: 0.5, toks: [{ t: "has taught me that I do my" }] },
-  { indent: 2,   toks: [{ t: "best work" }, { t: "bridging", b: true, s: BIG }] },
+  { indent: 2,   toks: [{ t: "best work" }, { t: "bridging", b: true, s: 1.45 }] },
   { kind: "cluster", indent: 2.8, left: ["product", "experience"], conj: "and", right: ["brand", "storytelling"] },
 ];
 
@@ -103,7 +103,7 @@ function CopyBlock({ lines, instant }: { lines: Line[]; instant?: boolean }) {
           // Stacks are bold and sit slightly lower; "and" centres vertically
           // between the two 2-line bold stacks (alignItems center).
           return (
-            <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", alignItems: "center", gap: "0.7em", marginTop: "0.5em" }}>
+            <div key={li} style={{ paddingLeft: `${ln.indent ?? 0}em`, display: "flex", alignItems: "center", gap: "0.7em", marginTop: "0.1em" }}>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", lineHeight: 1.05 }}>
                 {ln.left.map((w, wi) => <Word key={wi} text={w} bold delay={nextDelay()} block instant={instant} />)}
               </div>
@@ -128,11 +128,11 @@ function CopyBlock({ lines, instant }: { lines: Line[]; instant?: boolean }) {
   );
 }
 
-function CopySlot({ visible, lines, phaseKey, pref, pl = 8, pr = 14, instant }: {
-  visible: boolean; lines: Line[]; phaseKey: string; pref: boolean; pl?: number; pr?: number; instant?: boolean;
+function CopySlot({ visible, lines, phaseKey, pref, pl = 8, pr = 14, instant, center }: {
+  visible: boolean; lines: Line[]; phaseKey: string; pref: boolean; pl?: number; pr?: number; instant?: boolean; center?: boolean;
 }) {
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", paddingLeft: pl, paddingRight: pr, boxSizing: "border-box" }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: center ? "center" : "flex-start", paddingLeft: center ? 12 : pl, paddingRight: center ? 12 : pr, boxSizing: "border-box" }}>
       <AnimatePresence mode="wait">
         {visible && (
           <motion.div key={phaseKey} className="font-lore"
@@ -313,7 +313,7 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
 
         {/* Copy B — fixed at bottom, occupies row2 (1fr of the 2fr zone = 50%) */}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
-          <CopySlot visible={showB} lines={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} instant={debugInstant} />
+          <CopySlot visible={showB} lines={COPY_B} phaseKey="b" pref={pref} instant={debugInstant} center />
         </div>
       </div>
 
