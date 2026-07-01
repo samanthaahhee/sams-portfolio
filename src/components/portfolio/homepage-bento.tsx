@@ -230,16 +230,17 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
       {/* Col1 rows 2+3 zone — copy A at top, tile5 clips upward from bottom */}
       {/* position:relative is REQUIRED so absolutely-positioned children work */}
       <div style={{ gridColumn: 1, gridRow: "2/4", position: "relative", borderRadius: 10, overflow: "hidden" }}>
-        {/* Copy A — fixed at top, 55% of zone height */}
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "55%" }}>
+        {/* Copy A — fixed at top, occupies row2 (1fr of the 2.15fr zone = 46.5%) */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "46.5%" }}>
           <CopySlot visible={showA || pref} phrases={COPY_A} phaseKey="a" pref={pref} pl={4} pr={24} />
         </div>
 
-        {/* Tile5 clip — grows upward from bottom to cover copy A */}
+        {/* Tile5 clip — collapsed height = row3 (1.15fr of 2.15fr = 53.5%),
+            so its top edge lands exactly on the row2/row3 grid line */}
         <AnimatedClip
           src={src("5")}
           anchor="bottom"
-          height={swapped ? "100%" : "45%"}
+          height={swapped ? "100%" : "53.5%"}
           transition={boxTrans}
         />
       </div>
@@ -261,16 +262,17 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
 
       {/* Col3 rows 1+2 zone — tile4 clips down from top, copy B at bottom */}
       <div style={{ gridColumn: 3, gridRow: "1/3", position: "relative", borderRadius: 10, overflow: "hidden" }}>
-        {/* Tile4 clip — shrinks downward from top to reveal copy B */}
+        {/* Tile4 clip — collapsed height = row1 (1fr of the 2fr zone = 50%),
+            so its bottom edge lands exactly on the row1/row2 grid line */}
         <AnimatedClip
           src={src("4")}
           anchor="top"
-          height={swapped ? "45%" : "100%"}
+          height={swapped ? "50%" : "100%"}
           transition={boxTrans}
         />
 
-        {/* Copy B — fixed at bottom, 55% of zone height */}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "55%" }}>
+        {/* Copy B — fixed at bottom, occupies row2 (1fr of the 2fr zone = 50%) */}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "50%" }}>
           <CopySlot visible={showB} phrases={COPY_B} phaseKey="b" pref={pref} pl={16} pr={90} />
         </div>
       </div>
