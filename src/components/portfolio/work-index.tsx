@@ -25,17 +25,14 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
 
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
-// Constant card WIDTH is what makes the infinite loop seamless (the strip width
-// is predictable) and avoids horizontal jumps. Focus is shown by a taller image
-// + full opacity — height grows upward (cards are bottom-aligned) so it never
-// disturbs the horizontal scroll.
-const CARD_W = 520;
+// Every tile is the same size and a 16:9 ratio. Constant width keeps the
+// infinite loop seamless and avoids horizontal jumps; focus is shown by full
+// opacity (passives are dimmed).
+const CARD_W = 800;
 const GAP = 24;
 const PAD = 44;
 const STEP = CARD_W + GAP;
 const COPIES = 5; // repeated sets of the project list for the infinite wrap
-const ACTIVE_IMG_H = "min(62vh, 560px)";
-const PASSIVE_IMG_H = "min(44vh, 400px)";
 
 export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const list = projects.length > 0 ? projects : PLACEHOLDER_PROJECTS;
@@ -167,16 +164,15 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
                 transition: `opacity 500ms ${EASE}`,
               }}
             >
-              {/* Image — only the height changes with focus (grows upward) */}
+              {/* Image — fixed 16:9 for every tile */}
               <div
                 style={{
                   width: "100%",
+                  aspectRatio: "16 / 9",
                   borderRadius: 20,
                   overflow: "hidden",
                   position: "relative",
                   background: "#e9e7e2",
-                  height: isActive ? ACTIVE_IMG_H : PASSIVE_IMG_H,
-                  transition: `height 500ms ${EASE}`,
                 }}
               >
                 <Media src={cover} type={type} alt={proj.title} className="w-full h-full object-cover" />
