@@ -26,12 +26,14 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
 // The strip is driven manually. Every tile is a fixed 16:9 box; the focus tile
 // is scaled up with a CSS transform (visual only — no layout reflow), so the
 // enlargement never shifts the other tiles or the infinite loop.
-const ACTIVE_W = 760;       // focus tile width (scale = 1)
-const PASSIVE_SCALE = 0.72; // inactive tiles shrink to this (still 16:9)
+const ACTIVE_W = 760;       // focus image width (full size)
+const PASSIVE_SCALE = 0.72; // inactive image width shrinks to this
 const GAP = 28;
 const PAD = 56;             // left focus position
-const BOTTOM_PAD = 60;      // meta baseline from the bottom
+const BOTTOM_PAD = 70;      // baseline for passive tiles (low)
+const RISE = 120;           // how far the focus tile lifts above the passives
 const COPIES = 6;           // repeated project sets for the infinite wrap
+const IMG_RATIO = "16 / 10.35"; // 16:9 with height +15%
 
 // Smooth 0..1 "focus-ness" by distance (in tile units) from the focus point.
 function foc(d: number) {
@@ -77,8 +79,8 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
         const el = tileRefs.current[L];
         if (!el) continue;
         const f = foc(L - p);
-        const s = PASSIVE_SCALE + (1 - PASSIVE_SCALE) * f;
-        el.style.transform = `translate3d(${C[L] - scroll}px,0,0) scale(${s})`;
+        el.style.width = w[L] + "px"; // only the image column resizes; meta stays constant
+        el.style.transform = `translate3d(${C[L] - scroll}px,${-RISE * f}px,0)`; // focus tile lifts
         el.style.opacity = String(0.4 + 0.6 * f);
         el.style.zIndex = f > 0.5 ? "3" : "1";
       }
@@ -109,11 +111,11 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
       {/* Intro — floats top-right, beside the focus tile */}
-      <div style={{ position: "absolute", top: "21%", left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 520, pointerEvents: "none" }}>
-        <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "var(--ink)" }}>
+      <div style={{ position: "absolute", top: "24%", left: PAD + ACTIVE_W + 60, zIndex: 5, maxWidth: 520, pointerEvents: "none" }}>
+        <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "#111" }}>
           Thanks
         </h1>
-        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.35, color: "#333", marginTop: 14 }}>
+        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
           for stopping by. here is a collection of work I&rsquo;m proud of.
         </p>
       </div>
@@ -132,22 +134,21 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
               left: 0,
               bottom: BOTTOM_PAD,
               width: ACTIVE_W,
-              transformOrigin: "bottom left",
               willChange: "transform, opacity",
               cursor: "pointer",
               display: "flex",
               flexDirection: "column",
             }}
           >
-            <div style={{ width: "100%", aspectRatio: "16 / 9", borderRadius: 20, overflow: "hidden", position: "relative", background: "#e9e7e2" }}>
+            <div style={{ width: "100%", aspectRatio: IMG_RATIO, borderRadius: 20, overflow: "hidden", position: "relative", background: "#e9e7e2" }}>
               <Media src={cover} type={type} alt={proj.title} className="w-full h-full object-cover" />
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "16px 4px 0", gap: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "18px 4px 0", gap: 16 }}>
               <div style={{ minWidth: 0 }}>
-                <div className="font-portfolio-sans" style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>
+                <div className="font-portfolio-sans" style={{ fontSize: 26, fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>
                   {proj.title}
                 </div>
-                <div className="font-portfolio-sans" style={{ fontSize: 14, color: "#888", marginTop: 3, whiteSpace: "nowrap" }}>
+                <div className="font-portfolio-sans" style={{ fontSize: 15, color: "#888", marginTop: 4, whiteSpace: "nowrap" }}>
                   {proj.discipline}
                 </div>
               </div>
@@ -155,7 +156,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
                 href={`/work/${proj.slug}`}
                 onClick={(e) => e.stopPropagation()}
                 className="font-portfolio-sans"
-                style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}
+                style={{ fontSize: 15, fontWeight: 700, color: "#111", whiteSpace: "nowrap", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}
               >
                 View project <span aria-hidden>→</span>
               </Link>
