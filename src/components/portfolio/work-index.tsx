@@ -1,18 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
 
 /* Placeholder covers — shown until real media is uploaded */
 const PH_COVERS = [
-  "https://picsum.photos/seed/walkrr-cover/1600/1120",
-  "https://picsum.photos/seed/bos-cover/1600/1120",
-  "https://picsum.photos/seed/temper-cover/1600/1120",
-  "https://picsum.photos/seed/recharge-cover/1600/1120",
-  "https://picsum.photos/seed/smallstitch-cover/1600/1120",
-  "https://picsum.photos/seed/icetea-cover/1600/1120",
+  "https://picsum.photos/seed/walkrr-cover/1600/900",
+  "https://picsum.photos/seed/bos-cover/1600/900",
+  "https://picsum.photos/seed/temper-cover/1600/900",
+  "https://picsum.photos/seed/recharge-cover/1600/900",
+  "https://picsum.photos/seed/smallstitch-cover/1600/900",
+  "https://picsum.photos/seed/icetea-cover/1600/900",
 ];
 
 const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
@@ -23,105 +23,93 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
   { id: 4, slug: "small-stitch", title: "Small Stitch", discipline: "Brand Identity", client: "Small Stitch", role: "Brand Designer", year: "2023", orderIndex: 4, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[4], coverType: "image" },
 ];
 
-const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
+// The strip is driven manually. Every tile is a fixed 16:9 box; the focus tile
+// is scaled up with a CSS transform (visual only — no layout reflow), so the
+// enlargement never shifts the other tiles or the infinite loop.
+const ACTIVE_W = 760;       // focus tile width (scale = 1)
+const PASSIVE_SCALE = 0.72; // inactive tiles shrink to this (still 16:9)
+const GAP = 28;
+const PAD = 56;             // left focus position
+const BOTTOM_PAD = 60;      // meta baseline from the bottom
+const COPIES = 6;           // repeated project sets for the infinite wrap
 
-// Every tile is the same size and a 16:9 ratio. Constant width keeps the
-// infinite loop seamless and avoids horizontal jumps; focus is shown by full
-// opacity (passives are dimmed).
-const CARD_W = 800;
-const GAP = 24;
-const PAD = 44;
-const STEP = CARD_W + GAP;
-const COPIES = 5; // repeated sets of the project list for the infinite wrap
+// Smooth 0..1 "focus-ness" by distance (in tile units) from the focus point.
+function foc(d: number) {
+  const a = Math.max(0, 1 - Math.abs(d));
+  return a * a * (3 - 2 * a);
+}
 
 export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const list = projects.length > 0 ? projects : PLACEHOLDER_PROJECTS;
   const n = list.length;
-  const period = n * STEP; // pixel width of one full list — constant
+  const T = COPIES * n;
 
-  const scrollerRef = useRef<HTMLDivElement>(null);
-  const target = useRef(0); // where we're easing scrollLeft toward
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tileRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const pos = useRef(2 * n);    // continuous focus position (project 0 active)
+  const target = useRef(2 * n);
   const rafRef = useRef(0);
-  const [activeGlobal, setActiveGlobal] = useState(Math.round((Math.floor(COPIES / 2) * period) / STEP));
 
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
+    const w = new Array<number>(T);
+    const C = new Array<number>(T);
+    let settle: ReturnType<typeof setTimeout>;
+    const SCROLL_UNIT = ACTIVE_W * PASSIVE_SCALE + GAP; // px per tile advance
 
-    const mid = Math.floor(COPIES / 2) * period; // start in the middle copy
-    el.scrollLeft = mid;
-    target.current = mid;
-    let lastActive = -1;
+    const frame = () => {
+      pos.current += (target.current - pos.current) * 0.14;
+      if (Math.abs(target.current - pos.current) < 0.0005) pos.current = target.current;
 
-    const tick = () => {
-      const cur = el.scrollLeft;
-      let next = cur + (target.current - cur) * 0.14; // smooth easing
-      if (Math.abs(target.current - next) < 0.3) next = target.current;
-      el.scrollLeft = next;
+      // Infinite wrap — content repeats every n, so shifting pos by n is seamless.
+      const lo = n, hi = (COPIES - 2) * n;
+      if (pos.current < lo) { pos.current += n; target.current += n; }
+      else if (pos.current > hi) { pos.current -= n; target.current -= n; }
 
-      // Infinite wrap: content repeats every `period`, so shifting scrollLeft by
-      // one period lands on identical pixels — seamless, no snap or realignment.
-      if (el.scrollLeft < period * 2) { el.scrollLeft += period; target.current += period; }
-      else if (el.scrollLeft > period * 3) { el.scrollLeft -= period; target.current -= period; }
+      const p = pos.current;
+      for (let L = 0; L < T; L++) w[L] = ACTIVE_W * (PASSIVE_SCALE + (1 - PASSIVE_SCALE) * foc(L - p));
+      C[0] = 0;
+      for (let L = 1; L < T; L++) C[L] = C[L - 1] + w[L - 1] + GAP;
+      const b = Math.floor(p);
+      const Cpos = C[b] + (p - b) * (w[b] + GAP);
+      const scroll = Cpos - PAD;
 
-      const ag = Math.round(el.scrollLeft / STEP);
-      if (ag !== lastActive) { lastActive = ag; setActiveGlobal(ag); }
-
-      rafRef.current = requestAnimationFrame(tick);
+      for (let L = 0; L < T; L++) {
+        const el = tileRefs.current[L];
+        if (!el) continue;
+        const f = foc(L - p);
+        const s = PASSIVE_SCALE + (1 - PASSIVE_SCALE) * f;
+        el.style.transform = `translate3d(${C[L] - scroll}px,0,0) scale(${s})`;
+        el.style.opacity = String(0.4 + 0.6 * f);
+        el.style.zIndex = f > 0.5 ? "3" : "1";
+      }
+      rafRef.current = requestAnimationFrame(frame);
     };
-    rafRef.current = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(frame);
 
-    // Any wheel — vertical or horizontal — drives the horizontal scroll.
-    // When the gesture stops, softly settle to the nearest card so the focus
-    // card lands flush-left (a gentle ease, not a mid-scroll snap-back).
-    let settleTimer: ReturnType<typeof setTimeout>;
+    const el = containerRef.current!;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      target.current += d;
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => {
-        target.current = Math.round(target.current / STEP) * STEP;
-      }, 150);
+      target.current += d / SCROLL_UNIT;
+      clearTimeout(settle);
+      settle = setTimeout(() => { target.current = Math.round(target.current); }, 150);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
 
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      clearTimeout(settleTimer);
-      el.removeEventListener("wheel", onWheel);
-    };
-  }, [period, n]);
+    return () => { cancelAnimationFrame(rafRef.current); clearTimeout(settle); el.removeEventListener("wheel", onWheel); };
+  }, [T, n]);
 
-  // Click a card → ease it to the focus position.
-  function goTo(globalIndex: number) {
-    target.current = globalIndex * STEP;
-  }
+  function goTo(L: number) { target.current = L; }
 
-  // Build COPIES repeated sets so the strip is always full as it wraps.
-  const cards: { g: number; i: number; proj: PortfolioProject }[] = [];
-  for (let c = 0; c < COPIES; c++) {
-    for (let i = 0; i < n; i++) cards.push({ g: c * n + i, i, proj: list[i] });
-  }
+  const tiles = Array.from({ length: T }, (_, L) => ({ L, proj: list[L % n], i: L % n }));
 
   return (
-    <div style={{ height: "calc(100vh - 56px)", position: "relative", overflow: "hidden" }}>
-      <style>{`.wk-carousel::-webkit-scrollbar{display:none}`}</style>
+    <div ref={containerRef} style={{ height: "calc(100vh - 56px)", position: "relative", overflow: "hidden" }}>
+      {/* Mask the left gutter so tiles wrapping past the edge don't peek */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
-      {/* Mask the gutter so cards wrapping past the left edge don't peek */}
-      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 2, pointerEvents: "none" }} />
-
-      {/* Intro — floats in the top-right, beside the focus card */}
-      <div
-        style={{
-          position: "absolute",
-          top: "20%",
-          left: `${PAD + CARD_W + 48}px`,
-          zIndex: 5,
-          maxWidth: 540,
-          pointerEvents: "none",
-        }}
-      >
+      {/* Intro — floats top-right, beside the focus tile */}
+      <div style={{ position: "absolute", top: "21%", left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 520, pointerEvents: "none" }}>
         <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "var(--ink)" }}>
           Thanks
         </h1>
@@ -130,98 +118,51 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
         </p>
       </div>
 
-      {/* Scroller (JS-driven) */}
-      <div
-        ref={scrollerRef}
-        className="wk-carousel"
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          gap: GAP,
-          padding: `0 0 40px ${PAD}px`,
-          height: "100%",
-          overflowX: "scroll",
-          overflowY: "hidden",
-          scrollbarWidth: "none",
-        }}
-      >
-        {cards.map(({ g, i, proj }) => {
-          const isActive = g === activeGlobal;
-          const cover = proj.coverUrl ?? PH_COVERS[i % PH_COVERS.length];
-          const type = (proj.coverType ?? "image") as "image" | "gif" | "mp4";
-          return (
-            <div
-              key={g}
-              onClick={() => goTo(g)}
-              style={{
-                flexShrink: 0,
-                width: CARD_W,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                cursor: "pointer",
-                opacity: isActive ? 1 : 0.42,
-                transition: `opacity 500ms ${EASE}`,
-              }}
-            >
-              {/* Image — fixed 16:9 for every tile */}
-              <div
-                style={{
-                  width: "100%",
-                  aspectRatio: "16 / 9",
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  position: "relative",
-                  background: "#e9e7e2",
-                }}
-              >
-                <Media src={cover} type={type} alt={proj.title} className="w-full h-full object-cover" />
-              </div>
-
-              {/* Meta */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "16px 4px 0", gap: 16 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    className="font-portfolio-sans"
-                    style={{
-                      fontSize: isActive ? 24 : 20,
-                      fontWeight: 700,
-                      color: "var(--ink)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      lineHeight: 1.1,
-                      transition: `font-size 400ms ${EASE}`,
-                    }}
-                  >
-                    {proj.title}
-                  </div>
-                  <div className="font-portfolio-sans" style={{ fontSize: 14, color: "#888", marginTop: 3, whiteSpace: "nowrap" }}>
-                    {proj.discipline}
-                  </div>
-                </div>
-                <Link
-                  href={`/work/${proj.slug}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="font-portfolio-sans"
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: "var(--ink)",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  View project <span aria-hidden>→</span>
-                </Link>
-              </div>
+      {/* Tiles — absolutely positioned, driven by the rAF loop above */}
+      {tiles.map(({ L, proj, i }) => {
+        const cover = proj.coverUrl ?? PH_COVERS[i % PH_COVERS.length];
+        const type = (proj.coverType ?? "image") as "image" | "gif" | "mp4";
+        return (
+          <div
+            key={L}
+            ref={(el) => { tileRefs.current[L] = el; }}
+            onClick={() => goTo(L)}
+            style={{
+              position: "absolute",
+              left: 0,
+              bottom: BOTTOM_PAD,
+              width: ACTIVE_W,
+              transformOrigin: "bottom left",
+              willChange: "transform, opacity",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div style={{ width: "100%", aspectRatio: "16 / 9", borderRadius: 20, overflow: "hidden", position: "relative", background: "#e9e7e2" }}>
+              <Media src={cover} type={type} alt={proj.title} className="w-full h-full object-cover" />
             </div>
-          );
-        })}
-      </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "16px 4px 0", gap: 16 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="font-portfolio-sans" style={{ fontSize: 22, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>
+                  {proj.title}
+                </div>
+                <div className="font-portfolio-sans" style={{ fontSize: 14, color: "#888", marginTop: 3, whiteSpace: "nowrap" }}>
+                  {proj.discipline}
+                </div>
+              </div>
+              <Link
+                href={`/work/${proj.slug}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-portfolio-sans"
+                style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                View project <span aria-hidden>→</span>
+              </Link>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
