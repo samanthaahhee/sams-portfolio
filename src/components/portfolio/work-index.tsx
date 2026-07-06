@@ -25,59 +25,101 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
 
 const EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
-// Card sizing — active (focus) is large on the left, passive cards trail off
-// to the right. Bottom-aligned so the meta baseline stays put. Image heights
-// track viewport height so the focus card fills the space like the reference.
-const ACTIVE_W = 660;
-const ACTIVE_IMG_H = "min(60vh, 540px)";
-const PASSIVE_W = 480;
+// Constant card WIDTH is what makes the infinite loop seamless (the strip width
+// is predictable) and avoids horizontal jumps. Focus is shown by a taller image
+// + full opacity — height grows upward (cards are bottom-aligned) so it never
+// disturbs the horizontal scroll.
+const CARD_W = 520;
+const GAP = 24;
+const PAD = 44;
+const STEP = CARD_W + GAP;
+const COPIES = 5; // repeated sets of the project list for the infinite wrap
+const ACTIVE_IMG_H = "min(62vh, 560px)";
 const PASSIVE_IMG_H = "min(44vh, 400px)";
 
 export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const list = projects.length > 0 ? projects : PLACEHOLDER_PROJECTS;
-  const total = list.length;
+  const n = list.length;
+  const period = n * STEP; // pixel width of one full list — constant
 
-  const [active, setActive] = useState(0);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const ratios = useRef<number[]>([]);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const target = useRef(0); // where we're easing scrollLeft toward
+  const rafRef = useRef(0);
+  const [activeGlobal, setActiveGlobal] = useState(Math.round((Math.floor(COPIES / 2) * period) / STEP));
 
-  // IntersectionObserver: the left-most card that is >50% visible is the focus.
   useEffect(() => {
-    const root = carouselRef.current;
-    if (!root) return;
-    ratios.current = new Array(total).fill(0);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const idx = Number((entry.target as HTMLElement).dataset.index);
-          ratios.current[idx] = entry.intersectionRatio;
-        });
-        const leftMost = ratios.current.findIndex((r) => r > 0.5);
-        if (leftMost !== -1) setActive(leftMost);
-      },
-      { root, threshold: [0, 0.25, 0.5, 0.75, 1] }
-    );
-    cardRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
-  }, [total]);
+    const el = scrollerRef.current;
+    if (!el) return;
 
-  function goTo(i: number) {
-    cardRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-    setActive(i);
+    const mid = Math.floor(COPIES / 2) * period; // start in the middle copy
+    el.scrollLeft = mid;
+    target.current = mid;
+    let lastActive = -1;
+
+    const tick = () => {
+      const cur = el.scrollLeft;
+      let next = cur + (target.current - cur) * 0.14; // smooth easing
+      if (Math.abs(target.current - next) < 0.3) next = target.current;
+      el.scrollLeft = next;
+
+      // Infinite wrap: content repeats every `period`, so shifting scrollLeft by
+      // one period lands on identical pixels — seamless, no snap or realignment.
+      if (el.scrollLeft < period * 2) { el.scrollLeft += period; target.current += period; }
+      else if (el.scrollLeft > period * 3) { el.scrollLeft -= period; target.current -= period; }
+
+      const ag = Math.round(el.scrollLeft / STEP);
+      if (ag !== lastActive) { lastActive = ag; setActiveGlobal(ag); }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    // Any wheel — vertical or horizontal — drives the horizontal scroll.
+    // When the gesture stops, softly settle to the nearest card so the focus
+    // card lands flush-left (a gentle ease, not a mid-scroll snap-back).
+    let settleTimer: ReturnType<typeof setTimeout>;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+      target.current += d;
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(() => {
+        target.current = Math.round(target.current / STEP) * STEP;
+      }, 150);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      clearTimeout(settleTimer);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, [period, n]);
+
+  // Click a card → ease it to the focus position.
+  function goTo(globalIndex: number) {
+    target.current = globalIndex * STEP;
+  }
+
+  // Build COPIES repeated sets so the strip is always full as it wraps.
+  const cards: { g: number; i: number; proj: PortfolioProject }[] = [];
+  for (let c = 0; c < COPIES; c++) {
+    for (let i = 0; i < n; i++) cards.push({ g: c * n + i, i, proj: list[i] });
   }
 
   return (
     <div style={{ height: "calc(100vh - 56px)", position: "relative", overflow: "hidden" }}>
-      {/* hide the carousel scrollbar in webkit */}
       <style>{`.wk-carousel::-webkit-scrollbar{display:none}`}</style>
 
-      {/* Intro — floats in the top-right, above the passive cards */}
+      {/* Mask the gutter so cards wrapping past the left edge don't peek */}
+      <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 2, pointerEvents: "none" }} />
+
+      {/* Intro — floats in the top-right, beside the focus card */}
       <div
         style={{
           position: "absolute",
           top: "20%",
-          left: `${44 + ACTIVE_W + 56}px`,
+          left: `${PAD + CARD_W + 48}px`,
           zIndex: 5,
           maxWidth: 540,
           pointerEvents: "none",
@@ -91,46 +133,41 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
         </p>
       </div>
 
-      {/* Carousel */}
+      {/* Scroller (JS-driven) */}
       <div
-        ref={carouselRef}
+        ref={scrollerRef}
         className="wk-carousel"
         style={{
           display: "flex",
           alignItems: "flex-end",
-          gap: 24,
-          padding: "0 44px 40px",
+          gap: GAP,
+          padding: `0 0 40px ${PAD}px`,
           height: "100%",
-          overflowX: "auto",
+          overflowX: "scroll",
           overflowY: "hidden",
-          scrollSnapType: "x mandatory",
-          scrollPaddingLeft: 44,
           scrollbarWidth: "none",
         }}
       >
-        {list.map((proj, i) => {
-          const isActive = i === active;
+        {cards.map(({ g, i, proj }) => {
+          const isActive = g === activeGlobal;
           const cover = proj.coverUrl ?? PH_COVERS[i % PH_COVERS.length];
           const type = (proj.coverType ?? "image") as "image" | "gif" | "mp4";
           return (
             <div
-              key={proj.id + "-" + proj.slug}
-              data-index={i}
-              ref={(el) => { cardRefs.current[i] = el; }}
-              onClick={() => goTo(i)}
+              key={g}
+              onClick={() => goTo(g)}
               style={{
                 flexShrink: 0,
-                scrollSnapAlign: "start",
+                width: CARD_W,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "flex-end",
                 cursor: "pointer",
-                width: isActive ? ACTIVE_W : PASSIVE_W,
-                opacity: isActive ? 1 : 0.9,
-                transition: `width 500ms ${EASE}, opacity 500ms ${EASE}`,
+                opacity: isActive ? 1 : 0.42,
+                transition: `opacity 500ms ${EASE}`,
               }}
             >
-              {/* Image */}
+              {/* Image — only the height changes with focus (grows upward) */}
               <div
                 style={{
                   width: "100%",
@@ -151,7 +188,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
                   <div
                     className="font-portfolio-sans"
                     style={{
-                      fontSize: isActive ? 26 : 20,
+                      fontSize: isActive ? 24 : 20,
                       fontWeight: 700,
                       color: "var(--ink)",
                       whiteSpace: "nowrap",
@@ -188,8 +225,6 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
             </div>
           );
         })}
-        {/* End spacer so the last card can snap to the left */}
-        <div style={{ flexShrink: 0, width: "55vw" }} aria-hidden />
       </div>
     </div>
   );
