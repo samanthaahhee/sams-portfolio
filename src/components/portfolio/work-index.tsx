@@ -128,11 +128,11 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
 
       {/* Intro — anchored just above the passive tiles' top edge */}
       <div style={{ position: "absolute", bottom: vlayout.introBottom, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}>
-        <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "#111" }}>
+        <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}>
           Thanks
         </h1>
-        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          for stopping by. here is<br />a collection of work<br />I&rsquo;m proud of.
+        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", fontWeight: 400, lineHeight: 1.4, color: "#111", marginTop: 18 }}>
+          for stopping by.<br />here is a collection<br />of work <span style={{ fontWeight: 700 }}>I&rsquo;m</span> proud of.
         </p>
       </div>
 
