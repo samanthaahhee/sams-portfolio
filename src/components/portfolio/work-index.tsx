@@ -2,45 +2,71 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
 
 type Word = { t: string; b?: boolean };
-const LINE_1: Word[] = [{ t: "for" }, { t: "stopping" }, { t: "by." }];
-const LINE_2: Word[] = [{ t: "here" }, { t: "is" }, { t: "a" }, { t: "collection" }];
-const LINE_3: Word[] = [
-  { t: "of" },
-  { t: "work" },
-  { t: "I’m", b: true },
-  { t: "proud", b: true },
-  { t: "of.", b: true },
+const INTRO_WORDS: Word[] = [
+  { t: "Here" }, { t: "is" }, { t: "a" }, { t: "collection" },
+  { t: "of" }, { t: "work" },
+  { t: "I’m", b: true }, { t: "proud", b: true }, { t: "of.", b: true },
 ];
 
-// Reading-rhythm reveal — same pace as the homepage hero copy: each word gets
-// a running delay of STEP seconds (reading order), fades/rises in over 0.45s.
-// Hiding (scroll-away) is a flat, fast fade — no stagger — so it reads as
-// "the whole line is gone", not a slow reverse-replay.
-const STEP = 0.09;
-const introWord = {
-  hidden: { opacity: 0, y: 4, transition: { duration: 0.2 } },
-  visible: (delay: number) => ({ opacity: 1, y: 0, transition: { delay, duration: 0.45, ease: "easeOut" as const } }),
-};
+// RSVP-style reveal: one word at a time in place, paced like a human reading
+// (longer words get a longer dwell), then the full sentence settles into its
+// final centred, line-broken layout. Resets whenever `active` goes false, so
+// scrolling away and back always replays the read from the start.
+function IntroCopy({ active }: { active: boolean }) {
+  const [scanIdx, setScanIdx] = useState(-1);
+  const [settled, setSettled] = useState(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-function IntroLine({ words, ctx }: { words: Word[]; ctx: { i: number } }) {
+  useEffect(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setSettled(false);
+    setScanIdx(-1);
+    if (!active) return;
+
+    let t = 120;
+    INTRO_WORDS.forEach((w, i) => {
+      timers.current.push(setTimeout(() => setScanIdx(i), t));
+      t += Math.min(430, 200 + w.t.length * 18);
+    });
+    timers.current.push(setTimeout(() => { setScanIdx(-1); setSettled(true); }, t + 150));
+
+    return () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  }, [active]);
+
   return (
-    <span style={{ display: "block" }}>
-      {words.map((w, i) => (
-        <motion.span
-          key={i}
-          custom={ctx.i++ * STEP}
-          variants={introWord}
-          style={{ display: "inline-block", marginRight: "0.28em", fontWeight: w.b ? 700 : 400 }}
+    <div className="font-lore" style={{ textAlign: "center", color: "#111", fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4 }}>
+      <AnimatePresence mode="wait">
+        {scanIdx >= 0 && (
+          <motion.span
+            key={scanIdx}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12 }}
+            style={{ display: "inline-block", fontWeight: INTRO_WORDS[scanIdx].b ? 700 : 400 }}
+          >
+            {INTRO_WORDS[scanIdx].t}
+          </motion.span>
+        )}
+      </AnimatePresence>
+      {settled && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          style={{ margin: 0 }}
         >
-          {w.t}
-        </motion.span>
-      ))}
-    </span>
+          Here is a collection<br />
+          of work <span style={{ fontWeight: 700 }}>I’m proud of.</span>
+        </motion.p>
+      )}
+    </div>
   );
 }
 
@@ -97,15 +123,16 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const [introActive, setIntroActive] = useState(true);
 
   // Vertical layout: centre the hero tile in the viewport (all tiles share this
-  // bottom baseline), and anchor the intro just above the passive tiles.
-  const [vlayout, setVlayout] = useState({ bottom: 150, introBottom: 500 });
+  // bottom baseline), and give the intro a slot spanning from the top of the
+  // strip down to the top of the passive tiles, so it can be centred within it.
+  const [vlayout, setVlayout] = useState({ bottom: 150, slotBottom: 500 });
   useEffect(() => {
     const compute = () => {
       const containerH = window.innerHeight - 56;
       const heroTileH = ACTIVE_W / RATIO + META_H;
       const bottom = Math.max(36, (containerH - heroTileH) / 2);
       const passiveTileH = (ACTIVE_W * PASSIVE_SCALE) / RATIO + META_H;
-      setVlayout({ bottom, introBottom: bottom + passiveTileH + 28 });
+      setVlayout({ bottom, slotBottom: bottom + passiveTileH + GAP });
     };
     compute();
     window.addEventListener("resize", compute);
@@ -171,42 +198,31 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   function goTo(L: number) { target.current = L; }
 
   const tiles = Array.from({ length: T }, (_, L) => ({ L, proj: list[L % n], i: L % n }));
-  const introCtx = { i: 1 }; // 0 is reserved for the "Thanks" heading
 
   return (
     <div ref={containerRef} style={{ height: "calc(100vh - 56px)", position: "relative", overflow: "hidden" }}>
       {/* Mask the left gutter so tiles wrapping past the edge don't peek */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
-      {/* Intro — read once on load, fades out on scroll, replays if the user scrolls back to project 1 */}
-      <motion.div
-        initial="hidden"
-        animate={introActive ? "visible" : "hidden"}
+      {/* Intro slot — spans from the top of the strip to the top of the passive
+          tiles; the copy is centred both ways within it (reads once on load,
+          fades out on scroll, replays if the user scrolls back to project 1) */}
+      <div
         style={{
           position: "absolute",
-          bottom: vlayout.introBottom - 14,
           left: PAD + ACTIVE_W + 40,
+          right: 24,
+          top: 0,
+          bottom: vlayout.slotBottom,
           zIndex: 5,
-          maxWidth: 600,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           pointerEvents: "none",
-          paddingLeft: 24,
-          paddingBottom: 24,
         }}
       >
-        <motion.h1
-          custom={0}
-          variants={introWord}
-          className="font-lore"
-          style={{ fontSize: "clamp(1.54rem, 2.3vw, 2.18rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}
-        >
-          Thanks
-        </motion.h1>
-        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          <IntroLine words={LINE_1} ctx={introCtx} />
-          <IntroLine words={LINE_2} ctx={introCtx} />
-          <IntroLine words={LINE_3} ctx={introCtx} />
-        </p>
-      </motion.div>
+        <IntroCopy active={introActive} />
+      </div>
 
       {/* Tiles — absolutely positioned, driven by the rAF loop above */}
       {tiles.map(({ L, proj, i }) => {
