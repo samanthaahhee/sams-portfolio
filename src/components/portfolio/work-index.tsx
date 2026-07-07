@@ -2,8 +2,48 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
+
+type Word = { t: string; b?: boolean };
+const LINE_1: Word[] = [{ t: "for" }, { t: "stopping" }, { t: "by." }];
+const LINE_2: Word[] = [{ t: "here" }, { t: "is" }, { t: "a" }, { t: "collection" }];
+const LINE_3: Word[] = [
+  { t: "of" },
+  { t: "work" },
+  { t: "I’m", b: true },
+  { t: "proud", b: true },
+  { t: "of.", b: true },
+];
+
+// Reading-rhythm reveal: parent staggers each word in on the way in, and
+// collapses the stagger (reverse order, faster) on the way out so it reads
+// as "erasing" rather than replaying backwards slowly.
+const introContainer = {
+  hidden: { transition: { staggerChildren: 0.018, staggerDirection: -1 } },
+  visible: { transition: { staggerChildren: 0.055, delayChildren: 0.15 } },
+};
+const introItem = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
+};
+
+function IntroLine({ words }: { words: Word[] }) {
+  return (
+    <motion.span variants={introContainer} style={{ display: "block" }}>
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          variants={introItem}
+          style={{ display: "inline-block", marginRight: "0.28em", fontWeight: w.b ? 700 : 400 }}
+        >
+          {w.t}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+}
 
 /* Placeholder covers — shown until real media is uploaded */
 const PH_COVERS = [
@@ -52,6 +92,11 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const target = useRef(2 * n);
   const rafRef = useRef(0);
 
+  // Intro copy is only shown while the first project is in focus — read once
+  // on load, fade out as soon as the user scrolls, reappear if they scroll back.
+  const introActiveRef = useRef(true);
+  const [introActive, setIntroActive] = useState(true);
+
   // Vertical layout: centre the hero tile in the viewport (all tiles share this
   // bottom baseline), and anchor the intro just above the passive tiles.
   const [vlayout, setVlayout] = useState({ bottom: 150, introBottom: 500 });
@@ -91,6 +136,13 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       const Cpos = C[b] + (p - b) * (w[b] + GAP);
       const scroll = Cpos - PAD;
 
+      const focusedIdx = (((Math.round(p) % n) + n) % n);
+      const active = focusedIdx === 0;
+      if (active !== introActiveRef.current) {
+        introActiveRef.current = active;
+        setIntroActive(active);
+      }
+
       for (let L = 0; L < T; L++) {
         const el = tileRefs.current[L];
         if (!el) continue;
@@ -126,15 +178,26 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       {/* Mask the left gutter so tiles wrapping past the edge don't peek */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
-      {/* Intro — anchored just above the passive tiles' top edge */}
-      <div style={{ position: "absolute", bottom: vlayout.introBottom, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}>
-        <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}>
+      {/* Intro — read once on load, fades out on scroll, replays if the user scrolls back to project 1 */}
+      <motion.div
+        variants={introContainer}
+        initial="hidden"
+        animate={introActive ? "visible" : "hidden"}
+        style={{ position: "absolute", bottom: vlayout.introBottom - 14, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}
+      >
+        <motion.h1
+          variants={introItem}
+          className="font-lore"
+          style={{ fontSize: "clamp(1.92rem, 2.88vw, 2.72rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}
+        >
           Thanks
-        </h1>
-        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", fontWeight: 400, lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          for stopping by.<br />here is a collection<br />of work <span style={{ fontWeight: 700 }}>I&rsquo;m</span> proud of.
+        </motion.h1>
+        <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
+          <IntroLine words={LINE_1} />
+          <IntroLine words={LINE_2} />
+          <IntroLine words={LINE_3} />
         </p>
-      </div>
+      </motion.div>
 
       {/* Tiles — absolutely positioned, driven by the rAF loop above */}
       {tiles.map(({ L, proj, i }) => {
