@@ -17,31 +17,30 @@ const LINE_3: Word[] = [
   { t: "of.", b: true },
 ];
 
-// Reading-rhythm reveal: parent staggers each word in on the way in, and
-// collapses the stagger (reverse order, faster) on the way out so it reads
-// as "erasing" rather than replaying backwards slowly.
-const introContainer = {
-  hidden: { transition: { staggerChildren: 0.018, staggerDirection: -1 } },
-  visible: { transition: { staggerChildren: 0.055, delayChildren: 0.15 } },
-};
-const introItem = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as [number, number, number, number] } },
+// Reading-rhythm reveal — same pace as the homepage hero copy: each word gets
+// a running delay of STEP seconds (reading order), fades/rises in over 0.45s.
+// Hiding (scroll-away) is a flat, fast fade — no stagger — so it reads as
+// "the whole line is gone", not a slow reverse-replay.
+const STEP = 0.09;
+const introWord = {
+  hidden: { opacity: 0, y: 4, transition: { duration: 0.2 } },
+  visible: (delay: number) => ({ opacity: 1, y: 0, transition: { delay, duration: 0.45, ease: "easeOut" as const } }),
 };
 
-function IntroLine({ words }: { words: Word[] }) {
+function IntroLine({ words, ctx }: { words: Word[]; ctx: { i: number } }) {
   return (
-    <motion.span variants={introContainer} style={{ display: "block" }}>
+    <span style={{ display: "block" }}>
       {words.map((w, i) => (
         <motion.span
           key={i}
-          variants={introItem}
+          custom={ctx.i++ * STEP}
+          variants={introWord}
           style={{ display: "inline-block", marginRight: "0.28em", fontWeight: w.b ? 700 : 400 }}
         >
           {w.t}
         </motion.span>
       ))}
-    </motion.span>
+    </span>
   );
 }
 
@@ -172,6 +171,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   function goTo(L: number) { target.current = L; }
 
   const tiles = Array.from({ length: T }, (_, L) => ({ L, proj: list[L % n], i: L % n }));
+  const introCtx = { i: 1 }; // 0 is reserved for the "Thanks" heading
 
   return (
     <div ref={containerRef} style={{ height: "calc(100vh - 56px)", position: "relative", overflow: "hidden" }}>
@@ -180,22 +180,31 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
 
       {/* Intro — read once on load, fades out on scroll, replays if the user scrolls back to project 1 */}
       <motion.div
-        variants={introContainer}
         initial="hidden"
         animate={introActive ? "visible" : "hidden"}
-        style={{ position: "absolute", bottom: vlayout.introBottom - 14, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}
+        style={{
+          position: "absolute",
+          bottom: vlayout.introBottom - 14,
+          left: PAD + ACTIVE_W + 40,
+          zIndex: 5,
+          maxWidth: 600,
+          pointerEvents: "none",
+          paddingLeft: 24,
+          paddingBottom: 24,
+        }}
       >
         <motion.h1
-          variants={introItem}
+          custom={0}
+          variants={introWord}
           className="font-lore"
-          style={{ fontSize: "clamp(1.92rem, 2.88vw, 2.72rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}
+          style={{ fontSize: "clamp(1.54rem, 2.3vw, 2.18rem)", fontWeight: 700, lineHeight: 1, color: "#111" }}
         >
           Thanks
         </motion.h1>
         <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          <IntroLine words={LINE_1} />
-          <IntroLine words={LINE_2} />
-          <IntroLine words={LINE_3} />
+          <IntroLine words={LINE_1} ctx={introCtx} />
+          <IntroLine words={LINE_2} ctx={introCtx} />
+          <IntroLine words={LINE_3} ctx={introCtx} />
         </p>
       </motion.div>
 
