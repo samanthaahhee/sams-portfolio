@@ -26,12 +26,11 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
 // The strip is driven manually. Every tile is a fixed 16:9 box; the focus tile
 // is scaled up with a CSS transform (visual only — no layout reflow), so the
 // enlargement never shifts the other tiles or the infinite loop.
-const ACTIVE_W = 760;       // focus image width (full size)
+const ACTIVE_W = 912;       // focus image width (full size) — 20% bigger
 const PASSIVE_SCALE = 0.72; // inactive image width shrinks to this
 const GAP = 28;
 const PAD = 56;             // left focus position
-const BOTTOM_PAD = 70;      // baseline for passive tiles (low)
-const RISE = 120;           // how far the focus tile lifts above the passives
+const BOTTOM_PAD = 150;     // shared baseline — all tile bottoms + titles align
 const COPIES = 6;           // repeated project sets for the infinite wrap
 const IMG_RATIO = "16 / 10.35"; // 16:9 with height +15%
 
@@ -80,7 +79,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
         if (!el) continue;
         const f = foc(L - p);
         el.style.width = w[L] + "px"; // only the image column resizes; meta stays constant
-        el.style.transform = `translate3d(${C[L] - scroll}px,${-RISE * f}px,0)`; // focus tile lifts
+        el.style.transform = `translate3d(${C[L] - scroll}px,0,0)`;
         el.style.opacity = String(0.4 + 0.6 * f);
         el.style.zIndex = f > 0.5 ? "3" : "1";
       }
@@ -110,13 +109,14 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       {/* Mask the left gutter so tiles wrapping past the edge don't peek */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
-      {/* Intro — floats top-right, beside the focus tile */}
-      <div style={{ position: "absolute", top: "24%", left: PAD + ACTIVE_W + 60, zIndex: 5, maxWidth: 520, pointerEvents: "none" }}>
+      {/* Intro — anchored just above the passive tiles' top edge so it always
+          clears them (passive top ≈ 645px above the container bottom) */}
+      <div style={{ position: "absolute", bottom: 668, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}>
         <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "#111" }}>
           Thanks
         </h1>
         <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          for stopping by. here is a collection of work I&rsquo;m proud of.
+          for stopping by. here is a<br />collection of work I&rsquo;m proud of.
         </p>
       </div>
 
