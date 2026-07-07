@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
@@ -26,13 +26,14 @@ const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
 // The strip is driven manually. Every tile is a fixed 16:9 box; the focus tile
 // is scaled up with a CSS transform (visual only — no layout reflow), so the
 // enlargement never shifts the other tiles or the infinite loop.
-const ACTIVE_W = 912;       // focus image width (full size) — 20% bigger
-const PASSIVE_SCALE = 0.72; // inactive image width shrinks to this
+const ACTIVE_W = 820;       // focus image width (10% smaller)
+const PASSIVE_SCALE = 0.49; // secondary tiles are much smaller (per reference)
 const GAP = 28;
 const PAD = 56;             // left focus position
-const BOTTOM_PAD = 150;     // shared baseline — all tile bottoms + titles align
 const COPIES = 6;           // repeated project sets for the infinite wrap
 const IMG_RATIO = "16 / 10.35"; // 16:9 with height +15%
+const RATIO = 16 / 10.35;   // numeric ratio for vertical-centering math
+const META_H = 74;          // approx height of the title + discipline block
 
 // Smooth 0..1 "focus-ness" by distance (in tile units) from the focus point.
 function foc(d: number) {
@@ -50,6 +51,22 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const pos = useRef(2 * n);    // continuous focus position (project 0 active)
   const target = useRef(2 * n);
   const rafRef = useRef(0);
+
+  // Vertical layout: centre the hero tile in the viewport (all tiles share this
+  // bottom baseline), and anchor the intro just above the passive tiles.
+  const [vlayout, setVlayout] = useState({ bottom: 150, introBottom: 500 });
+  useEffect(() => {
+    const compute = () => {
+      const containerH = window.innerHeight - 56;
+      const heroTileH = ACTIVE_W / RATIO + META_H;
+      const bottom = Math.max(36, (containerH - heroTileH) / 2);
+      const passiveTileH = (ACTIVE_W * PASSIVE_SCALE) / RATIO + META_H;
+      setVlayout({ bottom, introBottom: bottom + passiveTileH + 28 });
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
 
   useEffect(() => {
     const w = new Array<number>(T);
@@ -109,14 +126,13 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       {/* Mask the left gutter so tiles wrapping past the edge don't peek */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
-      {/* Intro — anchored just above the passive tiles' top edge so it always
-          clears them (passive top ≈ 645px above the container bottom) */}
-      <div style={{ position: "absolute", bottom: 668, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}>
+      {/* Intro — anchored just above the passive tiles' top edge */}
+      <div style={{ position: "absolute", bottom: vlayout.introBottom, left: PAD + ACTIVE_W + 40, zIndex: 5, maxWidth: 600, pointerEvents: "none" }}>
         <h1 className="font-lore" style={{ fontSize: "clamp(2.4rem, 3.6vw, 3.4rem)", lineHeight: 1, color: "#111" }}>
           Thanks
         </h1>
         <p className="font-lore" style={{ fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, color: "#111", marginTop: 18 }}>
-          for stopping by. here is a<br />collection of work I&rsquo;m proud of.
+          for stopping by. here is<br />a collection of work<br />I&rsquo;m proud of.
         </p>
       </div>
 
@@ -132,7 +148,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
             style={{
               position: "absolute",
               left: 0,
-              bottom: BOTTOM_PAD,
+              bottom: vlayout.bottom,
               width: ACTIVE_W,
               willChange: "transform, opacity",
               cursor: "pointer",
