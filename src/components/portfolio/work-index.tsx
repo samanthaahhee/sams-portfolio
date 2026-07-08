@@ -1,72 +1,54 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
 
 type Word = { t: string; b?: boolean };
-const INTRO_WORDS: Word[] = [
-  { t: "Here" }, { t: "is" }, { t: "a" }, { t: "collection" },
-  { t: "of" }, { t: "work" },
-  { t: "I’m", b: true }, { t: "proud", b: true }, { t: "of.", b: true },
-];
+const LINE_1: Word[] = [{ t: "Here" }, { t: "is" }, { t: "a" }, { t: "collection" }];
+const LINE_2: Word[] = [{ t: "of" }, { t: "work" }, { t: "I’m", b: true }, { t: "proud", b: true }, { t: "of.", b: true }];
 
-// RSVP-style reveal: one word at a time in place, paced like a human reading
-// (longer words get a longer dwell), then the full sentence settles into its
-// final centred, line-broken layout. Resets whenever `active` goes false, so
-// scrolling away and back always replays the read from the start.
-function IntroCopy({ active }: { active: boolean }) {
-  const [scanIdx, setScanIdx] = useState(-1);
-  const [settled, setSettled] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+// Human reading rhythm: each word gets a running delay based on the previous
+// words' lengths (longer words dwell longer), so the whole sentence builds up
+// word by word — and every word that has appeared stays put. Plays once on
+// mount; the copy remains visible for good afterward.
+const ALL_WORDS = [...LINE_1, ...LINE_2];
+const INTRO_DELAYS: number[] = (() => {
+  let t = 0.15;
+  return ALL_WORDS.map((w) => {
+    const d = t;
+    t += Math.min(0.43, 0.2 + w.t.length * 0.018);
+    return d;
+  });
+})();
 
-  useEffect(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-    setSettled(false);
-    setScanIdx(-1);
-    if (!active) return;
-
-    let t = 120;
-    INTRO_WORDS.forEach((w, i) => {
-      timers.current.push(setTimeout(() => setScanIdx(i), t));
-      t += Math.min(430, 200 + w.t.length * 18);
-    });
-    timers.current.push(setTimeout(() => { setScanIdx(-1); setSettled(true); }, t + 150));
-
-    return () => { timers.current.forEach(clearTimeout); timers.current = []; };
-  }, [active]);
-
+function IntroLine({ words, offset }: { words: Word[]; offset: number }) {
   return (
-    <div className="font-lore" style={{ textAlign: "center", color: "#111", fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4 }}>
-      <AnimatePresence mode="wait">
-        {scanIdx >= 0 && (
-          <motion.span
-            key={scanIdx}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            style={{ display: "inline-block", fontWeight: INTRO_WORDS[scanIdx].b ? 700 : 400 }}
-          >
-            {INTRO_WORDS[scanIdx].t}
-          </motion.span>
-        )}
-      </AnimatePresence>
-      {settled && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          style={{ margin: 0 }}
+    <>
+      {words.map((w, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: INTRO_DELAYS[offset + i], duration: 0.35, ease: "easeOut" }}
+          style={{ display: "inline-block", marginRight: "0.28em", fontWeight: w.b ? 700 : 400 }}
         >
-          Here is a collection<br />
-          of work <span style={{ fontWeight: 700 }}>I’m proud of.</span>
-        </motion.p>
-      )}
-    </div>
+          {w.t}
+        </motion.span>
+      ))}
+    </>
+  );
+}
+
+function IntroCopy() {
+  return (
+    <p className="font-lore" style={{ textAlign: "center", color: "#111", fontSize: "clamp(1.05rem, 1.5vw, 1.4rem)", lineHeight: 1.4, margin: 0 }}>
+      <IntroLine words={LINE_1} offset={0} />
+      <br />
+      <IntroLine words={LINE_2} offset={LINE_1.length} />
+    </p>
   );
 }
 
@@ -117,11 +99,6 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
   const target = useRef(2 * n);
   const rafRef = useRef(0);
 
-  // Intro copy is only shown while the first project is in focus — read once
-  // on load, fade out as soon as the user scrolls, reappear if they scroll back.
-  const introActiveRef = useRef(true);
-  const [introActive, setIntroActive] = useState(true);
-
   // Vertical layout: centre the hero tile in the viewport (all tiles share this
   // bottom baseline), and give the intro a slot spanning from the top of the
   // strip down to the top of the passive tiles, so it can be centred within it.
@@ -162,20 +139,12 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       const Cpos = C[b] + (p - b) * (w[b] + GAP);
       const scroll = Cpos - PAD;
 
-      const focusedIdx = (((Math.round(p) % n) + n) % n);
-      const active = focusedIdx === 0;
-      if (active !== introActiveRef.current) {
-        introActiveRef.current = active;
-        setIntroActive(active);
-      }
-
       for (let L = 0; L < T; L++) {
         const el = tileRefs.current[L];
         if (!el) continue;
         const f = foc(L - p);
         el.style.width = w[L] + "px"; // only the image column resizes; meta stays constant
         el.style.transform = `translate3d(${C[L] - scroll}px,0,0)`;
-        el.style.opacity = String(0.4 + 0.6 * f);
         el.style.zIndex = f > 0.5 ? "3" : "1";
       }
       rafRef.current = requestAnimationFrame(frame);
@@ -205,8 +174,8 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PAD, background: "#fff", zIndex: 4, pointerEvents: "none" }} />
 
       {/* Intro slot — spans from the top of the strip to the top of the passive
-          tiles; the copy is centred both ways within it (reads once on load,
-          fades out on scroll, replays if the user scrolls back to project 1) */}
+          tiles; the copy is centred both ways within it, reads in once on load,
+          and stays visible from then on. */}
       <div
         style={{
           position: "absolute",
@@ -221,7 +190,7 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
           pointerEvents: "none",
         }}
       >
-        <IntroCopy active={introActive} />
+        <IntroCopy />
       </div>
 
       {/* Tiles — absolutely positioned, driven by the rAF loop above */}
@@ -244,26 +213,20 @@ export function WorkIndex({ projects }: { projects: PortfolioProject[] }) {
               flexDirection: "column",
             }}
           >
-            <div style={{ width: "100%", aspectRatio: IMG_RATIO, borderRadius: 20, overflow: "hidden", position: "relative", background: "#e9e7e2" }}>
+            <Link
+              href={`/work/${proj.slug}`}
+              onClick={(e) => e.stopPropagation()}
+              style={{ width: "100%", aspectRatio: IMG_RATIO, borderRadius: 20, overflow: "hidden", position: "relative", background: "#e9e7e2", display: "block" }}
+            >
               <Media src={cover} type={type} alt={proj.title} className="w-full h-full object-cover" />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "18px 4px 0", gap: 16 }}>
-              <div style={{ minWidth: 0 }}>
-                <div className="font-portfolio-sans" style={{ fontSize: 26, fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>
-                  {proj.title}
-                </div>
-                <div className="font-portfolio-sans" style={{ fontSize: 15, color: "#888", marginTop: 4, whiteSpace: "nowrap" }}>
-                  {proj.discipline}
-                </div>
+            </Link>
+            <div style={{ padding: "18px 4px 0" }}>
+              <div className="font-portfolio-sans" style={{ fontSize: 23.4, fontWeight: 700, color: "#111", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", lineHeight: 1.1 }}>
+                {proj.title}
               </div>
-              <Link
-                href={`/work/${proj.slug}`}
-                onClick={(e) => e.stopPropagation()}
-                className="font-portfolio-sans"
-                style={{ fontSize: 15, fontWeight: 700, color: "#111", whiteSpace: "nowrap", flexShrink: 0, display: "inline-flex", alignItems: "center", gap: 6 }}
-              >
-                View project <span aria-hidden>→</span>
-              </Link>
+              <div className="font-portfolio-sans" style={{ fontSize: 15, color: "#888", marginTop: 4, whiteSpace: "nowrap" }}>
+                {proj.discipline}
+              </div>
             </div>
           </div>
         );
