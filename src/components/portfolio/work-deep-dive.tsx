@@ -4,6 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Media } from "./media";
 import type { PortfolioProject, PortfolioMedia } from "@/lib/db-portfolio";
+import type { ThinkingSection } from "@/lib/portfolio-placeholders";
+
+const NAV_H = 56; // PortfolioNav's fixed height — tabs row sticks just below it
 
 /* ── Bento work grid ─────────────────────────────────────────────────
    First three items form a trio: two stacked on the left, one tall
@@ -71,33 +74,55 @@ function WorkGrid({ items, title }: { items: PortfolioMedia[]; title: string }) 
   );
 }
 
-/* ── The Thinking tab ─────────────────────────────────────────────── */
+/* ── The Thinking tab ─────────────────────────────────────────────────
+   Each section is a header + body copy, with an optional supporting
+   image below it. Falls back to a plain image stack when no structured
+   sections exist yet (older / DB-only projects). */
 
-const GRID_PAPER_SVG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M 40 0 L 0 0 0 40' fill='none' stroke='%23d8d4ce' stroke-width='0.5'/%3E%3C/svg%3E")`;
-
-function ThinkingTab({ items, title }: { items: PortfolioMedia[]; title: string }) {
+function ThinkingSections({ sections, title }: { sections: ThinkingSection[]; title: string }) {
   return (
-    <div
-      className="space-y-8 rounded-2xl p-6 md:p-10"
-      style={{ background: `${GRID_PAPER_SVG}, #f8f6f2`, minHeight: 400 }}
-    >
-      {items.length === 0 ? (
-        <div className="text-center py-20 text-neutral-400 font-portfolio-sans text-sm">
-          No thinking frames yet — upload via the admin dashboard.
+    <div className="flex flex-col gap-10">
+      {sections.map((s, i) => (
+        <div key={i} className="space-y-4">
+          <h3 className="font-portfolio-sans" style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>
+            {s.title}
+          </h3>
+          <p className="font-portfolio-sans" style={{ fontSize: 15, lineHeight: 1.7, color: "#333" }}>
+            {s.body}
+          </p>
+          {s.image && (
+            <div className="overflow-hidden bg-neutral-100" style={{ borderRadius: 20, aspectRatio: "16 / 10" }}>
+              <Media src={s.image} type="image" alt={`${title} — ${s.title}`} className="w-full h-full object-cover" />
+            </div>
+          )}
         </div>
-      ) : (
-        items.map((m, i) => (
-          <div
-            key={m.id}
-            className="overflow-hidden rounded-2xl bg-white"
-            style={{ aspectRatio: "1140 / 720" }}
-          >
-            <Media src={m.url} type={m.type} alt={`${title} — thinking ${i + 1}`} className="w-full h-full object-cover" />
-          </div>
-        ))
-      )}
+      ))}
     </div>
   );
+}
+
+function ThinkingMediaFallback({ items, title }: { items: PortfolioMedia[]; title: string }) {
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-20 text-neutral-400 font-portfolio-sans text-sm">
+        No thinking notes yet — add via the admin dashboard.
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-8">
+      {items.map((m, i) => (
+        <div key={m.id} className="overflow-hidden bg-neutral-100 rounded-2xl" style={{ aspectRatio: "16 / 10" }}>
+          <Media src={m.url} type={m.type} alt={`${title} — thinking ${i + 1}`} className="w-full h-full object-cover" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ThinkingTab({ sections, items, title }: { sections?: ThinkingSection[]; items: PortfolioMedia[]; title: string }) {
+  if (sections && sections.length > 0) return <ThinkingSections sections={sections} title={title} />;
+  return <ThinkingMediaFallback items={items} title={title} />;
 }
 
 /* ── Meta sidebar ─────────────────────────────────────────────────── */
@@ -123,48 +148,20 @@ export function WorkDeepDive({
   project,
   workMedia,
   thinkingMedia,
+  thinkingSections,
 }: {
   project: PortfolioProject;
   workMedia: PortfolioMedia[];
   thinkingMedia: PortfolioMedia[];
+  thinkingSections?: ThinkingSection[];
 }) {
   const [tab, setTab] = useState<"work" | "thinking">("work");
 
   return (
     <div className="font-portfolio-sans" style={{ color: "#111" }}>
-      {/* ── Tabs + back ─────────────────────────────────────────── */}
-      <div className="flex items-center px-6 md:px-14" style={{ paddingTop: 64, gap: 48 }}>
-        {(["work", "thinking"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="font-lore font-bold"
-            style={{ fontSize: 20, color: "#111", position: "relative", paddingBottom: 6 }}
-          >
-            THE {t === "work" ? "WORK" : "THINKING"}
-            {tab === t && (
-              <svg
-                viewBox="0 0 100 8"
-                preserveAspectRatio="none"
-                style={{ position: "absolute", left: 0, right: 0, bottom: -2, width: "100%", height: 8 }}
-              >
-                <path d="M1 4 Q 25 1, 50 4 T 99 4" stroke="#111" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-              </svg>
-            )}
-          </button>
-        ))}
-        <Link
-          href="/work"
-          className="font-portfolio-sans hover:opacity-60 transition-opacity"
-          style={{ fontSize: 15, color: "#111", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}
-        >
-          <span aria-hidden>←</span> Back
-        </Link>
-      </div>
-
-      {/* ── Content ─────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row gap-10 md:gap-16 px-6 md:px-14" style={{ paddingTop: 56, paddingBottom: 96 }}>
-        <aside className="w-full md:w-56 shrink-0 space-y-8">
+      <div className="flex flex-col md:flex-row gap-10 md:gap-16 px-6 md:px-14" style={{ paddingTop: 40, paddingBottom: 96 }}>
+        {/* Sidebar — offset to roughly align "Client:" with the grid below the tabs row */}
+        <aside className="w-full md:w-56 shrink-0 space-y-8" style={{ paddingTop: 76 }}>
           <MetaBlock label="Client" value={project.client} />
           <MetaBlock label="Role" value={project.role} />
           {project.deliverables && project.deliverables.length > 0 && (
@@ -173,11 +170,44 @@ export function WorkDeepDive({
           <MetaBlock label="Creative Team" value={project.creativeTeam?.join(", ")} />
         </aside>
 
+        {/* Content column — tabs + back sit only above this column, sticky below the nav */}
         <div className="flex-1 min-w-0">
+          <div
+            className="sticky flex items-center bg-white"
+            style={{ top: NAV_H, zIndex: 30, gap: 40, paddingTop: 24, paddingBottom: 24 }}
+          >
+            {(["work", "thinking"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className="font-lore"
+                style={{ fontSize: 20, fontWeight: 400, color: "#111", position: "relative", paddingBottom: 6 }}
+              >
+                THE {t === "work" ? "WORK" : "THINKING"}
+                {tab === t && (
+                  <svg
+                    viewBox="0 0 100 8"
+                    preserveAspectRatio="none"
+                    style={{ position: "absolute", left: 0, right: 0, bottom: -2, width: "100%", height: 8 }}
+                  >
+                    <path d="M1 4 Q 25 1, 50 4 T 99 4" stroke="#111" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                  </svg>
+                )}
+              </button>
+            ))}
+            <Link
+              href="/work"
+              className="font-portfolio-sans hover:opacity-60 transition-opacity"
+              style={{ fontSize: 15, color: "#111", marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}
+            >
+              <span aria-hidden>←</span> Back
+            </Link>
+          </div>
+
           {tab === "work" ? (
             <WorkGrid items={workMedia} title={project.title} />
           ) : (
-            <ThinkingTab items={thinkingMedia} title={project.title} />
+            <ThinkingTab sections={thinkingSections} items={thinkingMedia} title={project.title} />
           )}
         </div>
       </div>

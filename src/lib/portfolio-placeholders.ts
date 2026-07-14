@@ -68,3 +68,18 @@ export const PLACEHOLDER_WORK_MEDIA: Record<string, PortfolioMedia[]> = {
     media(0, "https://picsum.photos/seed/walkrr-4/1800/340", 1800, 340, 3),
   ],
 };
+
+export type ThinkingSection = { title: string; body: string; image?: string };
+
+const LOREM =
+  "Lorem ipsum dolor sit amet consectetur. Ullamcorper vitae sollicitudin aliquet sodales auctor. Curabitur faucibus in eu mauris. At aliquet auctor fringilla tincidunt tellus gravida molestie vulputate pellentesque. Pulvinar sed venenatis aenean semper egestas orci diam sed. Non sollicitudin pretium tellus ut accumsan quis. Massa diam congue non in ut odio tellus. Nisl adipiscing senectus nisl etiam nibh tortor eu commodo egestas.";
+
+/** "The Thinking" narrative, keyed by slug — each section has a title and
+ *  body copy, with an optional supporting image. */
+export const PLACEHOLDER_THINKING: Record<string, ThinkingSection[]> = {
+  walkrr: [
+    { title: "Context", body: LOREM },
+    { title: "Brand problem", body: LOREM, image: "https://picsum.photos/seed/walkrr-thinking-1/1200/900" },
+    { title: "Approach", body: LOREM },
+  ],
+};

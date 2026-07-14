@@ -5,7 +5,7 @@ import {
   getPortfolioProjectBySlug,
   getProjectMedia,
 } from "@/lib/db-portfolio";
-import { PLACEHOLDER_PROJECTS, PLACEHOLDER_WORK_MEDIA } from "@/lib/portfolio-placeholders";
+import { PLACEHOLDER_PROJECTS, PLACEHOLDER_WORK_MEDIA, PLACEHOLDER_THINKING } from "@/lib/portfolio-placeholders";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { WorkDeepDive } from "@/components/portfolio/work-deep-dive";
 
@@ -62,6 +62,7 @@ export default async function WorkDeepDivePage({
         project={project}
         workMedia={workMedia}
         thinkingMedia={thinkingMedia}
+        thinkingSections={isPlaceholder ? PLACEHOLDER_THINKING[slug] : undefined}
       />
     </div>
   );

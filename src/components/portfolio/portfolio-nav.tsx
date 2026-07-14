@@ -13,7 +13,7 @@ export function PortfolioNav({ active }: { active?: "work" | "about" | "contact"
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="relative bg-white" style={{ zIndex: 50 }}>
+    <header className="sticky top-0 bg-white" style={{ zIndex: 50 }}>
       <div className="flex items-center justify-between" style={{ height: 56, padding: "0 24px" }}>
         <Link
           href="/"

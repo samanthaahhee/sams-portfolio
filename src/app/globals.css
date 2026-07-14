@@ -151,7 +151,9 @@ body {
   letter-spacing: -0.005em;
   background: var(--paper);
   color: var(--ink);
-  overflow-x: hidden;
+  /* No overflow-x here (html already clips horizontal overflow) — setting
+     it on body too turns body into a second scroll container, which
+     silently breaks position: sticky for every descendant. */
 }
 
 ::selection {
