@@ -66,10 +66,11 @@ function WorkGrid({ items, title }: { items: PortfolioMedia[]; title: string }) 
         <Plate m={b} title={title} i={1} style={{ gridColumn: 1, gridRow: 2, aspectRatio: `${bw} / ${bh}` }} />
         <Plate m={c} title={title} i={2} style={{ gridColumn: 2, gridRow: "1 / 3", height: "100%" }} />
       </div>
-      {rest.map((m, i) => {
-        const { w, h } = parseDims(m);
-        return <Plate key={m.id} m={m} title={title} i={i + 3} style={{ aspectRatio: `${w} / ${h}` }} />;
-      })}
+      {rest.map((m, i) => (
+        // Full-width rows are always a wide landscape banner, regardless of
+        // the source image's own orientation — object-fit crops to match.
+        <Plate key={m.id} m={m} title={title} i={i + 3} style={{ aspectRatio: "21 / 6" }} />
+      ))}
     </div>
   );
 }
@@ -159,9 +160,13 @@ export function WorkDeepDive({
 
   return (
     <div className="font-portfolio-sans" style={{ color: "#111" }}>
-      <div className="flex flex-col md:flex-row gap-10 md:gap-16 px-6 md:px-14" style={{ paddingTop: 40, paddingBottom: 96 }}>
-        {/* Sidebar — offset to roughly align "Client:" with the grid below the tabs row */}
-        <aside className="w-full md:w-56 shrink-0 space-y-8" style={{ paddingTop: 76 }}>
+      <div className="flex flex-col md:flex-row items-start gap-10 md:gap-16 px-6 md:px-14" style={{ paddingTop: 40, paddingBottom: 96 }}>
+        {/* Sidebar — sticky below the nav, so only the grid/copy column scrolls.
+            Offset roughly aligns "Client:" with the grid below the tabs row. */}
+        <aside
+          className="w-full md:w-56 shrink-0 space-y-8 md:sticky"
+          style={{ paddingTop: 76, top: NAV_H + 24 }}
+        >
           <MetaBlock label="Client" value={project.client} />
           <MetaBlock label="Role" value={project.role} />
           {project.deliverables && project.deliverables.length > 0 && (
