@@ -4,6 +4,7 @@ import {
   getPortfolioProjects,
   getPortfolioProjectBySlug,
   getProjectMedia,
+  getThinkingSections,
 } from "@/lib/db-portfolio";
 import { PLACEHOLDER_PROJECTS, PLACEHOLDER_WORK_MEDIA, PLACEHOLDER_THINKING } from "@/lib/portfolio-placeholders";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
@@ -48,12 +49,17 @@ export default async function WorkDeepDivePage({
   if (!found) notFound();
   const { project, isPlaceholder } = found;
 
-  const [workMedia, thinkingMedia] = isPlaceholder
-    ? [PLACEHOLDER_WORK_MEDIA[slug] ?? [], []]
+  const [workMedia, thinkingMedia, dbThinkingSections] = isPlaceholder
+    ? [PLACEHOLDER_WORK_MEDIA[slug] ?? [], [], []]
     : await Promise.all([
         getProjectMedia(project.id, "work_grid"),
         getProjectMedia(project.id, "thinking"),
+        getThinkingSections(project.id),
       ]);
+
+  const thinkingSections = isPlaceholder
+    ? PLACEHOLDER_THINKING[slug]
+    : dbThinkingSections.map((s) => ({ title: s.title, body: s.body, image: s.imageUrl ?? undefined }));
 
   return (
     <div className="min-h-screen bg-white font-portfolio-sans">
@@ -62,7 +68,7 @@ export default async function WorkDeepDivePage({
         project={project}
         workMedia={workMedia}
         thinkingMedia={thinkingMedia}
-        thinkingSections={isPlaceholder ? PLACEHOLDER_THINKING[slug] : undefined}
+        thinkingSections={thinkingSections}
       />
     </div>
   );

@@ -80,10 +80,8 @@ export type PortfolioProject = {
   workGridTemplate: string | null;
   coverUrl: string | null;
   coverType: MediaType | null;
-  /** Not persisted yet — only populated for placeholder projects until the
-   *  DB schema and admin dashboard grow dedicated columns for these. */
-  deliverables?: string[];
-  creativeTeam?: string[];
+  deliverables: string[];
+  creativeTeam: string[];
 };
 
 type ProjectRow = {
@@ -99,7 +97,14 @@ type ProjectRow = {
   work_grid_template: string | null;
   cover_url: string | null;
   cover_type: string | null;
+  deliverables: string[] | string;
+  creative_team: string[] | string;
 };
+
+function parseJsonArray(v: string[] | string): string[] {
+  if (Array.isArray(v)) return v;
+  try { return JSON.parse(v); } catch { return []; }
+}
 
 function projectFromRow(r: ProjectRow): PortfolioProject {
   return {
@@ -115,6 +120,8 @@ function projectFromRow(r: ProjectRow): PortfolioProject {
     workGridTemplate: r.work_grid_template,
     coverUrl: r.cover_url,
     coverType: r.cover_type as MediaType | null,
+    deliverables: parseJsonArray(r.deliverables ?? []),
+    creativeTeam: parseJsonArray(r.creative_team ?? []),
   };
 }
 
@@ -182,28 +189,99 @@ export async function getProjectMedia(
 }
 
 export async function upsertPortfolioProject(p: Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number }) {
+  const deliverables = JSON.stringify(p.deliverables ?? []);
+  const creativeTeam = JSON.stringify(p.creativeTeam ?? []);
   if (p.id) {
     await sql`
       UPDATE portfolio_projects SET
         slug = ${p.slug}, title = ${p.title}, discipline = ${p.discipline},
         client = ${p.client}, role = ${p.role}, year = ${p.year},
         order_index = ${p.orderIndex}, visible = ${p.visible},
-        work_grid_template = ${p.workGridTemplate}, updated_at = NOW()
+        work_grid_template = ${p.workGridTemplate},
+        deliverables = ${deliverables}::jsonb, creative_team = ${creativeTeam}::jsonb,
+        updated_at = NOW()
       WHERE id = ${p.id}
     `;
   } else {
     await sql`
       INSERT INTO portfolio_projects
-        (slug, title, discipline, client, role, year, order_index, visible, work_grid_template)
+        (slug, title, discipline, client, role, year, order_index, visible, work_grid_template, deliverables, creative_team)
       VALUES
         (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
-         ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate})
+         ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb)
     `;
   }
 }
 
 export async function deletePortfolioProject(id: number) {
   await sql`DELETE FROM portfolio_projects WHERE id = ${id}`;
+}
+
+/* ── Thinking sections ───────────────────────────────────────────── */
+
+export type PortfolioThinkingSection = {
+  id: number;
+  projectId: number;
+  title: string;
+  body: string;
+  imageUrl: string | null;
+  orderIndex: number;
+};
+
+type ThinkingSectionRow = {
+  id: number;
+  project_id: number;
+  title: string;
+  body: string;
+  image_url: string | null;
+  order_index: number;
+};
+
+function thinkingSectionFromRow(r: ThinkingSectionRow): PortfolioThinkingSection {
+  return {
+    id: r.id,
+    projectId: r.project_id,
+    title: r.title,
+    body: r.body,
+    imageUrl: r.image_url,
+    orderIndex: r.order_index,
+  };
+}
+
+/** Ordered "Thinking" narrative sections for one project. */
+export async function getThinkingSections(projectId: number): Promise<PortfolioThinkingSection[]> {
+  try {
+    const { rows } = await sql<ThinkingSectionRow>`
+      SELECT * FROM portfolio_thinking_sections
+      WHERE  project_id = ${projectId}
+      ORDER  BY order_index ASC, id ASC
+    `;
+    return rows.map(thinkingSectionFromRow);
+  } catch {
+    return [];
+  }
+}
+
+export async function upsertThinkingSection(s: Omit<PortfolioThinkingSection, "id"> & { id?: number }) {
+  if (s.id) {
+    await sql`
+      UPDATE portfolio_thinking_sections SET
+        project_id = ${s.projectId}, title = ${s.title}, body = ${s.body},
+        image_url = ${s.imageUrl}, order_index = ${s.orderIndex}, updated_at = NOW()
+      WHERE id = ${s.id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO portfolio_thinking_sections
+        (project_id, title, body, image_url, order_index)
+      VALUES
+        (${s.projectId}, ${s.title}, ${s.body}, ${s.imageUrl}, ${s.orderIndex})
+    `;
+  }
+}
+
+export async function deleteThinkingSection(id: number) {
+  await sql`DELETE FROM portfolio_thinking_sections WHERE id = ${id}`;
 }
 
 /** Key/value settings bag — homepage copy A/B, contact ambient copy,
@@ -293,11 +371,6 @@ type JobRow = {
   rec_date: string | null;
   rec_relationship: string | null;
 };
-
-function parseJsonArray(v: string[] | string): string[] {
-  if (Array.isArray(v)) return v;
-  try { return JSON.parse(v); } catch { return []; }
-}
 
 function jobFromRow(r: JobRow): PortfolioJob {
   return {

@@ -15,9 +15,14 @@ CREATE TABLE IF NOT EXISTS portfolio_projects (
   order_index        INTEGER NOT NULL DEFAULT 0,
   visible            BOOLEAN NOT NULL DEFAULT TRUE,
   work_grid_template TEXT, -- e.g. 'mosaic-a' | 'mosaic-b' | 'single-hero' | 'two-up' | NULL (auto)
+  deliverables       JSONB NOT NULL DEFAULT '[]', -- string[], shown in the deep-dive sidebar
+  creative_team      JSONB NOT NULL DEFAULT '[]', -- string[], shown in the deep-dive sidebar
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE portfolio_projects ADD COLUMN IF NOT EXISTS deliverables JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE portfolio_projects ADD COLUMN IF NOT EXISTS creative_team JSONB NOT NULL DEFAULT '[]';
 
 CREATE INDEX IF NOT EXISTS portfolio_projects_order_idx ON portfolio_projects (order_index);
 
@@ -41,6 +46,21 @@ CREATE TABLE IF NOT EXISTS portfolio_media (
 
 CREATE INDEX IF NOT EXISTS portfolio_media_surface_idx ON portfolio_media (surface, order_index);
 CREATE INDEX IF NOT EXISTS portfolio_media_project_idx ON portfolio_media (project_id);
+
+-- "The Thinking" tab's narrative — ordered header + body sections per
+-- project, each with an optional supporting image.
+CREATE TABLE IF NOT EXISTS portfolio_thinking_sections (
+  id            SERIAL PRIMARY KEY,
+  project_id    INTEGER NOT NULL REFERENCES portfolio_projects(id) ON DELETE CASCADE,
+  title         TEXT NOT NULL,
+  body          TEXT NOT NULL DEFAULT '',
+  image_url     TEXT,
+  order_index   INTEGER NOT NULL DEFAULT 0,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS portfolio_thinking_sections_project_idx ON portfolio_thinking_sections (project_id, order_index);
 
 -- CV / timeline entries for /about.
 CREATE TABLE IF NOT EXISTS portfolio_jobs (
