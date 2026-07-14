@@ -80,6 +80,10 @@ export type PortfolioProject = {
   workGridTemplate: string | null;
   coverUrl: string | null;
   coverType: MediaType | null;
+  /** Not persisted yet — only populated for placeholder projects until the
+   *  DB schema and admin dashboard grow dedicated columns for these. */
+  deliverables?: string[];
+  creativeTeam?: string[];
 };
 
 type ProjectRow = {

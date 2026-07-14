@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Media } from "./media";
 import type { PortfolioProject } from "@/lib/db-portfolio";
+import { PH_COVERS, PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
 
 type Word = { t: string; b?: boolean };
 const LINE_1: Word[] = [{ t: "Here" }, { t: "is" }, { t: "a" }, { t: "collection" }];
@@ -51,24 +52,6 @@ function IntroCopy() {
     </p>
   );
 }
-
-/* Placeholder covers — shown until real media is uploaded */
-const PH_COVERS = [
-  "https://picsum.photos/seed/walkrr-cover/1600/900",
-  "https://picsum.photos/seed/bos-cover/1600/900",
-  "https://picsum.photos/seed/temper-cover/1600/900",
-  "https://picsum.photos/seed/recharge-cover/1600/900",
-  "https://picsum.photos/seed/smallstitch-cover/1600/900",
-  "https://picsum.photos/seed/icetea-cover/1600/900",
-];
-
-const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
-  { id: 0, slug: "walkrr", title: "Walkrr", discipline: "Brand Design", client: "Walkrr", role: "Brand Designer", year: "2023", orderIndex: 0, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[0], coverType: "image" },
-  { id: 1, slug: "bos-ice-tea", title: "BOS Ice Tea", discipline: "360 Campaign", client: "BOS", role: "Art Director", year: "2022", orderIndex: 1, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[1], coverType: "image" },
-  { id: 2, slug: "temper", title: "Temper", discipline: "Brand System", client: "Temper", role: "Product Designer", year: "2022", orderIndex: 2, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[2], coverType: "image" },
-  { id: 3, slug: "recharge", title: "Recharge.com", discipline: "Art Direction", client: "Recharge.com", role: "Visual Designer", year: "2021", orderIndex: 3, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[3], coverType: "image" },
-  { id: 4, slug: "small-stitch", title: "Small Stitch", discipline: "Brand Identity", client: "Small Stitch", role: "Brand Designer", year: "2023", orderIndex: 4, visible: true, workGridTemplate: null, coverUrl: PH_COVERS[4], coverType: "image" },
-];
 
 // The strip is driven manually. Every tile is a fixed 16:9 box; the focus tile
 // is scaled up with a CSS transform (visual only — no layout reflow), so the

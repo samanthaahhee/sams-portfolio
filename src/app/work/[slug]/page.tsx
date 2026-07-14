@@ -5,12 +5,22 @@ import {
   getPortfolioProjectBySlug,
   getProjectMedia,
 } from "@/lib/db-portfolio";
+import { PLACEHOLDER_PROJECTS, PLACEHOLDER_WORK_MEDIA } from "@/lib/portfolio-placeholders";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { WorkDeepDive } from "@/components/portfolio/work-deep-dive";
 
 export async function generateStaticParams() {
   const projects = await getPortfolioProjects();
-  return projects.map((p) => ({ slug: p.slug }));
+  const slugs = new Set(projects.map((p) => p.slug));
+  for (const p of PLACEHOLDER_PROJECTS) slugs.add(p.slug);
+  return Array.from(slugs).map((slug) => ({ slug }));
+}
+
+async function loadProject(slug: string) {
+  const dbProject = await getPortfolioProjectBySlug(slug);
+  if (dbProject) return { project: dbProject, isPlaceholder: false as const };
+  const placeholder = PLACEHOLDER_PROJECTS.find((p) => p.slug === slug);
+  return placeholder ? { project: placeholder, isPlaceholder: true as const } : null;
 }
 
 export async function generateMetadata({
@@ -19,8 +29,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getPortfolioProjectBySlug(slug);
-  if (!project) return {};
+  const found = await loadProject(slug);
+  if (!found) return {};
+  const { project } = found;
   return {
     title: `${project.title} — Sam Ahhee`,
     description: `${project.discipline} · ${project.client} · ${project.year}`,
@@ -33,13 +44,16 @@ export default async function WorkDeepDivePage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = await getPortfolioProjectBySlug(slug);
-  if (!project) notFound();
+  const found = await loadProject(slug);
+  if (!found) notFound();
+  const { project, isPlaceholder } = found;
 
-  const [workMedia, thinkingMedia] = await Promise.all([
-    getProjectMedia(project.id, "work_grid"),
-    getProjectMedia(project.id, "thinking"),
-  ]);
+  const [workMedia, thinkingMedia] = isPlaceholder
+    ? [PLACEHOLDER_WORK_MEDIA[slug] ?? [], []]
+    : await Promise.all([
+        getProjectMedia(project.id, "work_grid"),
+        getProjectMedia(project.id, "thinking"),
+      ]);
 
   return (
     <div className="min-h-screen bg-white font-portfolio-sans">
