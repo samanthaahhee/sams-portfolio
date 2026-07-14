@@ -422,7 +422,8 @@ export function HomepageBento({ media }: { media: PortfolioMedia[]; copyA?: stri
         />
       </div>
 
-      {/* Tile 2 — Walkrr laptop */}
+      {/* Tile 2 — Temper marketing site (slot-2.png is Temper, not Walkrr —
+          corrected stale label; there's no real Walkrr imagery in the repo) */}
       <div className="rounded-xl overflow-hidden" style={{ gridColumn: 2, gridRow: "1/2" }}>
         <Tile src={src("2")} />
       </div>

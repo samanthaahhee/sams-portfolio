@@ -48,6 +48,19 @@ async function seedProject(slug: string) {
     `;
   }
 
+  // Carousel cover — reuse the first work-grid image so the /work index
+  // shows the same real photo instead of falling back to a picsum cycle.
+  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = 'carousel'`;
+  if (media[0]) {
+    const c = media[0];
+    await sql`
+      INSERT INTO portfolio_media
+        (project_id, surface, slot_id, type, url, width, height, aspect_ratio, order_index)
+      VALUES
+        (${projectId}, 'carousel', NULL, ${c.type}, ${c.url}, ${c.width}, ${c.height}, ${c.aspectRatio}, 0)
+    `;
+  }
+
   const sections = PLACEHOLDER_THINKING[slug] ?? [];
   await sql`DELETE FROM portfolio_thinking_sections WHERE project_id = ${projectId}`;
   for (let i = 0; i < sections.length; i++) {

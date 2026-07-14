@@ -3,13 +3,15 @@
  * per-project deep-dive page so both fall back to the same fixtures. */
 import type { PortfolioProject, PortfolioMedia } from "./db-portfolio";
 
+// Real project imagery already uploaded to /public/images/bento — reused
+// here since it's genuine work, not stock. walkrr has no real imagery
+// anywhere in the repo yet, so its cover stays a picsum placeholder.
 export const PH_COVERS = [
   "https://picsum.photos/seed/walkrr-cover/1600/900",
-  "https://picsum.photos/seed/bos-cover/1600/900",
-  "https://picsum.photos/seed/temper-cover/1600/900",
-  "https://picsum.photos/seed/recharge-cover/1600/900",
-  "https://picsum.photos/seed/smallstitch-cover/1600/900",
-  "https://picsum.photos/seed/icetea-cover/1600/900",
+  "/images/bento/slot-1.jpg",   // BOS Ice Tea — product photography
+  "/images/bento/slot-2.png",   // Temper — marketing site
+  "/images/bento/slot-6.png",   // Recharge.com — before/after
+  "/images/bento/slot-3.png",   // Small Stitch — 3D storefront
 ];
 
 export const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
@@ -71,13 +73,30 @@ function workGrid(slug: string): PortfolioMedia[] {
 
 /** Work-grid media for the deep-dive page, keyed by slug. First three items
  *  form the bento trio (two stacked left, one tall right); anything after
- *  that stacks as full-width rows below. Images are still seeded picsum
- *  placeholders — no real project imagery has been uploaded yet. */
+ *  that stacks as full-width rows below.
+ *
+ *  bos-ice-tea, temper, recharge, and small-stitch use the real project
+ *  imagery already uploaded to /public/images/bento (dimensions read
+ *  directly from the files) — not stock photos. walkrr has no real
+ *  imagery anywhere in the repo yet, so it stays picsum until real photos
+ *  or screens are provided. */
 export const PLACEHOLDER_WORK_MEDIA: Record<string, PortfolioMedia[]> = {
   walkrr: workGrid("walkrr"),
-  "bos-ice-tea": workGrid("bos-ice-tea"),
-  temper: workGrid("temper"),
-  recharge: workGrid("recharge"),
+  "bos-ice-tea": [
+    media(0, "/images/bento/slot-1.jpg", 1920, 1291, 0),
+    media(0, "/images/bento/slot-4.jpg", 1920, 1291, 1),
+    media(0, "/images/bento/slot-7.jpg", 1920, 1291, 2),
+  ],
+  temper: [
+    media(0, "/images/bento/slot-2.png", 2037, 2499, 0),
+    media(0, "/images/bento/slot-5.png", 2037, 996, 1),
+  ],
+  recharge: [
+    media(0, "/images/bento/slot-6.png", 3200, 1800, 0),
+  ],
+  "small-stitch": [
+    media(0, "/images/bento/slot-3.png", 1895, 1296, 0),
+  ],
 };
 
 export type ThinkingSection = { title: string; body: string; image?: string };
