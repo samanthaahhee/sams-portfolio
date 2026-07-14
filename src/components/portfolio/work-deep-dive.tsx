@@ -85,10 +85,10 @@ function ThinkingSections({ sections, title }: { sections: ThinkingSection[]; ti
     <div className="flex flex-col gap-10">
       {sections.map((s, i) => (
         <div key={i} className="space-y-4">
-          <h3 className="font-portfolio-sans" style={{ fontSize: 17, fontWeight: 700, color: "#111" }}>
+          <h3 className="font-portfolio-sans" style={{ fontSize: 14, fontWeight: 700, color: "#111" }}>
             {s.title}
           </h3>
-          <p className="font-portfolio-sans" style={{ fontSize: 15, lineHeight: 1.7, color: "#333" }}>
+          <p className="font-portfolio-sans" style={{ fontSize: 15, lineHeight: 1.5, color: "#111" }}>
             {s.body}
           </p>
           {s.image && (
