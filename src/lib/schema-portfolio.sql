@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS portfolio_projects (
   year               TEXT NOT NULL DEFAULT '',
   order_index        INTEGER NOT NULL DEFAULT 0,
   visible            BOOLEAN NOT NULL DEFAULT TRUE,
-  work_grid_template TEXT, -- e.g. 'mosaic-a' | 'mosaic-b' | 'single-hero' | 'two-up' | NULL (auto)
+  work_grid_template TEXT, -- JSON {"columns": n, "rows": n} for the freeform bento builder; NULL = automatic trio+banner layout
   deliverables       JSONB NOT NULL DEFAULT '[]', -- string[], shown in the deep-dive sidebar
   creative_team      JSONB NOT NULL DEFAULT '[]', -- string[], shown in the deep-dive sidebar
   created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -41,8 +41,22 @@ CREATE TABLE IF NOT EXISTS portfolio_media (
   height        INTEGER,
   aspect_ratio  TEXT,          -- e.g. '14:9'
   order_index   INTEGER NOT NULL DEFAULT 0,
+  -- Freeform bento placement for surface='work_grid' items — NULL start
+  -- means "not yet placed on the custom grid", in which case the public
+  -- page falls back to the automatic trio+banner layout. Set together via
+  -- the admin grid builder; the project's work_grid_template column holds
+  -- the canvas size as JSON: {"columns": 4, "rows": 3}.
+  grid_col_start INTEGER,
+  grid_col_span  INTEGER NOT NULL DEFAULT 1,
+  grid_row_start INTEGER,
+  grid_row_span  INTEGER NOT NULL DEFAULT 1,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE portfolio_media ADD COLUMN IF NOT EXISTS grid_col_start INTEGER;
+ALTER TABLE portfolio_media ADD COLUMN IF NOT EXISTS grid_col_span INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE portfolio_media ADD COLUMN IF NOT EXISTS grid_row_start INTEGER;
+ALTER TABLE portfolio_media ADD COLUMN IF NOT EXISTS grid_row_span INTEGER NOT NULL DEFAULT 1;
 
 CREATE INDEX IF NOT EXISTS portfolio_media_surface_idx ON portfolio_media (surface, order_index);
 CREATE INDEX IF NOT EXISTS portfolio_media_project_idx ON portfolio_media (project_id);

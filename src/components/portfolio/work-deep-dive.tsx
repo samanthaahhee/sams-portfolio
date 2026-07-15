@@ -35,13 +35,70 @@ function Plate({ m, title, i, style }: { m: PortfolioMedia; title: string; i: nu
   );
 }
 
-function WorkGrid({ items, title }: { items: PortfolioMedia[]; title: string }) {
+function parseGridTemplate(json: string | null): { columns: number; rows: number } | null {
+  if (!json) return null;
+  try {
+    const t = JSON.parse(json) as { columns?: number; rows?: number };
+    if (t.columns && t.rows) return { columns: t.columns, rows: t.rows };
+  } catch {}
+  return null;
+}
+
+/** Freeform layout built in the admin grid builder — explicit CSS grid
+ *  placement per image. Only renders items that have a placement; the
+ *  admin's "Save layout" step auto-places anything left in the tray, so in
+ *  practice every uploaded image ends up placed once a custom layout exists. */
+function CustomWorkGrid({
+  items,
+  title,
+  columns,
+  rows,
+}: {
+  items: PortfolioMedia[];
+  title: string;
+  columns: number;
+  rows: number;
+}) {
+  const placed = items.filter((m) => m.gridColStart != null && m.gridRowStart != null);
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        gridAutoRows: "1fr",
+        gap: 24,
+        aspectRatio: `${columns} / ${rows}`,
+      }}
+    >
+      {placed.map((m, i) => (
+        <Plate
+          key={m.id}
+          m={m}
+          title={title}
+          i={i}
+          style={{
+            gridColumn: `${m.gridColStart} / span ${m.gridColSpan}`,
+            gridRow: `${m.gridRowStart} / span ${m.gridRowSpan}`,
+            height: "100%",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WorkGrid({ items, title, workGridTemplate }: { items: PortfolioMedia[]; title: string; workGridTemplate?: string | null }) {
   if (items.length === 0) {
     return (
       <div className="text-center py-20 text-neutral-400 font-portfolio-sans text-sm">
         No work images yet — upload via the admin dashboard.
       </div>
     );
+  }
+
+  const custom = parseGridTemplate(workGridTemplate ?? null);
+  if (custom && items.some((m) => m.gridColStart != null)) {
+    return <CustomWorkGrid items={items} title={title} columns={custom.columns} rows={custom.rows} />;
   }
 
   if (items.length < 3) {
@@ -210,7 +267,7 @@ export function WorkDeepDive({
           </div>
 
           {tab === "work" ? (
-            <WorkGrid items={workMedia} title={project.title} />
+            <WorkGrid items={workMedia} title={project.title} workGridTemplate={project.workGridTemplate} />
           ) : (
             <ThinkingTab sections={thinkingSections} items={thinkingMedia} title={project.title} />
           )}

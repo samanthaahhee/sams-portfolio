@@ -67,6 +67,7 @@ function media(url: string, w: number, h: number, order: number): PortfolioMedia
   return {
     id: order, projectId: null, surface: "work_grid", slotId: null, type: "image",
     url, width: w, height: h, aspectRatio: `${w}:${h}`, orderIndex: order,
+    gridColStart: null, gridColSpan: 1, gridRowStart: null, gridRowSpan: 1,
   };
 }
 

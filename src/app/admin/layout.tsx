@@ -20,6 +20,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/case-studies" className="hover:text-[color:var(--ink)]">
               Case studies
             </Link>
+            <Link href="/admin/work" className="hover:text-[color:var(--ink)]">
+              Work (rebuild)
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

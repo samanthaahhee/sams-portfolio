@@ -17,6 +17,13 @@ export type PortfolioMedia = {
   height: number | null;
   aspectRatio: string | null;
   orderIndex: number;
+  /** Freeform bento placement (surface='work_grid' only) — null start means
+   *  "not yet placed"; the public page falls back to the automatic layout
+   *  until every item (or at least one) has a placement. */
+  gridColStart: number | null;
+  gridColSpan: number;
+  gridRowStart: number | null;
+  gridRowSpan: number;
 };
 
 type MediaRow = {
@@ -30,6 +37,10 @@ type MediaRow = {
   height: number | null;
   aspect_ratio: string | null;
   order_index: number;
+  grid_col_start: number | null;
+  grid_col_span: number;
+  grid_row_start: number | null;
+  grid_row_span: number;
 };
 
 function mediaFromRow(r: MediaRow): PortfolioMedia {
@@ -44,6 +55,10 @@ function mediaFromRow(r: MediaRow): PortfolioMedia {
     height: r.height,
     aspectRatio: r.aspect_ratio,
     orderIndex: r.order_index,
+    gridColStart: r.grid_col_start,
+    gridColSpan: r.grid_col_span,
+    gridRowStart: r.grid_row_start,
+    gridRowSpan: r.grid_row_span,
   };
 }
 
@@ -171,6 +186,50 @@ export async function getPortfolioProjectBySlug(slug: string): Promise<Portfolio
   }
 }
 
+export async function getPortfolioProjectById(id: number): Promise<PortfolioProject | null> {
+  try {
+    const { rows } = await sql<ProjectRow>`
+      SELECT p.*,
+             m.url  AS cover_url,
+             m.type AS cover_type
+      FROM   portfolio_projects p
+      LEFT JOIN LATERAL (
+        SELECT url, type FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'carousel'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) m ON true
+      WHERE  p.id = ${id}
+      LIMIT  1
+    `;
+    return rows[0] ? projectFromRow(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Every project regardless of visibility — for the admin list. */
+export async function getAllPortfolioProjects(): Promise<PortfolioProject[]> {
+  try {
+    const { rows } = await sql<ProjectRow>`
+      SELECT p.*,
+             m.url  AS cover_url,
+             m.type AS cover_type
+      FROM   portfolio_projects p
+      LEFT JOIN LATERAL (
+        SELECT url, type FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'carousel'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) m ON true
+      ORDER  BY p.order_index ASC, p.id ASC
+    `;
+    return rows.map(projectFromRow);
+  } catch {
+    return [];
+  }
+}
+
 /** All media for one project + surface, ordered for display. */
 export async function getProjectMedia(
   projectId: number,
@@ -188,7 +247,9 @@ export async function getProjectMedia(
   }
 }
 
-export async function upsertPortfolioProject(p: Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number }) {
+export async function upsertPortfolioProject(
+  p: Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number },
+): Promise<number> {
   const deliverables = JSON.stringify(p.deliverables ?? []);
   const creativeTeam = JSON.stringify(p.creativeTeam ?? []);
   if (p.id) {
@@ -202,19 +263,41 @@ export async function upsertPortfolioProject(p: Omit<PortfolioProject, "id" | "c
         updated_at = NOW()
       WHERE id = ${p.id}
     `;
-  } else {
-    await sql`
-      INSERT INTO portfolio_projects
-        (slug, title, discipline, client, role, year, order_index, visible, work_grid_template, deliverables, creative_team)
-      VALUES
-        (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
-         ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb)
-    `;
+    return p.id;
   }
+  const { rows } = await sql<{ id: number }>`
+    INSERT INTO portfolio_projects
+      (slug, title, discipline, client, role, year, order_index, visible, work_grid_template, deliverables, creative_team)
+    VALUES
+      (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
+       ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb)
+    RETURNING id
+  `;
+  return rows[0].id;
 }
 
 export async function deletePortfolioProject(id: number) {
   await sql`DELETE FROM portfolio_projects WHERE id = ${id}`;
+}
+
+/** Bulk reorder — index becomes the new order_index. Used by the admin's
+ *  drag-and-drop list for projects, work-grid media, and thinking sections. */
+export async function setPortfolioProjectOrder(ids: number[]) {
+  for (let i = 0; i < ids.length; i++) {
+    await sql`UPDATE portfolio_projects SET order_index = ${i}, updated_at = NOW() WHERE id = ${ids[i]}`;
+  }
+}
+
+export async function setPortfolioMediaOrder(ids: number[]) {
+  for (let i = 0; i < ids.length; i++) {
+    await sql`UPDATE portfolio_media SET order_index = ${i} WHERE id = ${ids[i]}`;
+  }
+}
+
+export async function setThinkingSectionOrder(ids: number[]) {
+  for (let i = 0; i < ids.length; i++) {
+    await sql`UPDATE portfolio_thinking_sections SET order_index = ${i}, updated_at = NOW() WHERE id = ${ids[i]}`;
+  }
 }
 
 /* ── Thinking sections ───────────────────────────────────────────── */
@@ -311,21 +394,50 @@ export async function upsertPortfolioMedia(m: Omit<PortfolioMedia, "id"> & { id?
       UPDATE portfolio_media SET
         project_id = ${m.projectId}, surface = ${m.surface}, slot_id = ${m.slotId},
         type = ${m.type}, url = ${m.url}, width = ${m.width}, height = ${m.height},
-        aspect_ratio = ${m.aspectRatio}, order_index = ${m.orderIndex}
+        aspect_ratio = ${m.aspectRatio}, order_index = ${m.orderIndex},
+        grid_col_start = ${m.gridColStart}, grid_col_span = ${m.gridColSpan},
+        grid_row_start = ${m.gridRowStart}, grid_row_span = ${m.gridRowSpan}
       WHERE id = ${m.id}
     `;
   } else {
     await sql`
       INSERT INTO portfolio_media
-        (project_id, surface, slot_id, type, url, width, height, aspect_ratio, order_index)
+        (project_id, surface, slot_id, type, url, width, height, aspect_ratio, order_index,
+         grid_col_start, grid_col_span, grid_row_start, grid_row_span)
       VALUES
-        (${m.projectId}, ${m.surface}, ${m.slotId}, ${m.type}, ${m.url}, ${m.width}, ${m.height}, ${m.aspectRatio}, ${m.orderIndex})
+        (${m.projectId}, ${m.surface}, ${m.slotId}, ${m.type}, ${m.url}, ${m.width}, ${m.height}, ${m.aspectRatio}, ${m.orderIndex},
+         ${m.gridColStart}, ${m.gridColSpan}, ${m.gridRowStart}, ${m.gridRowSpan})
+    `;
+  }
+}
+
+/** Batch-save the freeform grid builder's placements in one round trip. */
+export async function saveGridPlacements(
+  placements: { id: number; gridColStart: number | null; gridColSpan: number; gridRowStart: number | null; gridRowSpan: number }[],
+) {
+  for (const p of placements) {
+    await sql`
+      UPDATE portfolio_media SET
+        grid_col_start = ${p.gridColStart}, grid_col_span = ${p.gridColSpan},
+        grid_row_start = ${p.gridRowStart}, grid_row_span = ${p.gridRowSpan}
+      WHERE id = ${p.id}
     `;
   }
 }
 
 export async function deletePortfolioMedia(id: number) {
   await sql`DELETE FROM portfolio_media WHERE id = ${id}`;
+}
+
+/** Set (or clear) just the freeform grid canvas size for a project, without
+ *  touching its other fields. `null` reverts the public page to the
+ *  automatic trio+banner layout. */
+export async function setWorkGridTemplate(projectId: number, template: { columns: number; rows: number } | null) {
+  await sql`
+    UPDATE portfolio_projects SET
+      work_grid_template = ${template ? JSON.stringify(template) : null}, updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
 }
 
 /* ── Jobs / timeline ─────────────────────────────────────────────── */
