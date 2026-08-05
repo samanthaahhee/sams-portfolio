@@ -10,7 +10,7 @@ import { animate, motion, useMotionValue, useScroll, useSpring, useTransform } f
    whileInView) on each section. Grid images are grey placeholders until
    real assets are picked/uploaded. */
 
-const RED = "#dc4941";
+const RED = "#FF2E31";
 
 const META = {
   role: "VISUAL COMMS DESIGNER",
@@ -40,12 +40,14 @@ const fadeUp = {
 
 const LOGO_TRACK_WIDTH = 260;
 
-/** Wordmark entrance: the real SVG logo tracks the cursor (spring-lagged)
- *  at a faded opacity for 3s, then disconnects and snaps into its static
- *  header position — while a loading-bar-style clip-path wipe sweeps a
- *  full-opacity copy in left-to-right on top, landing exactly where a
- *  hidden layout placeholder measures it should sit, so the handoff from
- *  fixed-cursor-follow to normal in-flow image is seamless. */
+/** Wordmark entrance: the real SVG logo tracks the cursor (spring-lagged),
+ *  and the moment the cursor first moves, a loading-bar-style clip-path
+ *  wipe starts filling it in over 3s — so the reveal is tied to actual
+ *  cursor activity instead of a mount timer nobody's watching. Once that
+ *  wipe finishes, the logo disconnects and snaps into its static header
+ *  position, landing exactly where a hidden layout placeholder measures
+ *  it should sit, so the handoff from fixed-cursor-follow to normal
+ *  in-flow image is seamless. */
 function CursorLogo() {
   const targetRef = useRef<HTMLDivElement>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -66,18 +68,10 @@ function CursorLogo() {
 
   useEffect(() => {
     if (!isTracking) return;
-    const handleMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-    };
-    window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
-  }, [isTracking, mouseX, mouseY]);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => {
+    let started = false;
+    const snap = () => {
       setIsTracking(false);
-
       const rect = targetRef.current?.getBoundingClientRect();
       if (!rect) return;
       const targetX = rect.left + rect.width / 2;
@@ -87,15 +81,20 @@ function CursorLogo() {
       animate(springX, targetX, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(springY, targetY, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(scale, targetScale, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      animate(reveal, 100, {
-        duration: 0.8,
-        delay: 0.15,
-        ease: [0.65, 0, 0.35, 1],
-        onComplete: () => setSettled(true),
-      });
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [springX, springY, scale, reveal]);
+      setTimeout(() => setSettled(true), 900);
+    };
+
+    const handleMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+      if (!started) {
+        started = true;
+        animate(reveal, 100, { duration: 3, ease: "linear", onComplete: snap });
+      }
+    };
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, [isTracking, mouseX, mouseY, springX, springY, scale, reveal]);
 
   return (
     <>
@@ -183,13 +182,12 @@ export function HomepageHero() {
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <div
         style={{
-          minHeight: "90vh",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
           position: "relative",
-          padding: "120px 24px 60px",
+          padding: "112px 24px 12px",
         }}
       >
         <motion.div
@@ -232,7 +230,7 @@ export function HomepageHero() {
           variants={fadeUp}
           className="font-portfolio-sans"
           style={{
-            marginTop: 28,
+            marginTop: 16,
             fontSize: "clamp(0.85rem, 1.3vw, 1rem)",
             fontWeight: 600,
             letterSpacing: "0.03em",
