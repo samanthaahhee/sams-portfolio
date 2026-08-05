@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
-import { LogoLoader } from "./logo-loader";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -39,16 +38,37 @@ const fadeUp = {
   }),
 };
 
-/** Logo "sizes into frame" on load — starts slightly small + faded,
- *  settles to full scale, instead of just fading/sliding up. */
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.82 },
-  visible: (delay = 0) => ({
-    opacity: 1,
-    scale: 1,
-    transition: { delay, duration: 0.8, ease: [0.16, 1, 0.3, 1] as const },
-  }),
-};
+/** Wordmark entrance: starts tiny + faded (a low-opacity base copy of the
+ *  logo), then a hard-edged wipe reveals a full-opacity copy left-to-right
+ *  on top of it while the whole thing scales up from ~22% to full size —
+ *  matches the reference site's load animation exactly (verified frame by
+ *  frame from a screen recording), not a simple fade/scale. */
+function LogoReveal() {
+  return (
+    <motion.div
+      initial={{ scale: 0.22 }}
+      animate={{ scale: 1 }}
+      transition={{ duration: 1.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+      style={{ position: "relative", width: "100%" }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo/samahhee.svg"
+        alt=""
+        aria-hidden
+        style={{ width: "100%", height: "auto", display: "block", opacity: 0.16 }}
+      />
+      <motion.img
+        src="/logo/samahhee.svg"
+        alt="Sam Ahhee"
+        initial={{ clipPath: "inset(0 100% 0 0)" }}
+        animate={{ clipPath: "inset(0 0% 0 0)" }}
+        transition={{ duration: 1.3, delay: 0.35, ease: [0.65, 0, 0.35, 1] }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "auto", display: "block" }}
+      />
+    </motion.div>
+  );
+}
 
 /** A grey placeholder tile — swap `src` in once real images are picked.
  *  Reveals via a scroll-progress-linked 3D tilt: as the tile travels from
@@ -85,8 +105,6 @@ function PlaceholderTile({ aspect = "4 / 3" }: { aspect?: string }) {
 export function HomepageHero() {
   return (
     <>
-      <LogoLoader />
-
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <div
         style={{
@@ -100,7 +118,7 @@ export function HomepageHero() {
         }}
       >
         <motion.div
-          custom={0}
+          custom={1.7}
           initial="hidden"
           animate="visible"
           variants={fadeUp}
@@ -128,19 +146,12 @@ export function HomepageHero() {
           <span>{META.handle}</span>
         </motion.div>
 
-        <motion.div
-          custom={0.15}
-          initial="hidden"
-          animate="visible"
-          variants={scaleIn}
-          style={{ width: "100%", maxWidth: 1100, padding: "0 16px" }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/samahhee.svg" alt="Sam Ahhee" style={{ width: "100%", height: "auto", display: "block" }} />
-        </motion.div>
+        <div style={{ width: "100%", maxWidth: 1100, padding: "0 16px" }}>
+          <LogoReveal />
+        </div>
 
         <motion.p
-          custom={0.4}
+          custom={1.9}
           initial="hidden"
           animate="visible"
           variants={fadeUp}
