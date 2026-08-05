@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, animate, motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
+import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransform } from "motion/react";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -163,43 +163,88 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
   );
 }
 
-/** A grey placeholder tile — swap `src` in once real images are picked.
- *
- *  Scroll-linked fold. `useScroll` tracks the tile from the moment its top
- *  edge crosses the bottom of the viewport ("start end") until it reaches
- *  the centre ("center center"); that progress drives rotateX 20deg -> 0,
- *  scale 0.9 -> 1 and opacity 0 -> 1 together, so the tile unfolds and
- *  fades into place as it rises. `perspective: 1000px` lives on the parent
- *  (without it the rotation renders flat) and `transform-origin: center
- *  bottom` hinges the fold off the incoming bottom edge. */
-function WorkTile({ aspect = "4 / 3" }: { aspect?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "center center"],
-  });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [20, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.9, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+/* The distortion is anchored to the VIEWPORT, not to the image: the bottom
+   BAND_FRACTION of the screen is a warp zone, and whatever content is
+   currently passing through it gets bent — so the effect lands part-way up
+   an image rather than folding the whole element. A single CSS transform
+   can't do that (it warps a rectangle uniformly), so each tile is built
+   from horizontal strips and every strip reacts to its own screen
+   position. Strips above the band are untouched. */
+const BAND_FRACTION = 0.2;
+const STRIP_COUNT = 18;
+const MAX_NARROW = 0.16; // how far the deepest strip pinches in
+const MAX_DIM = 0.14;
+
+/** A grey placeholder tile — pass `src` once real images are picked and
+ *  each strip shows its own slice of the image, keeping the picture
+ *  continuous while the bottom of the viewport bends it. */
+function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const stripRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const host = hostRef.current;
+      if (host) {
+        const rect = host.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const bandTop = vh * (1 - BAND_FRACTION);
+        // cheap bail-out when the tile is nowhere near the warp zone
+        if (rect.bottom > bandTop && rect.top < vh + rect.height) {
+          for (let i = 0; i < STRIP_COUNT; i++) {
+            const el = stripRefs.current[i];
+            if (!el) continue;
+            const y = rect.top + (rect.height * (i + 0.5)) / STRIP_COUNT;
+            const k = Math.max(0, Math.min(1, (y - bandTop) / (vh - bandTop)));
+            if (k <= 0) {
+              el.style.transform = "";
+              el.style.opacity = "";
+            } else {
+              const e = k * k; // ease in, so the bend starts gently
+              el.style.transform = `scaleX(${1 - MAX_NARROW * e})`;
+              el.style.opacity = `${1 - MAX_DIM * e}`;
+            }
+          }
+        } else if (rect.bottom <= bandTop) {
+          for (let i = 0; i < STRIP_COUNT; i++) {
+            const el = stripRefs.current[i];
+            if (el && el.style.transform) {
+              el.style.transform = "";
+              el.style.opacity = "";
+            }
+          }
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
 
   return (
-    /* ref sits on the untransformed container: measuring the element that
-       is itself being scaled/rotated would feed its own transform back
-       into the scroll progress */
-    <div ref={ref} style={{ perspective: "1000px", aspectRatio: aspect }}>
-      <motion.div
-        style={{
-          width: "100%",
-          height: "100%",
-          rotateX,
-          scale,
-          opacity,
-          transformOrigin: "center bottom",
-          borderRadius: 4,
-          background: "#e5e5e5",
-          border: "1px solid #d4d4d4",
-        }}
-      />
+    <div ref={hostRef} style={{ aspectRatio: aspect, position: "relative", borderRadius: 4, overflow: "hidden" }}>
+      {Array.from({ length: STRIP_COUNT }).map((_, i) => (
+        <div
+          key={i}
+          ref={(el) => {
+            stripRefs.current[i] = el;
+          }}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            top: `${(i * 100) / STRIP_COUNT}%`,
+            // slight overlap so neighbouring strips never show a seam
+            height: `${100 / STRIP_COUNT + 0.2}%`,
+            background: src ? undefined : "#e5e5e5",
+            backgroundImage: src ? `url(${src})` : undefined,
+            backgroundSize: `100% ${STRIP_COUNT * 100}%`,
+            backgroundPosition: `0 ${(i * 100) / (STRIP_COUNT - 1)}%`,
+            willChange: "transform",
+          }}
+        />
+      ))}
     </div>
   );
 }
