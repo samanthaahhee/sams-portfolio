@@ -169,11 +169,12 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
  *
  *  1. Viewport-edge distortion (outer): a scroll-linked 3D fold. As the
  *     tile crosses the bottom threshold of the screen it carries
- *     rotateX(45deg) under a deep perspective, so it reads as compressed
- *     and angled away from the viewer; that eases back to 0deg as the tile
+ *     rotateX(60deg) under a shallow perspective (800px, which exaggerates
+ *     the warp), plus a slight scale-down, so it reads as compressed and
+ *     angled away from the viewer; that eases back to flat as the tile
  *     travels up to the centre of the viewport, so it unfolds and snaps
- *     flat. Hinged at its bottom edge so the fold pivots off the incoming
- *     edge rather than the middle.
+ *     into place. Hinged at its bottom edge so the fold pivots off the
+ *     incoming edge rather than the middle.
  *  2. Load entrance (inner): opacity 0->1 with a ~46px slide-up, on a long
  *     expo ease-out, fired once the intro finishes. */
 function WorkTile({ show, aspect = "4 / 3" }: { show: boolean; aspect?: string }) {
@@ -182,11 +183,12 @@ function WorkTile({ show, aspect = "4 / 3" }: { show: boolean; aspect?: string }
     target: ref,
     offset: ["start end", "center center"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [45, 0]);
+  const rotateX = useTransform(scrollYProgress, [0, 1], [60, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
 
   return (
-    <div ref={ref} style={{ perspective: 1200, aspectRatio: aspect }}>
-      <motion.div style={{ width: "100%", height: "100%", rotateX, transformOrigin: "50% 100%" }}>
+    <div ref={ref} style={{ perspective: 800, aspectRatio: aspect }}>
+      <motion.div style={{ width: "100%", height: "100%", rotateX, scale, transformOrigin: "50% 100%" }}>
         <motion.div
           initial={{ opacity: 0, y: 46 }}
           animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 46 }}
