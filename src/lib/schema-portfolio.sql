@@ -141,3 +141,38 @@ CREATE TABLE IF NOT EXISTS portfolio_settings (
   value       TEXT NOT NULL DEFAULT '',
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+/* ── 2026 rebuild: project-page content model ────────────────────────
+   Per-project accent colour drives the wordmark, section headers and
+   meta row on that project's page; body copy stays charcoal.        */
+ALTER TABLE portfolio_projects
+  ADD COLUMN IF NOT EXISTS accent_color TEXT,
+  ADD COLUMN IF NOT EXISTS overview_heading TEXT,
+  ADD COLUMN IF NOT EXISTS overview_body TEXT;
+
+/* An ordered stream of blocks so text can sit anywhere between image
+   rows. `kind` discriminates: 'images' rows carry a layout, 'text'
+   rows carry a heading + body. One table keeps ordering trivial —
+   interleaving two tables by index is what makes that painful.      */
+CREATE TABLE IF NOT EXISTS portfolio_blocks (
+  id          SERIAL PRIMARY KEY,
+  project_id  INTEGER NOT NULL REFERENCES portfolio_projects(id) ON DELETE CASCADE,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  kind        TEXT    NOT NULL CHECK (kind IN ('images', 'text')),
+  -- image blocks: how the row is composed
+  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'split')),
+  -- text blocks
+  heading     TEXT,
+  body        TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS portfolio_blocks_project_idx
+  ON portfolio_blocks (project_id, order_index);
+
+/* Media attaches to a block; position within the row orders it. */
+ALTER TABLE portfolio_media
+  ADD COLUMN IF NOT EXISTS block_id INTEGER REFERENCES portfolio_blocks(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS block_position INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS portfolio_media_block_idx
+  ON portfolio_media (block_id, block_position);
