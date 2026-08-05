@@ -201,14 +201,20 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         const vh = window.innerHeight;
         const bandTop = vh * (1 - BAND_FRACTION);
 
-        /* Flare direction follows the tile's column: only edges facing the
-           outside of the grid splay, so the gutters between columns stay
-           parallel instead of closing up. A tile that touches both sides of
-           the row (single column) opens both ways; an interior column has
-           no outward-facing edge and stays straight. */
-        const atLeft = rect.left - rowRect.left < 2;
-        const atRight = rowRect.right - rect.right < 2;
-        const origin = atLeft && atRight ? "center" : atLeft ? "right" : atRight ? "left" : null;
+        /* The whole ROW bends as one continuous surface, expanding outward
+           from its centre: every point maps to cx + (x - cx) * flare. So a
+           tile left of centre leans left, one right of centre leans right,
+           and a tile straddling the centre opens both ways — the middle of
+           a three-up row still leans rather than standing parallel. Because
+           both sides of a gutter go through the same mapping, gutters scale
+           with the surface and can never close up.
+
+           Expressed as a transform, that is scaleX about the row's centre.
+           Putting transform-origin at the row centre in the tile's own
+           coordinates (which may fall outside the tile, and CSS allows
+           that) reproduces the mapping exactly. */
+        const originX = rowRect.left + rowRect.width / 2 - rect.left;
+        const originCss = `${originX.toFixed(2)}px center`;
 
         // flare factor at an absolute viewport y
         const flareAt = (y: number) => {
@@ -216,13 +222,13 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
           return 1 + MAX_FLARE * Math.pow(k, FLARE_CURVE);
         };
 
-        if (origin && rect.bottom > bandTop && rect.top < vh + rect.height) {
+        if (rect.bottom > bandTop && rect.top < vh + rect.height) {
           for (let i = 0; i < STRIP_COUNT; i++) {
             const el = stripRefs.current[i];
             if (!el) continue;
             // size from the strip's lower edge: the widest it needs to be
             const f = flareAt(rect.top + (rect.height * (i + 1)) / STRIP_COUNT);
-            if (el.style.transformOrigin !== origin) el.style.transformOrigin = origin;
+            if (el.style.transformOrigin !== originCss) el.style.transformOrigin = originCss;
             el.style.transform = f > 1 ? `scaleX(${f})` : "";
           }
 
@@ -235,9 +241,8 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             const t = 1 - Math.pow(1 - j / MASK_POINTS, 2);
             const yPx = rect.height * t;
             const f = flareAt(rect.top + yPx);
-            const grow = (f - 1) * W;
-            const lx = origin === "right" ? -grow : origin === "center" ? -grow / 2 : 0;
-            const rx = origin === "left" ? W + grow : origin === "center" ? W + grow / 2 : W;
+            const lx = originX * (1 - f);
+            const rx = originX + (W - originX) * f;
             right.push(`${rx.toFixed(2)}px ${yPx.toFixed(2)}px`);
             left.push(`${lx.toFixed(2)}px ${yPx.toFixed(2)}px`);
           }
