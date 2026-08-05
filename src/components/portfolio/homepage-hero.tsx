@@ -287,8 +287,15 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         lastKey = ""; // force a redraw at the new size
       }
 
-      // redraw only when the geometry actually moved
-      const key = `${Math.round(rect.top)}|${sizeKey}|${loaded}`;
+      /* Redraw on any sub-pixel movement, but ONLY while the tile actually
+         touches the warp band. Rounding the position to whole pixels was a
+         jitter source — the canvas scrolls smoothly with the page while its
+         drawn warp refreshed once per pixel, so the bend snapped a step
+         behind the movement. Tiles clear of the band are unwarped, so their
+         pixels never change: they draw once and are then skipped, which is
+         what keeps the per-frame cost to the one or two tiles in the band. */
+      const touchesBand = rect.bottom > bandTop && rect.top < vh;
+      const key = `${touchesBand ? rect.top.toFixed(2) : "flat"}|${sizeKey}|${loaded}`;
       if (key === lastKey) {
         raf = requestAnimationFrame(tick);
         return;
@@ -350,26 +357,27 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         }
       };
 
-      // everything above the band is unwarped: one blit, not many rows
+      /* Span boundaries are pinned to a fixed lattice measured from the
+         TILE's own top, never from the band. Adaptive spans were the other
+         jitter source: their heights depended on where the tile sat on
+         screen, so every boundary crept across the image as you scrolled,
+         and since each span is a uniform blit the content shimmered as
+         they moved. On a lattice the boundaries always land on the same
+         pixels of the picture, so only the stretch changes. */
       const flatUntil = Math.max(0, Math.min(H, bandTop - rect.top));
-      if (flatUntil > 0) drawSpan(0, flatUntil);
+      // below the viewport floor the flare is clamped, so one span covers it
+      const warpEnd = Math.min(H, Math.max(flatUntil, vh - rect.top));
+      // keep the lattice fine, but never let a tall tile explode the count
+      const step = Math.max(1 / dpr, (warpEnd - flatUntil) / 320);
+      const firstWarp = Math.min(H, Math.ceil(flatUntil / step) * step);
 
-      /* Inside the band, choose each span's height so the edge moves at
-         most ~0.3px across it. The flare's slope is near zero entering the
-         band and steepest at the screen floor, so this spends rows only
-         where the bend actually is — far cheaper than a uniform 1-device-
-         pixel walk while keeping the stretch sub-pixel. */
-      const minStep = 1 / dpr;
-      const halfSpan = W / 2 + Math.abs(B);
-      const bandH = vh - bandTop;
-      let y = flatUntil;
-      while (y < H) {
-        const k = Math.max(0, Math.min(1, (rect.top + y - bandTop) / bandH));
-        const dfdy = (MAX_FLARE * FLARE_CURVE * Math.pow(k, FLARE_CURVE - 1)) / bandH;
-        const dy = Math.max(minStep, Math.min(10, 0.3 / Math.max(dfdy * halfSpan, 1e-6)));
-        drawSpan(y, Math.min(y + dy, H));
-        y += dy;
+      // everything above the band is unwarped: one blit, not many rows
+      if (firstWarp > 0) drawSpan(0, firstWarp);
+
+      for (let y = firstWarp; y < warpEnd; y += step) {
+        drawSpan(y, Math.min(y + step, warpEnd));
       }
+      if (warpEnd < H) drawSpan(warpEnd, H);
 
       // the silhouette is cut with a vector clip-path: canvas edges land on
       // pixel boundaries, this antialiases them
