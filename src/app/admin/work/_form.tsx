@@ -57,6 +57,9 @@ export function WorkProjectForm({ project, media, thinkingSections, mode }: Prop
   const [form, setForm] = useState<Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number }>(
     project ?? {
       slug: "",
+      accentColor: null,
+      overviewHeading: null,
+      overviewBody: null,
       title: "",
       discipline: "",
       client: "",

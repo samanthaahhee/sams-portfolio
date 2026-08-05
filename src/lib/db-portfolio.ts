@@ -97,6 +97,12 @@ export type PortfolioProject = {
   coverType: MediaType | null;
   deliverables: string[];
   creativeTeam: string[];
+  /** Drives the wordmark, section headings and meta row on this project's
+   *  page. Body copy stays charcoal regardless. Null falls back to the
+   *  site red. */
+  accentColor: string | null;
+  overviewHeading: string | null;
+  overviewBody: string | null;
 };
 
 type ProjectRow = {
@@ -114,6 +120,9 @@ type ProjectRow = {
   cover_type: string | null;
   deliverables: string[] | string;
   creative_team: string[] | string;
+  accent_color: string | null;
+  overview_heading: string | null;
+  overview_body: string | null;
 };
 
 function parseJsonArray(v: string[] | string): string[] {
@@ -137,6 +146,9 @@ function projectFromRow(r: ProjectRow): PortfolioProject {
     coverType: r.cover_type as MediaType | null,
     deliverables: parseJsonArray(r.deliverables ?? []),
     creativeTeam: parseJsonArray(r.creative_team ?? []),
+    accentColor: r.accent_color ?? null,
+    overviewHeading: r.overview_heading ?? null,
+    overviewBody: r.overview_body ?? null,
   };
 }
 
@@ -260,6 +272,9 @@ export async function upsertPortfolioProject(
         order_index = ${p.orderIndex}, visible = ${p.visible},
         work_grid_template = ${p.workGridTemplate},
         deliverables = ${deliverables}::jsonb, creative_team = ${creativeTeam}::jsonb,
+        accent_color = ${p.accentColor ?? null},
+        overview_heading = ${p.overviewHeading ?? null},
+        overview_body = ${p.overviewBody ?? null},
         updated_at = NOW()
       WHERE id = ${p.id}
     `;
@@ -267,10 +282,12 @@ export async function upsertPortfolioProject(
   }
   const { rows } = await sql<{ id: number }>`
     INSERT INTO portfolio_projects
-      (slug, title, discipline, client, role, year, order_index, visible, work_grid_template, deliverables, creative_team)
+      (slug, title, discipline, client, role, year, order_index, visible, work_grid_template,
+       deliverables, creative_team, accent_color, overview_heading, overview_body)
     VALUES
       (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
-       ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb)
+       ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb,
+       ${p.accentColor ?? null}, ${p.overviewHeading ?? null}, ${p.overviewBody ?? null})
     RETURNING id
   `;
   return rows[0].id;
@@ -584,4 +601,140 @@ export async function getPortfolioContactStrips(): Promise<PortfolioContactStrip
   } catch {
     return [];
   }
+}
+
+/* ── Project page blocks ─────────────────────────────────────────────
+   An ordered stream mixing image rows and copy, so paragraphs can sit
+   anywhere between rows. `kind` discriminates the union.            */
+
+export type BlockLayout = "single" | "portrait_landscape" | "split";
+
+export type PortfolioBlock =
+  | {
+      kind: "images";
+      id: number;
+      projectId: number;
+      orderIndex: number;
+      layout: BlockLayout;
+      media: PortfolioMedia[];
+    }
+  | {
+      kind: "text";
+      id: number;
+      projectId: number;
+      orderIndex: number;
+      heading: string | null;
+      body: string | null;
+    };
+
+type BlockRow = {
+  id: number;
+  project_id: number;
+  order_index: number;
+  kind: "images" | "text";
+  layout: BlockLayout | null;
+  heading: string | null;
+  body: string | null;
+};
+
+/** Blocks for a project, each image block carrying its media in order. */
+export async function getProjectBlocks(projectId: number): Promise<PortfolioBlock[]> {
+  try {
+    const [{ rows: blockRows }, { rows: mediaRows }] = await Promise.all([
+      sql<BlockRow>`
+        SELECT id, project_id, order_index, kind, layout, heading, body
+        FROM   portfolio_blocks
+        WHERE  project_id = ${projectId}
+        ORDER  BY order_index ASC, id ASC
+      `,
+      sql<MediaRow & { block_id: number | null; block_position: number }>`
+        SELECT * FROM portfolio_media
+        WHERE  block_id IS NOT NULL AND project_id = ${projectId}
+        ORDER  BY block_position ASC, id ASC
+      `,
+    ]);
+
+    const byBlock = new Map<number, PortfolioMedia[]>();
+    for (const m of mediaRows) {
+      if (m.block_id === null) continue;
+      const list = byBlock.get(m.block_id) ?? [];
+      list.push(mediaFromRow(m));
+      byBlock.set(m.block_id, list);
+    }
+
+    return blockRows.map((b) =>
+      b.kind === "text"
+        ? {
+            kind: "text" as const,
+            id: b.id,
+            projectId: b.project_id,
+            orderIndex: b.order_index,
+            heading: b.heading,
+            body: b.body,
+          }
+        : {
+            kind: "images" as const,
+            id: b.id,
+            projectId: b.project_id,
+            orderIndex: b.order_index,
+            layout: b.layout ?? "single",
+            media: byBlock.get(b.id) ?? [],
+          },
+    );
+  } catch {
+    return [];
+  }
+}
+
+export async function createBlock(
+  projectId: number,
+  kind: "images" | "text",
+  layout: BlockLayout | null = null,
+): Promise<number> {
+  const { rows } = await sql<{ id: number }>`
+    INSERT INTO portfolio_blocks (project_id, kind, layout, order_index)
+    VALUES (
+      ${projectId}, ${kind}, ${layout},
+      COALESCE((SELECT MAX(order_index) + 1 FROM portfolio_blocks WHERE project_id = ${projectId}), 0)
+    )
+    RETURNING id
+  `;
+  return rows[0].id;
+}
+
+export async function updateBlock(
+  id: number,
+  patch: { layout?: BlockLayout | null; heading?: string | null; body?: string | null },
+) {
+  await sql`
+    UPDATE portfolio_blocks SET
+      layout  = COALESCE(${patch.layout ?? null}, layout),
+      heading = ${patch.heading ?? null},
+      body    = ${patch.body ?? null},
+      updated_at = NOW()
+    WHERE id = ${id}
+  `;
+}
+
+export async function deleteBlock(id: number) {
+  await sql`DELETE FROM portfolio_blocks WHERE id = ${id}`;
+}
+
+/** Persist a new block order from the admin's drag-and-drop. */
+export async function setBlockOrder(projectId: number, idsInOrder: number[]) {
+  for (let i = 0; i < idsInOrder.length; i++) {
+    await sql`
+      UPDATE portfolio_blocks SET order_index = ${i}, updated_at = NOW()
+      WHERE id = ${idsInOrder[i]} AND project_id = ${projectId}
+    `;
+  }
+}
+
+/** Attach media to a block (or detach with blockId = null). */
+export async function setMediaBlock(mediaId: number, blockId: number | null, position = 0) {
+  await sql`
+    UPDATE portfolio_media
+    SET block_id = ${blockId}, block_position = ${position}
+    WHERE id = ${mediaId}
+  `;
 }

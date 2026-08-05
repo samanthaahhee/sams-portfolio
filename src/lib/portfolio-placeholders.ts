@@ -22,7 +22,7 @@ export const PH_COVERS = [
 export const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
   {
     id: 0, slug: "walkrr", title: "Walkrr", discipline: "Brand Design", client: "Walkrr",
-    role: "Brand Designer", year: "2023", orderIndex: 0, visible: true, workGridTemplate: null,
+    role: "Brand Designer", year: "2023", orderIndex: 0, visible: true, workGridTemplate: null, accentColor: null, overviewHeading: null, overviewBody: null,
     coverUrl: PH_COVERS[0], coverType: "image",
     deliverables: ["Activation stands", "Store front", "Campaign Assets", "Brand Guideline"],
     creativeTeam: ["Sam Ahhee"],
@@ -32,21 +32,21 @@ export const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
   // the legacy /work/bos-ice-tea page) — not invented placeholder text.
   {
     id: 1, slug: "bos-ice-tea", title: "BOS Ice Tea", discipline: "360 Campaign", client: "BOS Ice Tea",
-    role: "Senior Art Director (EMEA region)", year: "2018–2019", orderIndex: 1, visible: true, workGridTemplate: null,
+    role: "Senior Art Director (EMEA region)", year: "2018–2019", orderIndex: 1, visible: true, workGridTemplate: null, accentColor: null, overviewHeading: null, overviewBody: null,
     coverUrl: PH_COVERS[1], coverType: "image",
     deliverables: ["Trade toolkit", "Sales toolkit", "Digital campaign", "Influencer pack"],
     creativeTeam: ["Sam Ahhee — Senior Art Director", "Creative Director", "Copywriter", "DTP Artist", "Junior Designer"],
   },
   {
     id: 2, slug: "temper", title: "Temper", discipline: "Product", client: "Temper",
-    role: "Visual Comms Design", year: "2024", orderIndex: 2, visible: true, workGridTemplate: null,
+    role: "Visual Comms Design", year: "2024", orderIndex: 2, visible: true, workGridTemplate: null, accentColor: null, overviewHeading: null, overviewBody: null,
     coverUrl: PH_COVERS[2], coverType: "image",
     deliverables: ["App Redesign", "Visual System"],
     creativeTeam: ["Sam Ahhee"],
   },
   {
     id: 3, slug: "recharge", title: "Recharge.com", discipline: "Brand", client: "Recharge.com",
-    role: "Brand Designer", year: "2024", orderIndex: 3, visible: true, workGridTemplate: null,
+    role: "Brand Designer", year: "2024", orderIndex: 3, visible: true, workGridTemplate: null, accentColor: null, overviewHeading: null, overviewBody: null,
     coverUrl: PH_COVERS[3], coverType: "image",
     deliverables: ["Visual Design", "Illustration Direction"],
     creativeTeam: ["Sam Ahhee"],
@@ -56,7 +56,7 @@ export const PLACEHOLDER_PROJECTS: PortfolioProject[] = [
   // one of the five with its own first-person description already written.
   {
     id: 4, slug: "small-stitch", title: "Small Stitch", discipline: "Brand Identity", client: "Small Stitch",
-    role: "Brand Designer", year: "2025", orderIndex: 4, visible: true, workGridTemplate: null,
+    role: "Brand Designer", year: "2025", orderIndex: 4, visible: true, workGridTemplate: null, accentColor: null, overviewHeading: null, overviewBody: null,
     coverUrl: PH_COVERS[4], coverType: "image",
     deliverables: ["Logo development", "Webpage & CRM assets", "Email campaigns", "Illustration range", "Community collaborations"],
     creativeTeam: ["Sam Ahhee"],
