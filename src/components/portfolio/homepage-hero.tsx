@@ -552,9 +552,11 @@ export function HomepageHero() {
           <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png" />
         </div>
 
-        {/* About — one panel holding the bio and the services rail, rather
-            than two separate cards. Bio sits top-left with the contact
-            link beneath it; services occupy the right-hand column. */}
+        {/* About — one panel, laid out as two rows rather than two columns:
+            the intro occupies the first row on its own, then the contact
+            link and the services rail share the second. That is what drops
+            services below the intro instead of alongside it, and keeps its
+            label on the same baseline as the link. */}
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -565,43 +567,37 @@ export function HomepageHero() {
             background: "#f2f2f2",
             borderRadius: 4,
             padding: "clamp(32px, 4.5vw, 72px) clamp(36px, 6vw, 88px)",
-            gap: "clamp(28px, 3vw, 48px)",
+            columnGap: "clamp(28px, 3vw, 48px)",
+            rowGap: "clamp(36px, 4vw, 64px)",
             marginBottom: GUTTER,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 40 }}>
-            <p
-              style={{
-                fontSize: "clamp(1.15rem, 2.1vw, 1.85rem)",
-                lineHeight: 1.32,
-                color: RED,
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-                maxWidth: "26ch",
-              }}
-            >
-              Hey I&rsquo;m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy
-              helping start-ups and scale-ups create memorable brand experiences.
-            </p>
-            <Link
-              href="/contact"
-              className="hover:opacity-70 transition-opacity"
-              style={{ color: RED, fontSize: "clamp(0.9rem, 1.15vw, 1rem)", fontWeight: 500 }}
-            >
-              Lets work together &rarr;
-            </Link>
-          </div>
+          <p
+            style={{
+              fontSize: "clamp(1.15rem, 2.1vw, 1.85rem)",
+              lineHeight: 1.32,
+              color: RED,
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              maxWidth: "26ch",
+            }}
+          >
+            Hey I&rsquo;m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy
+            helping start-ups and scale-ups create memorable brand experiences.
+          </p>
+          {/* holds the intro row open across the second column */}
+          <div className="hidden md:block" aria-hidden />
 
-          <div>
-            <p
-              style={{
-                fontFamily: MONO,
-                fontStyle: "italic",
-                fontSize: 14,
-                color: RED,
-                marginBottom: 18,
-              }}
-            >
+          <Link
+            href="/contact"
+            className="hover:opacity-70 transition-opacity self-start"
+            style={{ color: RED, fontSize: "clamp(0.9rem, 1.15vw, 1rem)", fontWeight: 500 }}
+          >
+            Lets work together &rarr;
+          </Link>
+
+          <div style={{ textAlign: "right" }}>
+            <p style={{ fontFamily: MONO, fontStyle: "italic", fontSize: 14, color: RED, marginBottom: 18 }}>
               Services &#8627;
             </p>
             <ul style={{ fontFamily: MONO, listStyle: "none", margin: 0, padding: 0 }}>
