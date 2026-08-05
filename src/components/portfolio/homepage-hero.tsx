@@ -165,43 +165,41 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
 
 /** A grey placeholder tile — swap `src` in once real images are picked.
  *
- *  Two independent motions, nested so they don't fight over `transform`:
- *
- *  1. Viewport-edge distortion (outer): a scroll-linked 3D fold. As the
- *     tile crosses the bottom threshold of the screen it carries
- *     rotateX(60deg) under a shallow perspective (800px, which exaggerates
- *     the warp), plus a slight scale-down, so it reads as compressed and
- *     angled away from the viewer; that eases back to flat as the tile
- *     travels up to the centre of the viewport, so it unfolds and snaps
- *     into place. Hinged at its bottom edge so the fold pivots off the
- *     incoming edge rather than the middle.
- *  2. Load entrance (inner): opacity 0->1 with a ~46px slide-up, on a long
- *     expo ease-out, fired once the intro finishes. */
-function WorkTile({ show, aspect = "4 / 3" }: { show: boolean; aspect?: string }) {
+ *  Scroll-linked fold. `useScroll` tracks the tile from the moment its top
+ *  edge crosses the bottom of the viewport ("start end") until it reaches
+ *  the centre ("center center"); that progress drives rotateX 20deg -> 0,
+ *  scale 0.9 -> 1 and opacity 0 -> 1 together, so the tile unfolds and
+ *  fades into place as it rises. `perspective: 1000px` lives on the parent
+ *  (without it the rotation renders flat) and `transform-origin: center
+ *  bottom` hinges the fold off the incoming bottom edge. */
+function WorkTile({ aspect = "4 / 3" }: { aspect?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "center center"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [60, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+  const rotateX = useTransform(scrollYProgress, [0, 1], [20, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.9, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   return (
-    <div ref={ref} style={{ perspective: 800, aspectRatio: aspect }}>
-      <motion.div style={{ width: "100%", height: "100%", rotateX, scale, transformOrigin: "50% 100%" }}>
-        <motion.div
-          initial={{ opacity: 0, y: 46 }}
-          animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 46 }}
-          transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{
-            width: "100%",
-            height: "100%",
-            borderRadius: 4,
-            background: "#e5e5e5",
-            border: "1px solid #d4d4d4",
-          }}
-        />
-      </motion.div>
+    /* ref sits on the untransformed container: measuring the element that
+       is itself being scaled/rotated would feed its own transform back
+       into the scroll progress */
+    <div ref={ref} style={{ perspective: "1000px", aspectRatio: aspect }}>
+      <motion.div
+        style={{
+          width: "100%",
+          height: "100%",
+          rotateX,
+          scale,
+          opacity,
+          transformOrigin: "center bottom",
+          borderRadius: 4,
+          background: "#e5e5e5",
+          border: "1px solid #d4d4d4",
+        }}
+      />
     </div>
   );
 }
@@ -295,12 +293,12 @@ export function HomepageHero() {
           entrance, and stacking the two would double-fade them */}
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile show={settled} aspect="4 / 3" />
-          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile show={settled} aspect="4 / 3" />
-          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
         </div>
 
         {/* Bio + services */}
@@ -353,12 +351,12 @@ export function HomepageHero() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile show={settled} aspect="4 / 3" />
-          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
-          <WorkTile show={settled} aspect="4 / 3" />
-          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" />
         </div>
       </div>
 
