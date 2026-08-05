@@ -72,6 +72,14 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20, mass: 0.5 });
   const springY = useSpring(mouseY, { stiffness: 150, damping: 20, mass: 0.5 });
+  /* What actually gets rendered. While the cursor is being followed these
+     mirror the springs; at snap time they are detached and animated
+     directly. Animating the SPRINGS instead bends the flight path badly —
+     the spring keeps pulling toward the last cursor position and carries a
+     different residual velocity on each axis, so the logo arcs across the
+     screen instead of travelling straight. */
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
   const scale = useMotionValue(1);
   const reveal = useMotionValue(0);
   const clipPath = useTransform(reveal, (v) => `inset(0 ${100 - v}% 0 0)`);
@@ -79,14 +87,28 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
   useEffect(() => {
     mouseX.set(window.innerWidth / 2);
     mouseY.set(window.innerHeight / 2);
-  }, [mouseX, mouseY]);
+    x.set(window.innerWidth / 2);
+    y.set(window.innerHeight / 2);
+  }, [mouseX, mouseY, x, y]);
 
   useEffect(() => {
     if (!isTracking) return;
 
+    // mirror the spring-smoothed cursor while we are still following it
+    const unsubX = springX.on("change", (v) => x.set(v));
+    const unsubY = springY.on("change", (v) => y.set(v));
+
     let started = false;
     const snap = () => {
       setIsTracking(false);
+      /* Detach from the springs first. Left attached they keep driving
+         toward the last cursor position, which is what bent the flight
+         path into an arc. Once detached, x and y are plain values and a
+         shared duration + easing makes both axes interpolate in lockstep,
+         so the logo travels in a straight line to its resting place. */
+      unsubX();
+      unsubY();
+
       const rect = targetRef.current?.getBoundingClientRect();
       if (!rect) return;
       const targetX = rect.left + rect.width / 2;
@@ -94,8 +116,8 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       const targetScale = rect.width / LOGO_TRACK_WIDTH;
 
       const opts = { duration: ENLARGE_SECONDS, ease: "easeInOut" as const };
-      animate(springX, targetX, opts);
-      animate(springY, targetY, opts);
+      animate(x, targetX, opts);
+      animate(y, targetY, opts);
       animate(scale, targetScale, opts);
       setTimeout(onSettled, ENLARGE_SECONDS * 1000);
     };
@@ -109,8 +131,12 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       }
     };
     window.addEventListener("mousemove", handleMove);
-    return () => window.removeEventListener("mousemove", handleMove);
-  }, [isTracking, mouseX, mouseY, springX, springY, scale, reveal, onSettled]);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      unsubX();
+      unsubY();
+    };
+  }, [isTracking, mouseX, mouseY, springX, springY, x, y, scale, reveal, onSettled]);
 
   return (
     <>
@@ -131,8 +157,8 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
             position: "fixed",
             top: 0,
             left: 0,
-            x: springX,
-            y: springY,
+            x,
+            y,
             scale,
             translateX: "-50%",
             translateY: "-50%",
