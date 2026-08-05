@@ -164,160 +164,226 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
 }
 
 /* The distortion is anchored to the VIEWPORT, not to the image: the bottom
-   BAND_FRACTION of the screen is a warp zone, and whatever content is
-   currently passing through it gets bent — so the effect lands part-way up
-   an image rather than folding the whole element. A single CSS transform
-   can't do that (it warps a rectangle uniformly), so each tile is built
-   from horizontal strips and every strip reacts to its own screen
-   position. Strips above the band are untouched. */
+   BAND_FRACTION of the screen is a warp zone, and whatever content passes
+   through it gets bent, so the effect lands part-way up an image rather
+   than folding the whole element.
+
+   This is drawn on a canvas rather than with DOM elements. Slicing the
+   tile into divs was the obvious approach but it cannot be made smooth:
+   every slice is a single uniform blit, so a vertical line in a photo
+   breaks by (slope x halfWidth x sliceHeight) at each boundary. Even at
+   140 slices that left ~1.8px jags. Drawing one device-pixel row at a
+   time with fractional source/destination rects lets the canvas
+   interpolate between rows instead, so the warp is continuous. */
 const BAND_FRACTION = 0.25;
-/* Strips warp the CONTENT, but their edges are axis-aligned div borders,
-   which the compositor pixel-snaps without antialiasing — so the silhouette
-   they draw is always a visible staircase no matter how many you add. The
-   visible edge is therefore cut by a clip-path polygon instead, which is
-   vector geometry and antialiases cleanly. Each strip is sized from the
-   flare at its BOTTOM edge, so content always covers the clip path and the
-   staircase hides just outside it. */
-const STRIP_COUNT = 140;
 const MASK_POINTS = 220;
-/* Strip height carries a small overlap to kill hairline seams; the
-   background sizing below is derived from it so each slice still renders
-   the image at exactly the tile's height. */
-const STRIP_H = 100 / STRIP_COUNT + 0.2;
-const BG_HEIGHT_PCT = 10000 / STRIP_H;
-const BG_STEP_PCT = ((100 / STRIP_COUNT) * 100) / (100 - STRIP_H);
 const MAX_FLARE = 0.5; // deepest point splays to 1.5x width
 const FLARE_CURVE = 3; // high power => straight sides, then a sharp trumpet
 
-/** A grey placeholder tile — pass `src` once real images are picked and
- *  each strip shows its own slice of the image, keeping the picture
- *  continuous while the bottom of the viewport bends it. */
+/** A work tile whose image bends through the viewport's bottom band.
+ *  Pass `src`; without one it renders a flat grey placeholder. */
 function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
-  const stripRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!src) return;
+    const img = new window.Image();
+    img.decoding = "async";
+    const done = () => {
+      imgRef.current = img;
+      setLoaded(true);
+    };
+    img.onload = done;
+    img.src = src;
+    if (img.complete && img.naturalWidth) done();
+  }, [src]);
 
   useEffect(() => {
     let raf = 0;
+    let lastKey = "";
+    let sizedFor = "";
+
     const tick = () => {
       const host = hostRef.current;
+      const canvas = canvasRef.current;
       const row = host?.parentElement;
-      if (host && row) {
-        const rect = host.getBoundingClientRect();
-        const vh = window.innerHeight;
-        const bandTop = vh * (1 - BAND_FRACTION);
+      if (!host || !canvas || !row) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
 
-        /* The row bends as one surface, but only the TILES stretch — the
-           gutters keep their exact base width and simply ride outward. If
-           the gutters scaled too they would visibly part, which is wrong.
+      const rect = host.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const bandTop = vh * (1 - BAND_FRACTION);
+      const W = rect.width;
+      const H = rect.height;
+      if (W < 1 || H < 1) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
 
-           So each tile scales about its own centre by `flare`, and the row
-           is re-laid-out with constant gutters and re-centred. Solving that
-           layout gives a translation that is linear in the flare:
+      /* Only the TILES stretch; gutters keep their exact base width and
+         ride outward. Re-solving the row layout under that constraint
+         makes the tile's shift linear in the flare:
 
-             delta(f) = B * (f - 1),  B = (widthsBefore + ownWidth/2) - totalWidths/2
+           delta(f) = B * (f - 1),
+           B = (widthsBefore + ownWidth/2) - totalWidths/2
 
-           B is the tile's centre measured in "tile-width space" relative to
-           the row's centre, so an outer tile leans out hard, and a tile
-           sitting on the centre of a three-up row has B = 0 and simply
-           opens both ways about itself. Nothing stays parallel, and every
-           gutter keeps its width because the tiles either side of it shift
-           by exactly the amount the tiles between them grew. */
-        const siblings = Array.from(row.children).filter((c) =>
-          (c as HTMLElement).dataset.worktile !== undefined,
-        ) as HTMLElement[];
-        const idx = siblings.indexOf(host);
-        let widthsBefore = 0;
-        let totalWidths = 0;
-        for (let s = 0; s < siblings.length; s++) {
-          const w = siblings[s].getBoundingClientRect().width;
-          if (s < idx) widthsBefore += w;
-          totalWidths += w;
-        }
-        const W = rect.width;
-        const B = widthsBefore + W / 2 - totalWidths / 2;
+         B is the tile's centre in "tile-width space" relative to the row
+         centre, so outer tiles lean out hard while a tile centred in a
+         three-up row has B = 0 and opens both ways about itself. Nothing
+         stays parallel, and gutters cannot part because the tiles either
+         side shift by exactly what the tiles between them grew. */
+      const siblings = Array.from(row.children).filter(
+        (c) => (c as HTMLElement).dataset.worktile !== undefined,
+      ) as HTMLElement[];
+      const idx = siblings.indexOf(host);
+      let widthsBefore = 0;
+      let totalWidths = 0;
+      for (let s = 0; s < siblings.length; s++) {
+        const w = siblings[s].getBoundingClientRect().width;
+        if (s < idx) widthsBefore += w;
+        totalWidths += w;
+      }
+      const B = widthsBefore + W / 2 - totalWidths / 2;
 
-        // flare factor at an absolute viewport y
-        const flareAt = (y: number) => {
-          const k = Math.max(0, Math.min(1, (y - bandTop) / (vh - bandTop)));
-          return 1 + MAX_FLARE * Math.pow(k, FLARE_CURVE);
-        };
+      const flareAt = (yAbs: number) => {
+        const k = Math.max(0, Math.min(1, (yAbs - bandTop) / (vh - bandTop)));
+        return 1 + MAX_FLARE * Math.pow(k, FLARE_CURVE);
+      };
 
-        if (rect.bottom > bandTop && rect.top < vh + rect.height) {
-          for (let i = 0; i < STRIP_COUNT; i++) {
-            const el = stripRefs.current[i];
-            if (!el) continue;
-            // size from the strip's lower edge: the widest it needs to be
-            const f = flareAt(rect.top + (rect.height * (i + 1)) / STRIP_COUNT);
-            el.style.transform = f > 1 ? `translateX(${(B * (f - 1)).toFixed(2)}px) scaleX(${f})` : "";
-          }
+      // horizontal room the flare needs on each side of the tile
+      const pad = Math.ceil((W * MAX_FLARE) / 2 + Math.abs(B) * MAX_FLARE + 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = W + pad * 2;
 
-          // antialiased silhouette, in the host's own pixel coordinates
-          const right: string[] = [];
-          const left: string[] = [];
-          for (let j = 0; j <= MASK_POINTS; j++) {
-            // bias samples toward the bottom, where the curve actually bends
-            const t = 1 - Math.pow(1 - j / MASK_POINTS, 2);
-            const yPx = rect.height * t;
-            const f = flareAt(rect.top + yPx);
-            const delta = B * (f - 1);
-            const lx = W / 2 - (W * f) / 2 + delta;
-            const rx = W / 2 + (W * f) / 2 + delta;
-            right.push(`${rx.toFixed(2)}px ${yPx.toFixed(2)}px`);
-            left.push(`${lx.toFixed(2)}px ${yPx.toFixed(2)}px`);
-          }
-          host.style.clipPath = `polygon(${right.join(",")},${left.reverse().join(",")})`;
+      const sizeKey = `${Math.round(cssW)}x${Math.round(H)}@${dpr}`;
+      if (sizedFor !== sizeKey) {
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(H * dpr);
+        canvas.style.width = `${cssW}px`;
+        canvas.style.height = `${H}px`;
+        canvas.style.left = `${-pad}px`;
+        sizedFor = sizeKey;
+        lastKey = ""; // force a redraw at the new size
+      }
+
+      // redraw only when the geometry actually moved
+      const key = `${Math.round(rect.top)}|${sizeKey}|${loaded}`;
+      if (key === lastKey) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      lastKey = key;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, H);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      const img = imgRef.current;
+      // object-fit: cover mapping from the source image onto the tile
+      let sx = 0;
+      let sy = 0;
+      let sw = 0;
+      let sh = 0;
+      if (img) {
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+        if (iw / ih > W / H) {
+          sh = ih;
+          sw = ih * (W / H);
+          sx = (iw - sw) / 2;
         } else {
-          for (let i = 0; i < STRIP_COUNT; i++) {
-            const el = stripRefs.current[i];
-            if (el && el.style.transform) el.style.transform = "";
-          }
-          if (host.style.clipPath) host.style.clipPath = "";
+          sw = iw;
+          sh = iw / (W / H);
+          sy = (ih - sh) / 2;
         }
       }
+
+      const drawSpan = (yTop: number, yBot: number) => {
+        const fTop = flareAt(rect.top + yTop);
+        const fBot = flareAt(rect.top + yBot);
+        const f = (fTop + fBot) / 2;
+        const dW = W * f;
+        const dX = pad + W / 2 - dW / 2 + B * (f - 1);
+        if (img) {
+          ctx.drawImage(
+            img,
+            sx,
+            sy + (yTop / H) * sh,
+            sw,
+            Math.max((sh * (yBot - yTop)) / H, 0.0001),
+            dX,
+            yTop,
+            dW,
+            yBot - yTop,
+          );
+        } else {
+          ctx.fillStyle = "#e5e5e5";
+          ctx.fillRect(dX, yTop, dW, yBot - yTop);
+        }
+      };
+
+      // everything above the band is unwarped: one blit, not many rows
+      const flatUntil = Math.max(0, Math.min(H, bandTop - rect.top));
+      if (flatUntil > 0) drawSpan(0, flatUntil);
+
+      /* Inside the band, choose each span's height so the edge moves at
+         most ~0.3px across it. The flare's slope is near zero entering the
+         band and steepest at the screen floor, so this spends rows only
+         where the bend actually is — far cheaper than a uniform 1-device-
+         pixel walk while keeping the stretch sub-pixel. */
+      const minStep = 1 / dpr;
+      const halfSpan = W / 2 + Math.abs(B);
+      const bandH = vh - bandTop;
+      let y = flatUntil;
+      while (y < H) {
+        const k = Math.max(0, Math.min(1, (rect.top + y - bandTop) / bandH));
+        const dfdy = (MAX_FLARE * FLARE_CURVE * Math.pow(k, FLARE_CURVE - 1)) / bandH;
+        const dy = Math.max(minStep, Math.min(10, 0.3 / Math.max(dfdy * halfSpan, 1e-6)));
+        drawSpan(y, Math.min(y + dy, H));
+        y += dy;
+      }
+
+      // the silhouette is cut with a vector clip-path: canvas edges land on
+      // pixel boundaries, this antialiases them
+      const rightPts: string[] = [];
+      const leftPts: string[] = [];
+      for (let j = 0; j <= MASK_POINTS; j++) {
+        const t = 1 - Math.pow(1 - j / MASK_POINTS, 2); // bias toward the bend
+        const yPx = H * t;
+        const f = flareAt(rect.top + yPx);
+        const delta = B * (f - 1);
+        rightPts.push(`${(W / 2 + (W * f) / 2 + delta).toFixed(2)}px ${yPx.toFixed(2)}px`);
+        leftPts.push(`${(W / 2 - (W * f) / 2 + delta).toFixed(2)}px ${yPx.toFixed(2)}px`);
+      }
+      host.style.clipPath = `polygon(${rightPts.join(",")},${leftPts.reverse().join(",")})`;
+
       raf = requestAnimationFrame(tick);
     };
+
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [loaded]);
 
   return (
-    /* overflow must stay visible: the flared strips deliberately splay
-       beyond the tile's own box near the bottom of the viewport */
+    /* overflow stays visible: the warped canvas deliberately extends past
+       the tile's own box near the bottom of the viewport */
     <div
       ref={hostRef}
       data-worktile=""
-      style={{ aspectRatio: aspect, position: "relative", overflow: "visible" }}
+      style={{ aspectRatio: aspect, position: "relative", overflow: "visible", borderRadius: 4 }}
     >
-      {Array.from({ length: STRIP_COUNT }).map((_, i) => (
-        <div
-          key={i}
-          ref={(el) => {
-            stripRefs.current[i] = el;
-          }}
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: `${(i * 100) / STRIP_COUNT}%`,
-            // slight overlap so neighbouring strips never show a seam
-            height: `${STRIP_H}%`,
-            background: src ? undefined : "#e5e5e5",
-            backgroundImage: src ? `url(${src})` : undefined,
-            /* The image must render at exactly the tile's height inside a
-               strip that is slightly taller than tileHeight/STRIP_COUNT
-               (because of the overlap), otherwise each slice is scaled a
-               few percent large and the picture visibly tears between
-               strips. Both numbers are derived from STRIP_H for that
-               reason rather than from STRIP_COUNT alone. */
-            backgroundSize: `100% ${BG_HEIGHT_PCT}%`,
-            backgroundPosition: `0 ${(i * BG_STEP_PCT).toFixed(4)}%`,
-            backgroundRepeat: "no-repeat",
-            borderRadius: i === 0 ? "4px 4px 0 0" : undefined,
-            /* no will-change here: at 96 strips per tile it would promote
-               hundreds of compositor layers for no gain */
-          }}
-        />
-      ))}
+      <canvas ref={canvasRef} style={{ position: "absolute", top: 0, display: "block" }} />
     </div>
   );
 }
