@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -38,57 +38,121 @@ const fadeUp = {
   }),
 };
 
-/** Wordmark entrance: starts tiny + faded (a low-opacity base copy of the
- *  logo), then a hard-edged wipe reveals a full-opacity copy left-to-right
- *  on top of it while the whole thing scales up from ~22% to full size —
- *  matches the reference site's load animation exactly (verified frame by
- *  frame from a screen recording), not a simple fade/scale. */
-function LogoReveal() {
+const FADED_RED = "#f3c7c4";
+
+/** Wordmark entrance: the text tracks the cursor (spring-lagged) in a
+ *  faded pink for 3s, then disconnects and snaps into its static header
+ *  position — scaling up and turning solid red — landing exactly where a
+ *  hidden layout placeholder measures it should sit, so the handoff from
+ *  fixed-cursor-follow to normal in-flow text is seamless. */
+function CursorLogo() {
+  const targetRef = useRef<HTMLDivElement>(null);
+  const [isTracking, setIsTracking] = useState(true);
+  const [settled, setSettled] = useState(false);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 150, damping: 20, mass: 0.5 });
+  const springY = useSpring(mouseY, { stiffness: 150, damping: 20, mass: 0.5 });
+  const scale = useMotionValue(1);
+  const color = useMotionValue(FADED_RED);
+
+  useEffect(() => {
+    mouseX.set(window.innerWidth / 2);
+    mouseY.set(window.innerHeight / 2);
+  }, [mouseX, mouseY]);
+
+  useEffect(() => {
+    if (!isTracking) return;
+    const handleMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+    window.addEventListener("mousemove", handleMove);
+    return () => window.removeEventListener("mousemove", handleMove);
+  }, [isTracking, mouseX, mouseY]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setIsTracking(false);
+
+      const rect = targetRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const targetX = rect.left + rect.width / 2;
+      const targetY = rect.top + rect.height / 2;
+      const targetScale = rect.width / 260;
+
+      animate(springX, targetX, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
+      animate(springY, targetY, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
+      animate(scale, targetScale, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
+      animate(color, RED, { duration: 0.7, ease: "easeInOut", onComplete: () => setSettled(true) });
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, [springX, springY, scale, color]);
+
   return (
-    <motion.div
-      initial={{ scale: 0.22 }}
-      animate={{ scale: 1 }}
-      transition={{ duration: 1.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-      style={{ position: "relative", width: "100%" }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/logo/samahhee.svg"
-        alt=""
-        aria-hidden
-        style={{ width: "100%", height: "auto", display: "block", opacity: 0.16 }}
-      />
-      <motion.img
-        src="/logo/samahhee.svg"
-        alt="Sam Ahhee"
-        initial={{ clipPath: "inset(0 100% 0 0)" }}
-        animate={{ clipPath: "inset(0 0% 0 0)" }}
-        transition={{ duration: 1.3, delay: 0.35, ease: [0.65, 0, 0.35, 1] }}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "auto", display: "block" }}
-      />
-    </motion.div>
+    <>
+      {/* invisible layout placeholder — marks the pixel-exact spot the
+          cursor-following text snaps into once tracking stops */}
+      <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", textAlign: "center" }}>
+        <span className="font-lore" style={{ fontSize: "clamp(2rem, 8.5vw, 8rem)", fontWeight: 700, whiteSpace: "nowrap" as const }}>
+          SAM SCHNEIDER
+        </span>
+      </div>
+
+      {!settled && (
+        <motion.span
+          className="font-lore"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            x: springX,
+            y: springY,
+            scale,
+            color,
+            translateX: "-50%",
+            translateY: "-50%",
+            fontSize: 40,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 60,
+          }}
+        >
+          SAM SCHNEIDER
+        </motion.span>
+      )}
+
+      {settled && (
+        <div style={{ width: "100%", textAlign: "center" }}>
+          <span className="font-lore" style={{ fontSize: "clamp(2rem, 8.5vw, 8rem)", fontWeight: 700, whiteSpace: "nowrap" as const, color: RED }}>
+            SAM SCHNEIDER
+          </span>
+        </div>
+      )}
+    </>
   );
 }
 
 /** A grey placeholder tile — swap `src` in once real images are picked.
- *  Reveals via a scroll-progress-linked 3D tilt: as the tile travels from
- *  the bottom of the viewport to the center, rotateX eases 45deg → 0deg
- *  (pivoting from the top edge, so the bottom reads as the "distorted"
- *  edge while it's still entering) alongside a scale + opacity settle. */
-function PlaceholderTile({ aspect = "4 / 3" }: { aspect?: string }) {
+ *  "Bottom-edge 3D unfold": as the tile travels from the bottom of the
+ *  viewport to the center, it starts tilted away (rotateX), scaled down,
+ *  and pushed down (y), then normalizes to flat/full-scale/in-place —
+ *  the perspective on the parent makes the tilt read as folding away from
+ *  the viewer at the bottom edge, not just a flat rotation. */
+function ScrollRevealTile({ aspect = "4 / 3" }: { aspect?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "center center"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [65, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.7, 1]);
-  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
-  const shadowOpacity = useTransform(scrollYProgress, [0, 1], [0.25, 0]);
-  const boxShadow = useTransform(shadowOpacity, (v) => `0 30px 40px -10px rgba(0,0,0,${v})`);
+  const rotateX = useTransform(scrollYProgress, [0, 1], [45, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.85, 1]);
+  const y = useTransform(scrollYProgress, [0, 1], [50, 0]);
 
   return (
-    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "visible", perspective: 900 }}>
+    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "visible", perspective: 1200 }}>
       <motion.div
         style={{
           width: "100%",
@@ -96,11 +160,10 @@ function PlaceholderTile({ aspect = "4 / 3" }: { aspect?: string }) {
           borderRadius: 4,
           background: "#e5e5e5",
           border: "1px solid #d4d4d4",
-          transformOrigin: "50% 0%",
+          transformOrigin: "50% 100%",
           rotateX,
           scale,
-          opacity,
-          boxShadow,
+          y,
         }}
       />
     </div>
@@ -152,7 +215,7 @@ export function HomepageHero() {
         </motion.div>
 
         <div style={{ width: "100%", maxWidth: 1100, padding: "0 16px" }}>
-          <LogoReveal />
+          <CursorLogo />
         </div>
 
         <motion.p
@@ -182,12 +245,12 @@ export function HomepageHero() {
       {/* ── Work grid ─────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" />
-          <PlaceholderTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" />
-          <PlaceholderTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
         </div>
 
         {/* Bio + services */}
@@ -240,12 +303,12 @@ export function HomepageHero() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" />
-          <PlaceholderTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
-          <PlaceholderTile aspect="4 / 3" />
-          <PlaceholderTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
+          <ScrollRevealTile aspect="4 / 3" />
         </div>
       </div>
 
