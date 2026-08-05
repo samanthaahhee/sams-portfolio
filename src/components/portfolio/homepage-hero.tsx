@@ -164,36 +164,42 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
 }
 
 /** A grey placeholder tile — swap `src` in once real images are picked.
- *  "Bottom-edge 3D unfold": as the tile travels from the bottom of the
- *  viewport to the center, it starts tilted away (rotateX), scaled down,
- *  and pushed down (y), then normalizes to flat/full-scale/in-place —
- *  the perspective on the parent makes the tilt read as folding away from
- *  the viewer at the bottom edge, not just a flat rotation. */
-function ScrollRevealTile({ aspect = "4 / 3" }: { aspect?: string }) {
+ *
+ *  Two independent motions, nested so they don't fight over `transform`:
+ *
+ *  1. Viewport-edge distortion (outer): a scroll-linked 3D fold. As the
+ *     tile crosses the bottom threshold of the screen it carries
+ *     rotateX(45deg) under a deep perspective, so it reads as compressed
+ *     and angled away from the viewer; that eases back to 0deg as the tile
+ *     travels up to the centre of the viewport, so it unfolds and snaps
+ *     flat. Hinged at its bottom edge so the fold pivots off the incoming
+ *     edge rather than the middle.
+ *  2. Load entrance (inner): opacity 0->1 with a ~46px slide-up, on a long
+ *     expo ease-out, fired once the intro finishes. */
+function WorkTile({ show, aspect = "4 / 3" }: { show: boolean; aspect?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "center center"],
   });
   const rotateX = useTransform(scrollYProgress, [0, 1], [45, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.85, 1]);
-  const y = useTransform(scrollYProgress, [0, 1], [50, 0]);
 
   return (
-    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "visible", perspective: 1200 }}>
-      <motion.div
-        style={{
-          width: "100%",
-          height: "100%",
-          borderRadius: 4,
-          background: "#e5e5e5",
-          border: "1px solid #d4d4d4",
-          transformOrigin: "50% 100%",
-          rotateX,
-          scale,
-          y,
-        }}
-      />
+    <div ref={ref} style={{ perspective: 1200, aspectRatio: aspect }}>
+      <motion.div style={{ width: "100%", height: "100%", rotateX, transformOrigin: "50% 100%" }}>
+        <motion.div
+          initial={{ opacity: 0, y: 46 }}
+          animate={show ? { opacity: 1, y: 0 } : { opacity: 0, y: 46 }}
+          transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            width: "100%",
+            height: "100%",
+            borderRadius: 4,
+            background: "#e5e5e5",
+            border: "1px solid #d4d4d4",
+          }}
+        />
+      </motion.div>
     </div>
   );
 }
@@ -283,20 +289,16 @@ export function HomepageHero() {
       </div>
 
       {/* ── Work grid ─────────────────────────────────────────────── */}
-      <motion.div
-        custom={0.2}
-        initial="hidden"
-        animate={settled ? "visible" : "hidden"}
-        variants={fadeUp}
-        style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}
-      >
+      {/* no fade on the container itself — each tile runs its own measured
+          entrance, and stacking the two would double-fade them */}
+      <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <ScrollRevealTile aspect="4 / 3" />
-          <ScrollRevealTile aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <ScrollRevealTile aspect="4 / 3" />
-          <ScrollRevealTile aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
         </div>
 
         {/* Bio + services */}
@@ -349,14 +351,14 @@ export function HomepageHero() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <ScrollRevealTile aspect="4 / 3" />
-          <ScrollRevealTile aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
-          <ScrollRevealTile aspect="4 / 3" />
-          <ScrollRevealTile aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
+          <WorkTile show={settled} aspect="4 / 3" />
         </div>
-      </motion.div>
+      </div>
 
       {/* ── Contact banner ────────────────────────────────────────── */}
       <motion.div
