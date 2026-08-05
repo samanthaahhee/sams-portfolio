@@ -170,10 +170,10 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
    can't do that (it warps a rectangle uniformly), so each tile is built
    from horizontal strips and every strip reacts to its own screen
    position. Strips above the band are untouched. */
-const BAND_FRACTION = 0.2;
-const STRIP_COUNT = 18;
-const MAX_NARROW = 0.16; // how far the deepest strip pinches in
-const MAX_DIM = 0.14;
+const BAND_FRACTION = 0.25;
+const STRIP_COUNT = 30;
+const MAX_FLARE = 0.5; // deepest strip splays to 1.5x width
+const FLARE_CURVE = 3; // high power => straight sides, then a sharp trumpet
 
 /** A grey placeholder tile — pass `src` once real images are picked and
  *  each strip shows its own slice of the image, keeping the picture
@@ -199,20 +199,17 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             const k = Math.max(0, Math.min(1, (y - bandTop) / (vh - bandTop)));
             if (k <= 0) {
               el.style.transform = "";
-              el.style.opacity = "";
             } else {
-              const e = k * k; // ease in, so the bend starts gently
-              el.style.transform = `scaleX(${1 - MAX_NARROW * e})`;
-              el.style.opacity = `${1 - MAX_DIM * e}`;
+              // high power keeps the sides straight until deep in the band,
+              // then they trumpet outward fast
+              const e = Math.pow(k, FLARE_CURVE);
+              el.style.transform = `scaleX(${1 + MAX_FLARE * e})`;
             }
           }
         } else if (rect.bottom <= bandTop) {
           for (let i = 0; i < STRIP_COUNT; i++) {
             const el = stripRefs.current[i];
-            if (el && el.style.transform) {
-              el.style.transform = "";
-              el.style.opacity = "";
-            }
+            if (el && el.style.transform) el.style.transform = "";
           }
         }
       }
@@ -223,7 +220,9 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
   }, []);
 
   return (
-    <div ref={hostRef} style={{ aspectRatio: aspect, position: "relative", borderRadius: 4, overflow: "hidden" }}>
+    /* overflow must stay visible: the flared strips deliberately splay
+       beyond the tile's own box near the bottom of the viewport */
+    <div ref={hostRef} style={{ aspectRatio: aspect, position: "relative", overflow: "visible" }}>
       {Array.from({ length: STRIP_COUNT }).map((_, i) => (
         <div
           key={i}
@@ -241,6 +240,7 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             backgroundImage: src ? `url(${src})` : undefined,
             backgroundSize: `100% ${STRIP_COUNT * 100}%`,
             backgroundPosition: `0 ${(i * 100) / (STRIP_COUNT - 1)}%`,
+            borderRadius: i === 0 ? "4px 4px 0 0" : undefined,
             willChange: "transform",
           }}
         />
