@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransform } from "motion/react";
 
@@ -551,64 +552,67 @@ export function HomepageHero() {
           <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png" />
         </div>
 
-        {/* Bio + services — 70/30, stacking to one column on small screens.
-            Tailwind handles the breakpoint because inline styles can't. */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-[7fr_3fr]"
-          style={{ gap: GUTTER, marginBottom: GUTTER }}
+        {/* About — one panel holding the bio and the services rail, rather
+            than two separate cards. Bio sits top-left with the contact
+            link beneath it; services occupy the right-hand column. */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+          variants={fadeUp}
+          className="font-portfolio-sans grid grid-cols-1 md:grid-cols-[7fr_3fr]"
+          style={{
+            background: "#f2f2f2",
+            borderRadius: 4,
+            padding: "clamp(32px, 4.5vw, 72px) clamp(36px, 6vw, 88px)",
+            gap: "clamp(28px, 3vw, 48px)",
+            marginBottom: GUTTER,
+          }}
         >
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            variants={fadeUp}
-            className="font-portfolio-sans"
-            style={{
-              background: "#f2f2f2",
-              borderRadius: 4,
-              padding: "clamp(32px, 4.5vw, 64px) clamp(36px, 6vw, 88px)",
-              display: "flex",
-              alignItems: "center",
-              fontSize: "clamp(1rem, 1.8vw, 1.35rem)",
-              lineHeight: 1.5,
-              color: RED,
-              fontWeight: 500,
-            }}
-          >
-            Hey I&rsquo;m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy
-            helping start-ups and scale-ups create memorable brand experiences.
-          </motion.div>
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            custom={0.1}
-            variants={fadeUp}
-            className="font-portfolio-sans"
-            style={{
-              background: "#f2f2f2",
-              borderRadius: 4,
-              padding: "28px 32px",
-            }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", gap: 40 }}>
             <p
-              style={{ fontFamily: MONO, fontSize: 13, fontWeight: 500, letterSpacing: "0.06em", color: RED, marginBottom: 14 }}
+              style={{
+                fontSize: "clamp(1.15rem, 2.1vw, 1.85rem)",
+                lineHeight: 1.32,
+                color: RED,
+                fontWeight: 500,
+                letterSpacing: "-0.01em",
+                maxWidth: "26ch",
+              }}
             >
-              Services
+              Hey I&rsquo;m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy
+              helping start-ups and scale-ups create memorable brand experiences.
             </p>
-            {/* two columns, collapsing to one when the rail gets narrow */}
-            <ul
-              className="grid grid-cols-1 sm:grid-cols-2"
-              style={{ fontFamily: MONO, listStyle: "none", margin: 0, padding: 0, columnGap: 16, rowGap: 2 }}
+            <Link
+              href="/contact"
+              className="hover:opacity-70 transition-opacity"
+              style={{ color: RED, fontSize: "clamp(0.9rem, 1.15vw, 1rem)", fontWeight: 500 }}
             >
+              Lets work together &rarr;
+            </Link>
+          </div>
+
+          <div>
+            <p
+              style={{
+                fontFamily: MONO,
+                fontStyle: "italic",
+                fontSize: 14,
+                color: RED,
+                marginBottom: 18,
+              }}
+            >
+              Services &#8627;
+            </p>
+            <ul style={{ fontFamily: MONO, listStyle: "none", margin: 0, padding: 0 }}>
               {SERVICES.map((s) => (
-                <li key={s} style={{ fontSize: 13, color: RED, lineHeight: 1.7 }}>
+                <li key={s} style={{ fontSize: 14, color: RED, lineHeight: 1.9 }}>
                   {s}
                 </li>
               ))}
             </ul>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png" />
