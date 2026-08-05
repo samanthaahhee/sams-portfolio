@@ -178,8 +178,14 @@ const BAND_FRACTION = 0.25;
    vector geometry and antialiases cleanly. Each strip is sized from the
    flare at its BOTTOM edge, so content always covers the clip path and the
    staircase hides just outside it. */
-const STRIP_COUNT = 48;
+const STRIP_COUNT = 140;
 const MASK_POINTS = 220;
+/* Strip height carries a small overlap to kill hairline seams; the
+   background sizing below is derived from it so each slice still renders
+   the image at exactly the tile's height. */
+const STRIP_H = 100 / STRIP_COUNT + 0.2;
+const BG_HEIGHT_PCT = 10000 / STRIP_H;
+const BG_STEP_PCT = ((100 / STRIP_COUNT) * 100) / (100 - STRIP_H);
 const MAX_FLARE = 0.5; // deepest point splays to 1.5x width
 const FLARE_CURVE = 3; // high power => straight sides, then a sharp trumpet
 
@@ -197,24 +203,38 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
       const row = host?.parentElement;
       if (host && row) {
         const rect = host.getBoundingClientRect();
-        const rowRect = row.getBoundingClientRect();
         const vh = window.innerHeight;
         const bandTop = vh * (1 - BAND_FRACTION);
 
-        /* The whole ROW bends as one continuous surface, expanding outward
-           from its centre: every point maps to cx + (x - cx) * flare. So a
-           tile left of centre leans left, one right of centre leans right,
-           and a tile straddling the centre opens both ways — the middle of
-           a three-up row still leans rather than standing parallel. Because
-           both sides of a gutter go through the same mapping, gutters scale
-           with the surface and can never close up.
+        /* The row bends as one surface, but only the TILES stretch — the
+           gutters keep their exact base width and simply ride outward. If
+           the gutters scaled too they would visibly part, which is wrong.
 
-           Expressed as a transform, that is scaleX about the row's centre.
-           Putting transform-origin at the row centre in the tile's own
-           coordinates (which may fall outside the tile, and CSS allows
-           that) reproduces the mapping exactly. */
-        const originX = rowRect.left + rowRect.width / 2 - rect.left;
-        const originCss = `${originX.toFixed(2)}px center`;
+           So each tile scales about its own centre by `flare`, and the row
+           is re-laid-out with constant gutters and re-centred. Solving that
+           layout gives a translation that is linear in the flare:
+
+             delta(f) = B * (f - 1),  B = (widthsBefore + ownWidth/2) - totalWidths/2
+
+           B is the tile's centre measured in "tile-width space" relative to
+           the row's centre, so an outer tile leans out hard, and a tile
+           sitting on the centre of a three-up row has B = 0 and simply
+           opens both ways about itself. Nothing stays parallel, and every
+           gutter keeps its width because the tiles either side of it shift
+           by exactly the amount the tiles between them grew. */
+        const siblings = Array.from(row.children).filter((c) =>
+          (c as HTMLElement).dataset.worktile !== undefined,
+        ) as HTMLElement[];
+        const idx = siblings.indexOf(host);
+        let widthsBefore = 0;
+        let totalWidths = 0;
+        for (let s = 0; s < siblings.length; s++) {
+          const w = siblings[s].getBoundingClientRect().width;
+          if (s < idx) widthsBefore += w;
+          totalWidths += w;
+        }
+        const W = rect.width;
+        const B = widthsBefore + W / 2 - totalWidths / 2;
 
         // flare factor at an absolute viewport y
         const flareAt = (y: number) => {
@@ -228,12 +248,10 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             if (!el) continue;
             // size from the strip's lower edge: the widest it needs to be
             const f = flareAt(rect.top + (rect.height * (i + 1)) / STRIP_COUNT);
-            if (el.style.transformOrigin !== originCss) el.style.transformOrigin = originCss;
-            el.style.transform = f > 1 ? `scaleX(${f})` : "";
+            el.style.transform = f > 1 ? `translateX(${(B * (f - 1)).toFixed(2)}px) scaleX(${f})` : "";
           }
 
           // antialiased silhouette, in the host's own pixel coordinates
-          const W = rect.width;
           const right: string[] = [];
           const left: string[] = [];
           for (let j = 0; j <= MASK_POINTS; j++) {
@@ -241,8 +259,9 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             const t = 1 - Math.pow(1 - j / MASK_POINTS, 2);
             const yPx = rect.height * t;
             const f = flareAt(rect.top + yPx);
-            const lx = originX * (1 - f);
-            const rx = originX + (W - originX) * f;
+            const delta = B * (f - 1);
+            const lx = W / 2 - (W * f) / 2 + delta;
+            const rx = W / 2 + (W * f) / 2 + delta;
             right.push(`${rx.toFixed(2)}px ${yPx.toFixed(2)}px`);
             left.push(`${lx.toFixed(2)}px ${yPx.toFixed(2)}px`);
           }
@@ -264,7 +283,11 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
   return (
     /* overflow must stay visible: the flared strips deliberately splay
        beyond the tile's own box near the bottom of the viewport */
-    <div ref={hostRef} style={{ aspectRatio: aspect, position: "relative", overflow: "visible" }}>
+    <div
+      ref={hostRef}
+      data-worktile=""
+      style={{ aspectRatio: aspect, position: "relative", overflow: "visible" }}
+    >
       {Array.from({ length: STRIP_COUNT }).map((_, i) => (
         <div
           key={i}
@@ -277,11 +300,18 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             right: 0,
             top: `${(i * 100) / STRIP_COUNT}%`,
             // slight overlap so neighbouring strips never show a seam
-            height: `${100 / STRIP_COUNT + 0.2}%`,
+            height: `${STRIP_H}%`,
             background: src ? undefined : "#e5e5e5",
             backgroundImage: src ? `url(${src})` : undefined,
-            backgroundSize: `100% ${STRIP_COUNT * 100}%`,
-            backgroundPosition: `0 ${(i * 100) / (STRIP_COUNT - 1)}%`,
+            /* The image must render at exactly the tile's height inside a
+               strip that is slightly taller than tileHeight/STRIP_COUNT
+               (because of the overlap), otherwise each slice is scaled a
+               few percent large and the picture visibly tears between
+               strips. Both numbers are derived from STRIP_H for that
+               reason rather than from STRIP_COUNT alone. */
+            backgroundSize: `100% ${BG_HEIGHT_PCT}%`,
+            backgroundPosition: `0 ${(i * BG_STEP_PCT).toFixed(4)}%`,
+            backgroundRepeat: "no-repeat",
             borderRadius: i === 0 ? "4px 4px 0 0" : undefined,
             /* no will-change here: at 96 strips per tile it would promote
                hundreds of compositor layers for no gain */
@@ -381,12 +411,12 @@ export function HomepageHero() {
           entrance, and stacking the two would double-fade them */}
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" />
-          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-4.jpg" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" />
-          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-7.jpg" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png" />
         </div>
 
         {/* Bio + services */}
@@ -439,12 +469,12 @@ export function HomepageHero() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" />
-          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-5.png" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
-          <WorkTile aspect="4 / 3" />
-          <WorkTile aspect="4 / 3" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-6.png" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg" />
         </div>
       </div>
 
