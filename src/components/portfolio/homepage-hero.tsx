@@ -171,8 +171,16 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
    from horizontal strips and every strip reacts to its own screen
    position. Strips above the band are untouched. */
 const BAND_FRACTION = 0.25;
-const STRIP_COUNT = 30;
-const MAX_FLARE = 0.5; // deepest strip splays to 1.5x width
+/* Strips warp the CONTENT, but their edges are axis-aligned div borders,
+   which the compositor pixel-snaps without antialiasing — so the silhouette
+   they draw is always a visible staircase no matter how many you add. The
+   visible edge is therefore cut by a clip-path polygon instead, which is
+   vector geometry and antialiases cleanly. Each strip is sized from the
+   flare at its BOTTOM edge, so content always covers the clip path and the
+   staircase hides just outside it. */
+const STRIP_COUNT = 48;
+const MASK_POINTS = 220;
+const MAX_FLARE = 0.5; // deepest point splays to 1.5x width
 const FLARE_CURVE = 3; // high power => straight sides, then a sharp trumpet
 
 /** A grey placeholder tile — pass `src` once real images are picked and
@@ -186,31 +194,60 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
     let raf = 0;
     const tick = () => {
       const host = hostRef.current;
-      if (host) {
+      const row = host?.parentElement;
+      if (host && row) {
         const rect = host.getBoundingClientRect();
+        const rowRect = row.getBoundingClientRect();
         const vh = window.innerHeight;
         const bandTop = vh * (1 - BAND_FRACTION);
-        // cheap bail-out when the tile is nowhere near the warp zone
-        if (rect.bottom > bandTop && rect.top < vh + rect.height) {
+
+        /* Flare direction follows the tile's column: only edges facing the
+           outside of the grid splay, so the gutters between columns stay
+           parallel instead of closing up. A tile that touches both sides of
+           the row (single column) opens both ways; an interior column has
+           no outward-facing edge and stays straight. */
+        const atLeft = rect.left - rowRect.left < 2;
+        const atRight = rowRect.right - rect.right < 2;
+        const origin = atLeft && atRight ? "center" : atLeft ? "right" : atRight ? "left" : null;
+
+        // flare factor at an absolute viewport y
+        const flareAt = (y: number) => {
+          const k = Math.max(0, Math.min(1, (y - bandTop) / (vh - bandTop)));
+          return 1 + MAX_FLARE * Math.pow(k, FLARE_CURVE);
+        };
+
+        if (origin && rect.bottom > bandTop && rect.top < vh + rect.height) {
           for (let i = 0; i < STRIP_COUNT; i++) {
             const el = stripRefs.current[i];
             if (!el) continue;
-            const y = rect.top + (rect.height * (i + 0.5)) / STRIP_COUNT;
-            const k = Math.max(0, Math.min(1, (y - bandTop) / (vh - bandTop)));
-            if (k <= 0) {
-              el.style.transform = "";
-            } else {
-              // high power keeps the sides straight until deep in the band,
-              // then they trumpet outward fast
-              const e = Math.pow(k, FLARE_CURVE);
-              el.style.transform = `scaleX(${1 + MAX_FLARE * e})`;
-            }
+            // size from the strip's lower edge: the widest it needs to be
+            const f = flareAt(rect.top + (rect.height * (i + 1)) / STRIP_COUNT);
+            if (el.style.transformOrigin !== origin) el.style.transformOrigin = origin;
+            el.style.transform = f > 1 ? `scaleX(${f})` : "";
           }
-        } else if (rect.bottom <= bandTop) {
+
+          // antialiased silhouette, in the host's own pixel coordinates
+          const W = rect.width;
+          const right: string[] = [];
+          const left: string[] = [];
+          for (let j = 0; j <= MASK_POINTS; j++) {
+            // bias samples toward the bottom, where the curve actually bends
+            const t = 1 - Math.pow(1 - j / MASK_POINTS, 2);
+            const yPx = rect.height * t;
+            const f = flareAt(rect.top + yPx);
+            const grow = (f - 1) * W;
+            const lx = origin === "right" ? -grow : origin === "center" ? -grow / 2 : 0;
+            const rx = origin === "left" ? W + grow : origin === "center" ? W + grow / 2 : W;
+            right.push(`${rx.toFixed(2)}px ${yPx.toFixed(2)}px`);
+            left.push(`${lx.toFixed(2)}px ${yPx.toFixed(2)}px`);
+          }
+          host.style.clipPath = `polygon(${right.join(",")},${left.reverse().join(",")})`;
+        } else {
           for (let i = 0; i < STRIP_COUNT; i++) {
             const el = stripRefs.current[i];
             if (el && el.style.transform) el.style.transform = "";
           }
+          if (host.style.clipPath) host.style.clipPath = "";
         }
       }
       raf = requestAnimationFrame(tick);
@@ -241,7 +278,8 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
             backgroundSize: `100% ${STRIP_COUNT * 100}%`,
             backgroundPosition: `0 ${(i * 100) / (STRIP_COUNT - 1)}%`,
             borderRadius: i === 0 ? "4px 4px 0 0" : undefined,
-            willChange: "transform",
+            /* no will-change here: at 96 strips per tile it would promote
+               hundreds of compositor layers for no gain */
           }}
         />
       ))}
