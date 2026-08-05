@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { animate, motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AnimatePresence, animate, motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -48,10 +48,9 @@ const LOGO_TRACK_WIDTH = 260;
  *  position, landing exactly where a hidden layout placeholder measures
  *  it should sit, so the handoff from fixed-cursor-follow to normal
  *  in-flow image is seamless. */
-function CursorLogo() {
+function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () => void }) {
   const targetRef = useRef<HTMLDivElement>(null);
   const [isTracking, setIsTracking] = useState(true);
-  const [settled, setSettled] = useState(false);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -81,7 +80,7 @@ function CursorLogo() {
       animate(springX, targetX, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(springY, targetY, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(scale, targetScale, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      setTimeout(() => setSettled(true), 900);
+      setTimeout(onSettled, 900);
     };
 
     const handleMove = (e: MouseEvent) => {
@@ -94,7 +93,7 @@ function CursorLogo() {
     };
     window.addEventListener("mousemove", handleMove);
     return () => window.removeEventListener("mousemove", handleMove);
-  }, [isTracking, mouseX, mouseY, springX, springY, scale, reveal]);
+  }, [isTracking, mouseX, mouseY, springX, springY, scale, reveal, onSettled]);
 
   return (
     <>
@@ -136,7 +135,9 @@ function CursorLogo() {
       )}
 
       {settled && (
-        <div style={{ width: "100%", maxWidth: 1100, margin: "0 auto" }}>
+        /* sits above the white intro overlay while that fades out, so the
+           logo never flickers behind it during the handoff */
+        <div style={{ width: "100%", maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 60 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/samahhee.svg" alt="Sam Ahhee" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
@@ -181,8 +182,36 @@ function ScrollRevealTile({ aspect = "4 / 3" }: { aspect?: string }) {
 }
 
 export function HomepageHero() {
+  /* The intro runs in strict order, matching the reference exactly:
+     screen starts full white (a fixed overlay hides the nav and page
+     underneath) → the logo loads + enlarges into place on top of it →
+     only then does the overlay clear and everything else fade in. */
+  const [settled, setSettled] = useState(false);
+  const onSettled = useCallback(() => setSettled(true), []);
+
+  useEffect(() => {
+    if (settled) return;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = overflow;
+    };
+  }, [settled]);
+
   return (
     <>
+      <AnimatePresence>
+        {!settled && (
+          <motion.div
+            key="intro-veil"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            style={{ position: "fixed", inset: 0, background: "#fff", zIndex: 55, pointerEvents: "none" }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <div
         style={{
@@ -195,9 +224,9 @@ export function HomepageHero() {
         }}
       >
         <motion.div
-          custom={1.7}
+          custom={0}
           initial="hidden"
-          animate="visible"
+          animate={settled ? "visible" : "hidden"}
           variants={fadeUp}
           className="font-portfolio-sans"
           style={{
@@ -224,13 +253,13 @@ export function HomepageHero() {
         </motion.div>
 
         <div style={{ width: "100%", maxWidth: 1100, padding: "0 16px" }}>
-          <CursorLogo />
+          <CursorLogo settled={settled} onSettled={onSettled} />
         </div>
 
         <motion.p
-          custom={1.9}
+          custom={0.1}
           initial="hidden"
-          animate="visible"
+          animate={settled ? "visible" : "hidden"}
           variants={fadeUp}
           className="font-portfolio-sans"
           style={{
@@ -252,7 +281,13 @@ export function HomepageHero() {
       </div>
 
       {/* ── Work grid ─────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 24px" }}>
+      <motion.div
+        custom={0.2}
+        initial="hidden"
+        animate={settled ? "visible" : "hidden"}
+        variants={fadeUp}
+        style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 24px" }}
+      >
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
@@ -319,7 +354,7 @@ export function HomepageHero() {
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Contact banner ────────────────────────────────────────── */}
       <motion.div
