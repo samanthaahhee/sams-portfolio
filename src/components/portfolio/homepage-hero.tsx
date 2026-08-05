@@ -81,21 +81,26 @@ function PlaceholderTile({ aspect = "4 / 3" }: { aspect?: string }) {
     target: ref,
     offset: ["start end", "center center"],
   });
-  const rotateX = useTransform(scrollYProgress, [0, 1], [45, 0]);
-  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
+  const rotateX = useTransform(scrollYProgress, [0, 1], [65, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.7, 1]);
   const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const shadowOpacity = useTransform(scrollYProgress, [0, 1], [0.25, 0]);
+  const boxShadow = useTransform(shadowOpacity, (v) => `0 30px 40px -10px rgba(0,0,0,${v})`);
 
   return (
-    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "hidden", perspective: 1000 }}>
+    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "visible", perspective: 900 }}>
       <motion.div
         style={{
           width: "100%",
           height: "100%",
+          borderRadius: 4,
           background: "#e5e5e5",
+          border: "1px solid #d4d4d4",
           transformOrigin: "50% 0%",
           rotateX,
           scale,
           opacity,
+          boxShadow,
         }}
       />
     </div>
