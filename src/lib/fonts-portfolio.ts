@@ -1,5 +1,5 @@
 import localFont from "next/font/local";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Mono } from "next/font/google";
 
 /**
  * LORE — the portfolio's handwritten/display typeface, self-hosted.
@@ -45,5 +45,16 @@ export const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta-portfolio",
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+/**
+ * DM Mono — the rebuild's monospace voice.
+ * Used for: services list, project meta rails, small labelling.
+ */
+export const dmMono = DM_Mono({
+  subsets: ["latin"],
+  variable: "--font-dm-mono",
+  weight: ["300", "400", "500"],
   display: "swap",
 });

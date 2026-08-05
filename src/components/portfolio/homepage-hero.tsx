@@ -11,6 +11,9 @@ import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransfo
    real assets are picked/uploaded. */
 
 const RED = "#FF2E31";
+/* DM Mono, referenced by variable: the next/font class is on <html>, so the
+   custom property resolves anywhere without needing a Tailwind utility. */
+const MONO = "var(--font-dm-mono)";
 
 const META = {
   role: "VISUAL COMMS DESIGNER",
@@ -563,7 +566,7 @@ export function HomepageHero() {
             style={{
               background: "#f2f2f2",
               borderRadius: 4,
-              padding: "32px 36px",
+              padding: "clamp(32px, 4.5vw, 64px) clamp(36px, 6vw, 88px)",
               display: "flex",
               alignItems: "center",
               fontSize: "clamp(1rem, 1.8vw, 1.35rem)",
@@ -588,12 +591,18 @@ export function HomepageHero() {
               padding: "28px 32px",
             }}
           >
-            <p style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", color: RED, marginBottom: 12 }}>
+            <p
+              style={{ fontFamily: MONO, fontSize: 13, fontWeight: 500, letterSpacing: "0.06em", color: RED, marginBottom: 14 }}
+            >
               Services
             </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+            {/* two columns, collapsing to one when the rail gets narrow */}
+            <ul
+              className="grid grid-cols-1 sm:grid-cols-2"
+              style={{ fontFamily: MONO, listStyle: "none", margin: 0, padding: 0, columnGap: 16, rowGap: 2 }}
+            >
               {SERVICES.map((s) => (
-                <li key={s} style={{ fontSize: 14, color: RED, lineHeight: 1.7 }}>
+                <li key={s} style={{ fontSize: 13, color: RED, lineHeight: 1.7 }}>
                   {s}
                 </li>
               ))}
