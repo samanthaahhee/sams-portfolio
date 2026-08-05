@@ -38,16 +38,32 @@ const fadeUp = {
   }),
 };
 
-const LOGO_TRACK_WIDTH = 260;
+/* Layout + timing constants measured frame-by-frame off the reference
+   recording (captured at 3414x1722, i.e. a 1707x861 CSS viewport):
+     side padding 44px · grid gutter 44px · logo spans the full padded width
+     meta row top 24px · meta->logo 100px · logo->sub 121px · sub->grid 76px
+   The intro holds the wordmark at a constant ~321px wide while the wipe
+   fills it (t=3.00s..5.53s), then enlarges it to full width in ~0.47s. */
+const LOGO_TRACK_WIDTH = 321;
+const WIPE_SECONDS = 2.5;
+const ENLARGE_SECONDS = 0.5;
 
-/** Wordmark entrance: the real SVG logo tracks the cursor (spring-lagged),
- *  and the moment the cursor first moves, a loading-bar-style clip-path
- *  wipe starts filling it in over 3s — so the reveal is tied to actual
- *  cursor activity instead of a mount timer nobody's watching. Once that
- *  wipe finishes, the logo disconnects and snaps into its static header
- *  position, landing exactly where a hidden layout placeholder measures
- *  it should sit, so the handoff from fixed-cursor-follow to normal
- *  in-flow image is seamless. */
+const SIDE_PAD = "clamp(16px, 2.6vw, 44px)";
+const GAP_META_LOGO = "clamp(40px, 5.86vw, 100px)";
+const GAP_LOGO_SUB = "clamp(48px, 7.09vw, 121px)";
+const GAP_SUB_GRID = "clamp(32px, 4.45vw, 76px)";
+const GUTTER = "clamp(16px, 2.6vw, 44px)";
+
+/** Wordmark entrance: the real SVG logo tracks the cursor (spring-lagged)
+ *  at a fixed small size while a loading-bar clip-path wipe fills it in,
+ *  starting on the first cursor movement. Once the wipe completes it
+ *  disconnects and enlarges into its static header position — position and
+ *  scale animating together — landing exactly where a hidden layout
+ *  placeholder measures it should sit, so the handoff from fixed
+ *  cursor-follow to normal in-flow image is seamless. Holding size during
+ *  the wipe and only then enlarging is what the reference actually does:
+ *  its wordmark measures a constant 108px tall for the full 2.5s of the
+ *  wipe, then scales up over the last ~0.47s. */
 function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () => void }) {
   const targetRef = useRef<HTMLDivElement>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -77,10 +93,11 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       const targetY = rect.top + rect.height / 2;
       const targetScale = rect.width / LOGO_TRACK_WIDTH;
 
-      animate(springX, targetX, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      animate(springY, targetY, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      animate(scale, targetScale, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      setTimeout(onSettled, 900);
+      const opts = { duration: ENLARGE_SECONDS, ease: "easeInOut" as const };
+      animate(springX, targetX, opts);
+      animate(springY, targetY, opts);
+      animate(scale, targetScale, opts);
+      setTimeout(onSettled, ENLARGE_SECONDS * 1000);
     };
 
     const handleMove = (e: MouseEvent) => {
@@ -88,7 +105,7 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       mouseY.set(e.clientY);
       if (!started) {
         started = true;
-        animate(reveal, 100, { duration: 3, ease: "linear", onComplete: snap });
+        animate(reveal, 100, { duration: WIPE_SECONDS, ease: "linear", onComplete: snap });
       }
     };
     window.addEventListener("mousemove", handleMove);
@@ -102,7 +119,7 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
           needed until settled: the real settled logo below takes over
           that same flow space, so keeping both mounted would double it. */}
       {!settled && (
-        <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", maxWidth: 1100, margin: "0 auto" }}>
+        <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
@@ -137,7 +154,7 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       {settled && (
         /* sits above the white intro overlay while that fades out, so the
            logo never flickers behind it during the handoff */
-        <div style={{ width: "100%", maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 60 }}>
+        <div style={{ width: "100%", position: "relative", zIndex: 60 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/samahhee.svg" alt="Sam Ahhee" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
@@ -213,16 +230,8 @@ export function HomepageHero() {
       </AnimatePresence>
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          position: "relative",
-          padding: "112px 24px 12px",
-        }}
-      >
+      <div style={{ position: "relative", padding: `24px ${SIDE_PAD} 0` }}>
+        {/* meta row: justified left / centre / right, as in the reference */}
         <motion.div
           custom={0}
           initial="hidden"
@@ -230,21 +239,14 @@ export function HomepageHero() {
           variants={fadeUp}
           className="font-portfolio-sans"
           style={{
-            position: "absolute",
-            top: 88,
-            left: 0,
-            right: 0,
             display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
+            justifyContent: "space-between",
             alignItems: "center",
             gap: "4px 20px",
-            padding: "0 24px",
             fontSize: "clamp(10px, 2.6vw, 13px)",
             fontWeight: 600,
             letterSpacing: "0.08em",
             color: RED,
-            textAlign: "center",
           }}
         >
           <span>{META.role}</span>
@@ -252,7 +254,8 @@ export function HomepageHero() {
           <span>{META.handle}</span>
         </motion.div>
 
-        <div style={{ width: "100%", maxWidth: 1100, padding: "0 16px" }}>
+        {/* logo: fills the full padded width, no max-width cap */}
+        <div style={{ width: "100%", marginTop: GAP_META_LOGO }}>
           <CursorLogo settled={settled} onSettled={onSettled} />
         </div>
 
@@ -263,14 +266,13 @@ export function HomepageHero() {
           variants={fadeUp}
           className="font-portfolio-sans"
           style={{
-            marginTop: 16,
+            marginTop: GAP_LOGO_SUB,
             fontSize: "clamp(0.85rem, 1.3vw, 1rem)",
             fontWeight: 600,
             letterSpacing: "0.03em",
             lineHeight: 1.5,
             color: RED,
             textAlign: "center",
-            maxWidth: 480,
             textTransform: "uppercase",
           }}
         >
@@ -286,19 +288,19 @@ export function HomepageHero() {
         initial="hidden"
         animate={settled ? "visible" : "hidden"}
         variants={fadeUp}
-        style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 24px" }}
+        style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
         </div>
 
         {/* Bio + services */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -346,11 +348,11 @@ export function HomepageHero() {
           </motion.div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
           <ScrollRevealTile aspect="4 / 3" />
           <ScrollRevealTile aspect="4 / 3" />
         </div>
@@ -366,7 +368,7 @@ export function HomepageHero() {
         style={{
           background: RED,
           color: "#fff",
-          margin: "0 24px 40px",
+          margin: `0 ${SIDE_PAD} 40px`,
           borderRadius: 4,
           padding: "48px 40px",
         }}
