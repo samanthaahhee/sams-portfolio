@@ -99,11 +99,15 @@ function CursorLogo() {
   return (
     <>
       {/* invisible layout placeholder — marks the pixel-exact spot the
-          cursor-following logo snaps into once tracking stops */}
-      <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", maxWidth: 1100, margin: "0 auto" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
-      </div>
+          cursor-following logo snaps into once tracking stops. Only
+          needed until settled: the real settled logo below takes over
+          that same flow space, so keeping both mounted would double it. */}
+      {!settled && (
+        <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", maxWidth: 1100, margin: "0 auto" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
+        </div>
+      )}
 
       {!settled && (
         <motion.div
