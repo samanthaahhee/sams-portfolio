@@ -23,7 +23,6 @@ const META = {
 const SOCIALS = [
   { label: "Behance", href: "https://www.behance.net/Samantha_ahhee" },
   { label: "LinkedIn", href: "https://linkedin.com/in/samanthaahhee" },
-  { label: "Instagram", href: "https://instagram.com/samanthaahhee" },
 ];
 
 const CONTACT = {
