@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import { useRef } from "react";
+import { motion, useScroll, useTransform } from "motion/react";
+import { LogoLoader } from "./logo-loader";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -49,82 +50,43 @@ const scaleIn = {
   }),
 };
 
-/* ── Scroll-velocity skew ─────────────────────────────────────────────
-   Every registered tile shears (skewY) in proportion to how fast the
-   page is currently scrolling, pivoting from the top edge so the
-   distortion reads at the bottom — the edge still entering from
-   off-screen — then springs back to 0 as scroll velocity decays. One
-   shared rAF loop drives every tile so they all stay in sync, same as
-   the reference. */
-function useScrollSkew<T extends HTMLElement>(count: number) {
-  const refs = useRef<(T | null)[]>(Array(count).fill(null));
-
-  useEffect(() => {
-    let lastY = window.scrollY;
-    let skew = 0;
-    let raf = 0;
-
-    const loop = () => {
-      const y = window.scrollY;
-      const velocity = y - lastY;
-      lastY = y;
-      const target = Math.max(-14, Math.min(14, velocity * 0.8));
-      skew += (target - skew) * 0.18;
-      if (Math.abs(skew) < 0.01) skew = 0;
-      for (const el of refs.current) {
-        if (el) el.style.transform = `skewY(${skew}deg)`;
-      }
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
-  }, []);
-
-  return refs;
-}
-
 /** A grey placeholder tile — swap `src` in once real images are picked.
- *  `skewRef` is the shared scroll-skew system's slot for this tile. */
-function PlaceholderTile({
-  aspect = "4 / 3",
-  delay = 0,
-  skewRef,
-}: {
-  aspect?: string;
-  delay?: number;
-  skewRef?: (el: HTMLDivElement | null) => void;
-}) {
+ *  Reveals via a scroll-progress-linked 3D tilt: as the tile travels from
+ *  the bottom of the viewport to the center, rotateX eases 45deg → 0deg
+ *  (pivoting from the top edge, so the bottom reads as the "distorted"
+ *  edge while it's still entering) alongside a scale + opacity settle. */
+function PlaceholderTile({ aspect = "4 / 3" }: { aspect?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "center center"],
+  });
+  const rotateX = useTransform(scrollYProgress, [0, 1], [45, 0]);
+  const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1]);
+  const opacity = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.3 }}
-      custom={delay}
-      variants={fadeUp}
-      style={{ aspectRatio: aspect, borderRadius: 4, overflow: "hidden" }}
-    >
-      <div
-        ref={skewRef}
+    <div ref={ref} style={{ aspectRatio: aspect, borderRadius: 4, overflow: "hidden", perspective: 1000 }}>
+      <motion.div
         style={{
           width: "100%",
           height: "100%",
           background: "#e5e5e5",
           transformOrigin: "50% 0%",
-          willChange: "transform",
+          rotateX,
+          scale,
+          opacity,
         }}
       />
-    </motion.div>
+    </div>
   );
 }
 
 export function HomepageHero() {
-  const skewRefs = useScrollSkew<HTMLDivElement>(8);
-  const skewSlot = (i: number) => (el: HTMLDivElement | null) => {
-    skewRefs.current[i] = el;
-  };
-
   return (
     <>
+      <LogoLoader />
+
       {/* ── Hero ──────────────────────────────────────────────────── */}
       <div
         style={{
@@ -204,12 +166,12 @@ export function HomepageHero() {
       {/* ── Work grid ─────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" skewRef={skewSlot(0)} />
-          <PlaceholderTile aspect="4 / 3" delay={0.1} skewRef={skewSlot(1)} />
+          <PlaceholderTile aspect="4 / 3" />
+          <PlaceholderTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" skewRef={skewSlot(2)} />
-          <PlaceholderTile aspect="4 / 3" delay={0.1} skewRef={skewSlot(3)} />
+          <PlaceholderTile aspect="4 / 3" />
+          <PlaceholderTile aspect="4 / 3" />
         </div>
 
         {/* Bio + services */}
@@ -262,12 +224,12 @@ export function HomepageHero() {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24, marginBottom: 24 }}>
-          <PlaceholderTile aspect="4 / 3" skewRef={skewSlot(4)} />
-          <PlaceholderTile aspect="4 / 3" delay={0.1} skewRef={skewSlot(5)} />
+          <PlaceholderTile aspect="4 / 3" />
+          <PlaceholderTile aspect="4 / 3" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
-          <PlaceholderTile aspect="4 / 3" skewRef={skewSlot(6)} />
-          <PlaceholderTile aspect="4 / 3" delay={0.1} skewRef={skewSlot(7)} />
+          <PlaceholderTile aspect="4 / 3" />
+          <PlaceholderTile aspect="4 / 3" />
         </div>
       </div>
 
