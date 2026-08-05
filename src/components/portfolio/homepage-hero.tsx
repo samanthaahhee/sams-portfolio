@@ -548,8 +548,12 @@ export function HomepageHero() {
           <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png" />
         </div>
 
-        {/* Bio + services */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
+        {/* Bio + services — 70/30, stacking to one column on small screens.
+            Tailwind handles the breakpoint because inline styles can't. */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-[7fr_3fr]"
+          style={{ gap: GUTTER, marginBottom: GUTTER }}
+        >
           <motion.div
             initial="hidden"
             whileInView="visible"
