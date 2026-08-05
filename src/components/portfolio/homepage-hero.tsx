@@ -175,10 +175,18 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
    140 slices that left ~1.8px jags. Drawing one device-pixel row at a
    time with fractional source/destination rects lets the canvas
    interpolate between rows instead, so the warp is continuous. */
-const BAND_FRACTION = 0.25;
+const BAND_FRACTION = 0.125;
 const MASK_POINTS = 220;
 const MAX_FLARE = 0.5; // deepest point splays to 1.5x width
 const FLARE_CURVE = 3; // high power => straight sides, then a sharp trumpet
+/* On top of the flare the whole row slides sideways as it sinks, by an
+   amount that depends only on depth — never on x. That makes every
+   vertical line lean together, so the gutter bends as one channel instead
+   of standing rigid, and because it is a pure translation no width
+   changes: the gap stays exactly as wide at the floor as at the top.
+   Expressed as a fraction of the row's combined tile width so it scales
+   with the layout. */
+const MAX_SHEAR = 0.025;
 
 /** A work tile whose image bends through the viewport's bottom band.
  *  Pass `src`; without one it renders a flat grey placeholder. */
@@ -254,9 +262,17 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         const k = Math.max(0, Math.min(1, (yAbs - bandTop) / (vh - bandTop)));
         return 1 + MAX_FLARE * Math.pow(k, FLARE_CURVE);
       };
+      /* Same easing as the flare, but a plain sideways offset. Driven off
+         the row's combined width so every tile in the row shifts by an
+         identical amount and the gutters ride along unchanged. */
+      const shearMax = totalWidths * MAX_SHEAR;
+      const shearAt = (yAbs: number) => {
+        const k = Math.max(0, Math.min(1, (yAbs - bandTop) / (vh - bandTop)));
+        return shearMax * Math.pow(k, FLARE_CURVE);
+      };
 
       // horizontal room the flare needs on each side of the tile
-      const pad = Math.ceil((W * MAX_FLARE) / 2 + Math.abs(B) * MAX_FLARE + 2);
+      const pad = Math.ceil((W * MAX_FLARE) / 2 + Math.abs(B) * MAX_FLARE + shearMax + 2);
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const cssW = W + pad * 2;
 
@@ -313,8 +329,9 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         const fTop = flareAt(rect.top + yTop);
         const fBot = flareAt(rect.top + yBot);
         const f = (fTop + fBot) / 2;
+        const shear = (shearAt(rect.top + yTop) + shearAt(rect.top + yBot)) / 2;
         const dW = W * f;
-        const dX = pad + W / 2 - dW / 2 + B * (f - 1);
+        const dX = pad + W / 2 - dW / 2 + B * (f - 1) + shear;
         if (img) {
           ctx.drawImage(
             img,
@@ -362,7 +379,7 @@ function WorkTile({ aspect = "4 / 3", src }: { aspect?: string; src?: string }) 
         const t = 1 - Math.pow(1 - j / MASK_POINTS, 2); // bias toward the bend
         const yPx = H * t;
         const f = flareAt(rect.top + yPx);
-        const delta = B * (f - 1);
+        const delta = B * (f - 1) + shearAt(rect.top + yPx);
         rightPts.push(`${(W / 2 + (W * f) / 2 + delta).toFixed(2)}px ${yPx.toFixed(2)}px`);
         leftPts.push(`${(W / 2 - (W * f) / 2 + delta).toFixed(2)}px ${yPx.toFixed(2)}px`);
       }
