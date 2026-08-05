@@ -38,13 +38,14 @@ const fadeUp = {
   }),
 };
 
-const FADED_RED = "#f3c7c4";
+const LOGO_TRACK_WIDTH = 260;
 
-/** Wordmark entrance: the text tracks the cursor (spring-lagged) in a
- *  faded pink for 3s, then disconnects and snaps into its static header
- *  position — scaling up and turning solid red — landing exactly where a
+/** Wordmark entrance: the real SVG logo tracks the cursor (spring-lagged)
+ *  at a faded opacity for 3s, then disconnects and snaps into its static
+ *  header position — while a loading-bar-style clip-path wipe sweeps a
+ *  full-opacity copy in left-to-right on top, landing exactly where a
  *  hidden layout placeholder measures it should sit, so the handoff from
- *  fixed-cursor-follow to normal in-flow text is seamless. */
+ *  fixed-cursor-follow to normal in-flow image is seamless. */
 function CursorLogo() {
   const targetRef = useRef<HTMLDivElement>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -55,7 +56,8 @@ function CursorLogo() {
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20, mass: 0.5 });
   const springY = useSpring(mouseY, { stiffness: 150, damping: 20, mass: 0.5 });
   const scale = useMotionValue(1);
-  const color = useMotionValue(FADED_RED);
+  const reveal = useMotionValue(0);
+  const clipPath = useTransform(reveal, (v) => `inset(0 ${100 - v}% 0 0)`);
 
   useEffect(() => {
     mouseX.set(window.innerWidth / 2);
@@ -80,29 +82,32 @@ function CursorLogo() {
       if (!rect) return;
       const targetX = rect.left + rect.width / 2;
       const targetY = rect.top + rect.height / 2;
-      const targetScale = rect.width / 260;
+      const targetScale = rect.width / LOGO_TRACK_WIDTH;
 
       animate(springX, targetX, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(springY, targetY, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
       animate(scale, targetScale, { duration: 0.9, ease: [0.16, 1, 0.3, 1] });
-      animate(color, RED, { duration: 0.7, ease: "easeInOut", onComplete: () => setSettled(true) });
+      animate(reveal, 100, {
+        duration: 0.8,
+        delay: 0.15,
+        ease: [0.65, 0, 0.35, 1],
+        onComplete: () => setSettled(true),
+      });
     }, 3000);
     return () => clearTimeout(timeout);
-  }, [springX, springY, scale, color]);
+  }, [springX, springY, scale, reveal]);
 
   return (
     <>
       {/* invisible layout placeholder — marks the pixel-exact spot the
-          cursor-following text snaps into once tracking stops */}
-      <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", textAlign: "center" }}>
-        <span className="font-lore" style={{ fontSize: "clamp(2rem, 8.5vw, 8rem)", fontWeight: 700, whiteSpace: "nowrap" as const }}>
-          SAM SCHNEIDER
-        </span>
+          cursor-following logo snaps into once tracking stops */}
+      <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%", maxWidth: 1100, margin: "0 auto" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
       </div>
 
       {!settled && (
-        <motion.span
-          className="font-lore"
+        <motion.div
           style={{
             position: "fixed",
             top: 0,
@@ -110,25 +115,27 @@ function CursorLogo() {
             x: springX,
             y: springY,
             scale,
-            color,
             translateX: "-50%",
             translateY: "-50%",
-            fontSize: 40,
-            fontWeight: 700,
-            whiteSpace: "nowrap",
+            width: LOGO_TRACK_WIDTH,
             pointerEvents: "none",
             zIndex: 60,
           }}
         >
-          SAM SCHNEIDER
-        </motion.span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block", opacity: 0.18 }} />
+          <motion.img
+            src="/logo/samahhee.svg"
+            alt="Sam Ahhee"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "auto", display: "block", clipPath }}
+          />
+        </motion.div>
       )}
 
       {settled && (
-        <div style={{ width: "100%", textAlign: "center" }}>
-          <span className="font-lore" style={{ fontSize: "clamp(2rem, 8.5vw, 8rem)", fontWeight: 700, whiteSpace: "nowrap" as const, color: RED }}>
-            SAM SCHNEIDER
-          </span>
+        <div style={{ width: "100%", maxWidth: 1100, margin: "0 auto" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/samahhee.svg" alt="Sam Ahhee" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
       )}
     </>
