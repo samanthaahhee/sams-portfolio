@@ -763,7 +763,12 @@ export type LibraryImage = {
 async function getDatabaseImages(): Promise<LibraryImage[]> {
   try {
     const { rows } = await sql<{ url: string; width: number | null; height: number | null; source: string }>`
-      WITH all_images AS (
+      WITH visuals AS (
+        SELECT jsonb_array_elements(visuals) AS e, 'Case study' AS src FROM case_studies
+        UNION ALL
+        SELECT jsonb_array_elements(visuals), 'Project' FROM projects
+      ),
+      all_images AS (
         SELECT url, width, height, 'Work grid'  AS source, 1 AS pref FROM portfolio_media
         UNION ALL
         SELECT cover, NULL, NULL, 'Project cover', 2 FROM projects
@@ -775,6 +780,19 @@ async function getDatabaseImages(): Promise<LibraryImage[]> {
         SELECT image_url, NULL, NULL, 'Hero card', 5 FROM hero_cards
         UNION ALL
         SELECT image_src, NULL, NULL, 'Experience', 6 FROM experience_entries
+        /* The visuals JSON is not one shape: 'image'/'video' carry a url,
+           'media'/'grid'/'stack' carry an images[] of plain strings, and
+           'compare' carries before + after. Reading only ->>'src' found
+           none of them, which is why the library looked so short. */
+        UNION ALL
+        SELECT e->>'url', NULL, NULL, src, 7 FROM visuals WHERE e ? 'url'
+        UNION ALL
+        SELECT jsonb_array_elements_text(e->'images'), NULL, NULL, src, 7
+        FROM visuals WHERE e ? 'images'
+        UNION ALL
+        SELECT e->>'before', NULL, NULL, src, 7 FROM visuals WHERE e ? 'before'
+        UNION ALL
+        SELECT e->>'after', NULL, NULL, src, 7 FROM visuals WHERE e ? 'after'
       )
       SELECT DISTINCT ON (url) url, width, height, source
       FROM   all_images
