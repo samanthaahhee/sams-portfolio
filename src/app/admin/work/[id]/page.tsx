@@ -23,9 +23,22 @@ export default async function EditWorkProjectPage({
   return (
     <div className="max-w-3xl mx-auto">
       <p className="font-mono text-[color:var(--meta)] mb-2">Edit work project</p>
-      <h1 className="font-display text-3xl md:text-4xl mb-8" style={{ lineHeight: 0.95 }}>
-        {project.client || project.title} · {project.title}
-      </h1>
+      <div className="flex items-baseline justify-between gap-4 flex-wrap mb-8">
+        <h1 className="font-display text-3xl md:text-4xl" style={{ lineHeight: 0.95 }}>
+          {project.client || project.title} · {project.title}
+        </h1>
+        {/* The page these edits land on — the one thing that was missing
+            when it wasn't clear which generation you were editing. */}
+        <a
+          href={`/work/${project.slug}`}
+          target="_blank"
+          rel="noreferrer"
+          className="font-mono text-[11px] hover:opacity-70"
+          style={{ color: "#FF2E31" }}
+        >
+          /work/{project.slug} ↗
+        </a>
+      </div>
       <WorkProjectForm project={project} media={media} thinkingSections={thinkingSections} blocks={blocks} mode="edit" />
     </div>
   );

@@ -14,14 +14,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin" className="hover:text-[color:var(--ink)]">
               Dashboard
             </Link>
+            {/* Legacy sections stay muted; the rebuild's section is tinted
+                red so it is obvious which generation you are editing. */}
             <Link href="/admin/projects" className="hover:text-[color:var(--ink)]">
-              Projects
+              Projects <span className="text-[10px] opacity-60">(old)</span>
             </Link>
             <Link href="/admin/case-studies" className="hover:text-[color:var(--ink)]">
-              Case studies
+              Case studies <span className="text-[10px] opacity-60">(old)</span>
             </Link>
-            <Link href="/admin/work" className="hover:text-[color:var(--ink)]">
-              Work (rebuild)
+            <Link href="/admin/work" style={{ color: "#FF2E31" }} className="hover:opacity-70">
+              Work <span className="text-[10px]">(new site)</span>
             </Link>
           </nav>
         </div>
