@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { BlockLayout, PortfolioBlock } from "@/lib/db-portfolio";
+import type { BlockLayout, PortfolioBlock, PortfolioMedia } from "@/lib/db-portfolio";
 
 /* ── Project-page block editor ─────────────────────────────────────────
    The project page body is an ordered stream, so paragraphs can be
@@ -14,10 +14,16 @@ const fieldInput =
 const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "single", label: "Single landscape", slots: 1 },
   { value: "portrait_landscape", label: "Portrait + landscape", slots: 2 },
+  { value: "landscape_portrait", label: "Landscape + portrait", slots: 2 },
   { value: "split", label: "Landscape 50/50", slots: 2 },
 ];
 
-const SLOTS: Record<BlockLayout, number> = { single: 1, portrait_landscape: 2, split: 2 };
+const SLOTS: Record<BlockLayout, number> = {
+  single: 1,
+  portrait_landscape: 2,
+  landscape_portrait: 2,
+  split: 2,
+};
 
 function readImageDims(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -48,11 +54,17 @@ export function BlocksEditor({
   projectId,
   projectSlug,
   initialBlocks,
+  library,
 }: {
   projectId: number;
   projectSlug: string;
   initialBlocks: PortfolioBlock[];
+  /** Everything already uploaded, so an existing asset can be reused
+   *  rather than uploaded again. */
+  library: PortfolioMedia[];
 }) {
+  /** Which slot the library picker is currently filling. */
+  const [picking, setPicking] = useState<{ blockId: number; slot: number; mediaId?: number } | null>(null);
   const [blocks, setBlocks] = useState(initialBlocks);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -126,13 +138,32 @@ export function BlocksEditor({
     setError(null);
     try {
       const [url, dims] = await Promise.all([uploadToBlob(file), readImageDims(file)]);
+      await attach(blockId, position, url, dims.width, dims.height, existingMediaId);
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Point a slot at an image that already exists in storage — the same
+   *  call the upload path finishes with, minus the upload. */
+  async function attach(
+    blockId: number,
+    position: number,
+    url: string,
+    width: number | null,
+    height: number | null,
+    existingMediaId?: number,
+  ) {
+    {
       if (existingMediaId) {
         await fetch(`/api/admin/work/blocks/media?id=${existingMediaId}&projectSlug=${projectSlug}`, { method: "DELETE" });
       }
       const res = await fetch("/api/admin/work/blocks/media", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, projectSlug, blockId, position, url, width: dims.width, height: dims.height }),
+        body: JSON.stringify({ projectId, projectSlug, blockId, position, url, width, height }),
       });
       const json = (await res.json()) as { id?: number; error?: string };
       if (!res.ok || !json.id) throw new Error(json.error ?? "Could not attach image");
@@ -147,9 +178,9 @@ export function BlocksEditor({
             slotId: null,
             type: "image",
             url,
-            width: dims.width,
-            height: dims.height,
-            aspectRatio: `${dims.width}:${dims.height}`,
+            width,
+            height,
+            aspectRatio: width && height ? `${width}:${height}` : null,
             orderIndex: position,
             gridColStart: null,
             gridColSpan: 1,
@@ -159,6 +190,16 @@ export function BlocksEditor({
           return { ...b, media };
         }),
       );
+    }
+  }
+
+  async function pickFromLibrary(m: PortfolioMedia) {
+    if (!picking) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await attach(picking.blockId, picking.slot, m.url, m.width, m.height, picking.mediaId);
+      setPicking(null);
     } catch (e) {
       fail(e);
     } finally {
@@ -168,6 +209,49 @@ export function BlocksEditor({
 
   return (
     <section className="space-y-4 pt-8 border-t border-[color:var(--rule)]">
+      {/* Library picker — every image already uploaded to the site,
+          whatever it was originally uploaded for. */}
+      {picking && (
+        <div
+          className="fixed inset-0 z-50 p-6 overflow-auto"
+          style={{ background: "rgba(0,0,0,0.55)" }}
+          onClick={() => setPicking(null)}
+        >
+          <div
+            className="max-w-4xl mx-auto rounded-sm p-6 space-y-4"
+            style={{ background: "var(--paper)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-baseline justify-between gap-4">
+              <h3 className="font-mono uppercase tracking-[0.14em] text-[11px]">
+                Media library · {library.length}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPicking(null)}
+                className="font-mono text-[color:var(--meta)] text-[11px] hover:text-[color:var(--ink)]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {library.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => pickFromLibrary(m)}
+                  className="border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden hover:opacity-70 transition-opacity disabled:opacity-40"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="font-mono uppercase tracking-[0.14em] text-[11px]">Page blocks</h2>
         <div className="flex items-center gap-2 flex-wrap">
@@ -279,29 +363,43 @@ export function BlocksEditor({
                   {Array.from({ length: SLOTS[block.layout] }, (_, slot) => {
                     const m = block.media[slot];
                     return (
-                      <label
-                        key={slot}
-                        className="block border border-dashed border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden cursor-pointer relative"
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="sr-only"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) setSlotImage(block.id, slot, f, m?.id);
-                            e.target.value = "";
-                          }}
-                        />
-                        {m ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={m.url} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="absolute inset-0 grid place-items-center font-mono text-[10px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
-                            {busy ? "Uploading…" : `Image ${slot + 1}`}
-                          </span>
-                        )}
-                      </label>
+                      <div key={slot} className="space-y-2">
+                        <div className="border border-dashed border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden relative">
+                          {m ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={m.url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="absolute inset-0 grid place-items-center font-mono text-[10px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
+                              {busy ? "Working…" : `Image ${slot + 1}`}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Choose first: reusing an existing asset should be
+                              at least as easy as uploading a second copy. */}
+                          <button
+                            type="button"
+                            disabled={busy || library.length === 0}
+                            onClick={() => setPicking({ blockId: block.id, slot, mediaId: m?.id })}
+                            className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] disabled:opacity-40"
+                          >
+                            Choose
+                          </button>
+                          <label className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] cursor-pointer">
+                            Upload
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="sr-only"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) setSlotImage(block.id, slot, f, m?.id);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

@@ -607,7 +607,7 @@ export async function getPortfolioContactStrips(): Promise<PortfolioContactStrip
    An ordered stream mixing image rows and copy, so paragraphs can sit
    anywhere between rows. `kind` discriminates the union.            */
 
-export type BlockLayout = "single" | "portrait_landscape" | "split";
+export type BlockLayout = "single" | "portrait_landscape" | "landscape_portrait" | "split";
 
 export type PortfolioBlock =
   | {
@@ -727,6 +727,24 @@ export async function setBlockOrder(projectId: number, idsInOrder: number[]) {
       UPDATE portfolio_blocks SET order_index = ${i}, updated_at = NOW()
       WHERE id = ${idsInOrder[i]} AND project_id = ${projectId}
     `;
+  }
+}
+
+/** Every image already uploaded, newest first — the picker's library, so
+ *  an asset from an old work grid or carousel can be reused in a block
+ *  instead of being uploaded a second time. Deduplicated by URL, since
+ *  the same file may be referenced by more than one row. */
+export async function getMediaLibrary(): Promise<PortfolioMedia[]> {
+  try {
+    const { rows } = await sql<MediaRow>`
+      SELECT DISTINCT ON (url) *
+      FROM   portfolio_media
+      WHERE  url IS NOT NULL AND url <> ''
+      ORDER  BY url, id DESC
+    `;
+    return rows.map(mediaFromRow).sort((a, b) => b.id - a.id);
+  } catch {
+    return [];
   }
 }
 

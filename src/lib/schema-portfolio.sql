@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS portfolio_blocks (
   order_index INTEGER NOT NULL DEFAULT 0,
   kind        TEXT    NOT NULL CHECK (kind IN ('images', 'text')),
   -- image blocks: how the row is composed
-  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'split')),
+  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split')),
   -- text blocks
   heading     TEXT,
   body        TEXT,
@@ -176,3 +176,9 @@ ALTER TABLE portfolio_media
   ADD COLUMN IF NOT EXISTS block_position INTEGER NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS portfolio_media_block_idx
   ON portfolio_media (block_id, block_position);
+
+-- Fourth image-row layout: the mirror of portrait_landscape, so a row can
+-- lead with the wide image instead of the tall one.
+ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
+ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
+  CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split'));

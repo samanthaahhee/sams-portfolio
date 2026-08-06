@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createBlock, updateBlock, deleteBlock, type BlockLayout } from "@/lib/db-portfolio";
 
-const LAYOUTS: BlockLayout[] = ["single", "portrait_landscape", "split"];
+const LAYOUTS: BlockLayout[] = ["single", "portrait_landscape", "landscape_portrait", "split"];
 
 function bust(slug?: string | null) {
   revalidatePath("/work");

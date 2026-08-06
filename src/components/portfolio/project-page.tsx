@@ -192,6 +192,7 @@ function MetaRail({ color, project }: { color: string; project: PortfolioProject
 const ROW_LAYOUTS = {
   single: { className: "grid grid-cols-1", aspects: ["2 / 1"] },
   portrait_landscape: { className: "grid grid-cols-1 md:grid-cols-[1fr_2fr]", aspects: ["3 / 4", "3 / 2"] },
+  landscape_portrait: { className: "grid grid-cols-1 md:grid-cols-[2fr_1fr]", aspects: ["3 / 2", "3 / 4"] },
   split: { className: "grid grid-cols-1 md:grid-cols-2", aspects: ["4 / 3", "4 / 3"] },
 } as const;
 
