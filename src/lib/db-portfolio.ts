@@ -730,19 +730,45 @@ export async function setBlockOrder(projectId: number, idsInOrder: number[]) {
   }
 }
 
-/** Every image already uploaded, newest first — the picker's library, so
- *  an asset from an old work grid or carousel can be reused in a block
- *  instead of being uploaded a second time. Deduplicated by URL, since
- *  the same file may be referenced by more than one row. */
-export async function getMediaLibrary(): Promise<PortfolioMedia[]> {
+export type LibraryImage = {
+  url: string;
+  width: number | null;
+  height: number | null;
+  /** Which table it came from — shown as a caption so an image can be
+   *  placed in context when several look alike. */
+  source: string;
+};
+
+/** Every image anywhere in the database, deduplicated by URL.
+ *
+ *  Deliberately not limited to portfolio_media: most of Sam's uploads
+ *  predate these tables and still live on the legacy project and case
+ *  study rows, so a library that read portfolio_media alone showed 19 of
+ *  the 40 images she actually has. Only portfolio_media stores
+ *  dimensions; the rest come back null, which is fine — the page reads
+ *  natural size off the image itself. */
+export async function getMediaLibrary(): Promise<LibraryImage[]> {
   try {
-    const { rows } = await sql<MediaRow>`
-      SELECT DISTINCT ON (url) *
-      FROM   portfolio_media
+    const { rows } = await sql<{ url: string; width: number | null; height: number | null; source: string }>`
+      WITH all_images AS (
+        SELECT url, width, height, 'Work grid'  AS source, 1 AS pref FROM portfolio_media
+        UNION ALL
+        SELECT cover, NULL, NULL, 'Project cover', 2 FROM projects
+        UNION ALL
+        SELECT cover, NULL, NULL, 'Case study', 3 FROM case_studies
+        UNION ALL
+        SELECT image_url, NULL, NULL, 'Thinking', 4 FROM portfolio_thinking_sections
+        UNION ALL
+        SELECT image_url, NULL, NULL, 'Hero card', 5 FROM hero_cards
+        UNION ALL
+        SELECT image_src, NULL, NULL, 'Experience', 6 FROM experience_entries
+      )
+      SELECT DISTINCT ON (url) url, width, height, source
+      FROM   all_images
       WHERE  url IS NOT NULL AND url <> ''
-      ORDER  BY url, id DESC
+      ORDER  BY url, pref ASC
     `;
-    return rows.map(mediaFromRow).sort((a, b) => b.id - a.id);
+    return rows;
   } catch {
     return [];
   }

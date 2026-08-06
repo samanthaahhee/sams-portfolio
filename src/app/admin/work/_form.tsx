@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PortfolioProject, PortfolioMedia, PortfolioBlock } from "@/lib/db-portfolio";
+import type { PortfolioProject, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { BlocksEditor } from "./_blocks-editor";
 
 type Props = {
   project?: PortfolioProject;
   /** Every image already uploaded, offered as a pick-from library. */
-  library?: PortfolioMedia[];
+  library?: LibraryImage[];
   blocks?: PortfolioBlock[];
   mode: "create" | "edit";
 };
@@ -76,14 +76,32 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [k]: v }));
 
+  /* The comma-separated fields keep their RAW text while you type and are
+     only parsed on save. Splitting on every keystroke made them
+     impossible to type in: the moment you pressed "," the value became
+     ["Sam", ""], the empty entry was filtered out, and the comma you had
+     just typed was rewritten away — likewise any trailing space. */
+  const [deliverablesRaw, setDeliverablesRaw] = useState((project?.deliverables ?? []).join(", "));
+  const [creativeTeamRaw, setCreativeTeamRaw] = useState((project?.creativeTeam ?? []).join(", "));
+
+  const splitList = (s: string) =>
+    s.split(",").map((v) => v.trim()).filter(Boolean);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError(null);
+    const payload = {
+      ...form,
+      deliverables: splitList(deliverablesRaw),
+      creativeTeam: splitList(creativeTeamRaw),
+      id: project?.id,
+      _mode: mode,
+    };
     const res = await fetch("/api/admin/work", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, id: project?.id, _mode: mode }),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
     if (!res.ok) {
@@ -170,8 +188,8 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
 
         <Field label="Deliverables (comma-separated)">
           <input
-            value={form.deliverables.join(", ")}
-            onChange={(e) => set("deliverables", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+            value={deliverablesRaw}
+            onChange={(e) => setDeliverablesRaw(e.target.value)}
             className={fieldInput}
             placeholder="Activation stands, Store front, Campaign Assets"
           />
@@ -217,8 +235,8 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
 
         <Field label="Creative team (comma-separated)">
           <input
-            value={form.creativeTeam.join(", ")}
-            onChange={(e) => set("creativeTeam", e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+            value={creativeTeamRaw}
+            onChange={(e) => setCreativeTeamRaw(e.target.value)}
             className={fieldInput}
             placeholder="Sam Ahhee, Creative Director"
           />

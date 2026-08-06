@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { BlockLayout, PortfolioBlock, PortfolioMedia } from "@/lib/db-portfolio";
+import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 
 /* ── Project-page block editor ─────────────────────────────────────────
    The project page body is an ordered stream, so paragraphs can be
@@ -61,7 +61,7 @@ export function BlocksEditor({
   initialBlocks: PortfolioBlock[];
   /** Everything already uploaded, so an existing asset can be reused
    *  rather than uploaded again. */
-  library: PortfolioMedia[];
+  library: LibraryImage[];
 }) {
   /** Which slot the library picker is currently filling. */
   const [picking, setPicking] = useState<{ blockId: number; slot: number; mediaId?: number } | null>(null);
@@ -193,7 +193,7 @@ export function BlocksEditor({
     }
   }
 
-  async function pickFromLibrary(m: PortfolioMedia) {
+  async function pickFromLibrary(m: LibraryImage) {
     if (!picking) return;
     setBusy(true);
     setError(null);
@@ -237,14 +237,19 @@ export function BlocksEditor({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {library.map((m) => (
                 <button
-                  key={m.id}
+                  key={m.url}
                   type="button"
                   disabled={busy}
                   onClick={() => pickFromLibrary(m)}
-                  className="border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden hover:opacity-70 transition-opacity disabled:opacity-40"
+                  className="text-left hover:opacity-70 transition-opacity disabled:opacity-40"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  <span className="block border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  </span>
+                  <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)] mt-1">
+                    {m.source}
+                  </span>
                 </button>
               ))}
             </div>
