@@ -6,6 +6,7 @@ import type { PortfolioBlock, PortfolioProject } from "@/lib/db-portfolio";
 import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { WorkTile } from "./work-tile";
+import { META_STYLE, MetaRowContent } from "./site-meta";
 
 /* ── Project page ──────────────────────────────────────────────────────
    One accent colour drives the wordmark, the section headings and the
@@ -220,28 +221,11 @@ export function ProjectPage({
 
   return (
     <div className="font-portfolio-sans" style={{ background: "#fff" }}>
-      <div style={{ padding: `20px ${SIDE_PAD} 0` }}>
-        {/* top rail */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 16,
-            fontFamily: MONO,
-            fontSize: 9,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: accent,
-          }}
-        >
-          <span>Visual Comms Designer</span>
-          <Link href="/work" className="hover:opacity-70 transition-opacity" style={{ color: accent }}>
-            Work
-          </Link>
-          <Link href="/about" className="hover:opacity-70 transition-opacity" style={{ color: accent }}>
-            Experience
-          </Link>
+      <div style={{ padding: `24px ${SIDE_PAD} 0` }}>
+        {/* Same meta row as the homepage — identical copy and styling, only
+            tinted with this project's accent. */}
+        <div style={{ ...META_STYLE, color: accent }}>
+          <MetaRowContent />
         </div>
 
         {/* small centred wordmark, tinted by the project's accent */}

@@ -6,6 +6,7 @@ import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransfo
 import { BendingPanel } from "./bending-panel";
 import { WorkTile } from "./work-tile";
 import { SiteFooter } from "./site-footer";
+import { META_STYLE, MetaRowContent } from "./site-meta";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -18,12 +19,6 @@ const RED = "#FF2E31";
 /* DM Mono, referenced by variable: the next/font class is on <html>, so the
    custom property resolves anywhere without needing a Tailwind utility. */
 const MONO = "var(--font-dm-mono)";
-
-const META = {
-  role: "VISUAL COMMS DESIGNER",
-  year: "2026",
-  handle: "@SAMANTHAAHHEE",
-};
 
 const FIELDS = ["Fintech", "FMCG", "Retail", "Consumer Tech"];
 
@@ -237,20 +232,9 @@ export function HomepageHero() {
           animate={settled ? "visible" : "hidden"}
           variants={fadeUp}
           className="font-portfolio-sans"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "4px 20px",
-            fontSize: "clamp(10px, 2.6vw, 13px)",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            color: RED,
-          }}
+          style={{ ...META_STYLE, color: RED }}
         >
-          <span>{META.role}</span>
-          <span>{META.year}</span>
-          <span>{META.handle}</span>
+          <MetaRowContent />
         </motion.div>
 
         {/* logo: fills the full padded width, no max-width cap */}
