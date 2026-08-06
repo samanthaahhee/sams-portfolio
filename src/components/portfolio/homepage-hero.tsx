@@ -192,7 +192,17 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
   );
 }
 
-export function HomepageHero() {
+export type TileLabels = Record<string, { client: string; title: string }>;
+
+export function HomepageHero({ labels = {} }: { labels?: TileLabels }) {
+  /* Both pills come from the project row: client on the solid pill,
+     title on the frosted one — the same pair the project page shows as
+     "CLIENT | TITLE". */
+  const pillsFor = (slug: string) => {
+    const l = labels[slug];
+    return { title: l?.client ?? "", tags: l?.title ? [l.title] : [] };
+  };
+
   /* The intro runs in strict order, matching the reference exactly:
      screen starts full white (a fixed overlay hides the nav and page
      underneath) → the logo loads + enlarges into place on top of it →
@@ -271,15 +281,15 @@ export function HomepageHero() {
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
-            title="BOS Ice Tea" tags={["360 Campaign"]} href="/work/bos-ice-tea" />
+            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
           <WorkTile aspect="4 / 3" src="/images/bento/slot-4.jpg"
-            title="BOS Ice Tea" tags={["Art Direction"]} href="/work/bos-ice-tea" />
+            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-7.jpg"
-            title="BOS Ice Tea" tags={["Packaging"]} href="/work/bos-ice-tea" />
+            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
           <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png"
-            title="Temper" tags={["Product"]} href="/work/temper" />
+            {...pillsFor("temper")} href="/work/temper" />
         </div>
 
         {/* About — one panel, laid out as two rows rather than two columns:
@@ -360,15 +370,15 @@ export function HomepageHero() {
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginTop: GUTTER, marginBottom: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png"
-            title="Temper" tags={["Brand Design"]} href="/work/temper" />
+            {...pillsFor("temper")} href="/work/temper" />
           <WorkTile aspect="4 / 3" src="/images/bento/slot-5.png"
-            title="Small Stitch" tags={["Brand Identity"]} href="/work/small-stitch" />
+            {...pillsFor("small-stitch")} href="/work/small-stitch" />
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-6.png"
-            title="Recharge.com" tags={["Brand"]} href="/work/recharge" />
+            {...pillsFor("recharge")} href="/work/recharge" />
           <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
-            title="BOS Ice Tea" tags={["360 Campaign"]} href="/work/bos-ice-tea" />
+            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
         </div>
       </div>
 

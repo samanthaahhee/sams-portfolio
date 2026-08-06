@@ -91,7 +91,7 @@ export default async function AdminHome() {
                   />
                 )}
                 <span className="font-mono text-[color:var(--meta)] hidden md:inline">
-                  {p.discipline}
+                  {p.year}
                 </span>
                 <a
                   href={`/work/${p.slug}`}

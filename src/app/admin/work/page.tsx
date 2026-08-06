@@ -22,7 +22,7 @@ export default async function WorkList() {
     slug: String(p.id),
     meta: p.client || "—",
     label: p.title,
-    secondary: p.discipline,
+    secondary: p.year,
     editHref: `/admin/work/${p.id}`,
     viewHref: `/work/${p.slug}`,
   });
@@ -137,7 +137,7 @@ export default async function WorkList() {
                   </span>
                 </Link>
                 <span className="font-mono text-[color:var(--meta)] hidden md:inline shrink-0">
-                  {p.discipline}
+                  {p.year}
                 </span>
               </li>
             ))}

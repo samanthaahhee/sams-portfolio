@@ -57,17 +57,19 @@ function Wordmark({ color }: { color: string }) {
   );
 }
 
-/** ← previous project · PROJECT NAME · next project → */
+/** ← previous project · CLIENT | TITLE · next project → */
 function ProjectNav({
   color,
   prev,
   next,
   title,
+  client,
 }: {
   color: string;
   prev: ProjectNeighbour;
   next: ProjectNeighbour;
   title?: string;
+  client?: string;
 }) {
   const link: React.CSSProperties = { color, fontSize: "clamp(12px, 1.05vw, 15px)" };
   return (
@@ -95,8 +97,19 @@ function ProjectNav({
             letterSpacing: "0.06em",
             textTransform: "uppercase",
             textAlign: "center",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.9em",
           }}
         >
+          {client && (
+            <>
+              {client}
+              {/* hairline divider, not a typed pipe — keeps its weight
+                  independent of the label's */}
+              <span aria-hidden style={{ width: 1, height: "1em", background: "currentColor", opacity: 0.5 }} />
+            </>
+          )}
           {title}
         </span>
       )}
@@ -235,7 +248,7 @@ export function ProjectPage({
         </Link>
 
         <div style={{ marginTop: "clamp(24px, 3.4vw, 46px)" }}>
-          <ProjectNav color={accent} prev={prev} next={next} title={project.title} />
+          <ProjectNav color={accent} prev={prev} next={next} title={project.title} client={project.client} />
         </div>
       </div>
 
@@ -248,11 +261,10 @@ export function ProjectPage({
         )}
 
         {/* overview: heading + body left, meta rail right */}
-        {(project.overviewHeading || project.overviewBody || project.deliverables.length > 0) && (
+        {(project.overviewBody || project.deliverables.length > 0) && (
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeUp}>
             <TextPanel
               color={accent}
-              heading={project.overviewHeading}
               body={project.overviewBody}
               rail={<MetaRail color={accent} project={project} />}
             />

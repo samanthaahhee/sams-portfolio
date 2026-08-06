@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PortfolioProject, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { BlocksEditor } from "./_blocks-editor";
+import { PagePreview } from "./_page-preview";
 
 type Props = {
   project?: PortfolioProject;
@@ -160,19 +161,11 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Title">
-            <input required value={form.title} onChange={(e) => set("title", e.target.value)} className={fieldInput} />
-          </Field>
-          <Field label="Discipline">
-            <input
-              value={form.discipline}
-              onChange={(e) => set("discipline", e.target.value)}
-              className={fieldInput}
-              placeholder="Brand Design"
-            />
-          </Field>
-        </div>
+        {/* Client + Title are the pair shown as "CLIENT | TITLE" on the
+            project page and as the two pills on the homepage. */}
+        <Field label="Title (shown after the client, e.g. Brand Expansion)">
+          <input required value={form.title} onChange={(e) => set("title", e.target.value)} className={fieldInput} />
+        </Field>
 
         <div className="grid grid-cols-3 gap-4">
           <Field label="Client">
@@ -212,15 +205,6 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               className={fieldInput}
             />
           </div>
-        </Field>
-
-        <Field label="Overview header">
-          <input
-            value={form.overviewHeading ?? ""}
-            onChange={(e) => set("overviewHeading", e.target.value || null)}
-            className={fieldInput}
-            placeholder="Header"
-          />
         </Field>
 
         <Field label="Overview copy">
@@ -267,12 +251,15 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
           Save the project first, then compose the page from image rows and paragraphs.
         </p>
       ) : (
-        <BlocksEditor
-          projectId={project.id}
-          projectSlug={form.slug}
-          initialBlocks={blocks ?? []}
-          library={library ?? []}
-        />
+        <>
+          <BlocksEditor
+            projectId={project.id}
+            projectSlug={form.slug}
+            initialBlocks={blocks ?? []}
+            library={library ?? []}
+          />
+          <PagePreview slug={project.slug} />
+        </>
       )}
     </div>
   );
