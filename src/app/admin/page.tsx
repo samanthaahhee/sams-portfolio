@@ -1,13 +1,16 @@
 import Link from "next/link";
-import { getProjects, getCaseStudies, getExperience } from "@/lib/db";
-import { ReorderControls } from "@/app/admin/_components/reorder-controls";
+import { getAllPortfolioProjects } from "@/lib/db-portfolio";
+import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
+
+/* The rebuild has one content type: a project. The legacy dashboard split
+ * the same idea across "Projects" and "Case studies" and carried a CV
+ * section besides; all three are retired here. Their tables and API
+ * routes are untouched, so nothing is lost — only the editors are gone. */
 
 export default async function AdminHome() {
-  const [projects, caseStudies, experience] = await Promise.all([
-    getProjects(),
-    getCaseStudies(),
-    getExperience(),
-  ]);
+  const projects = await getAllPortfolioProjects();
+  const inDb = new Set(projects.map((p) => p.slug));
+  const notImported = PLACEHOLDER_PROJECTS.filter((p) => !inDb.has(p.slug));
 
   return (
     <div className="max-w-5xl mx-auto space-y-12">
@@ -34,131 +37,85 @@ export default async function AdminHome() {
         </div>
       </header>
 
-      {/* Projects */}
       <section>
-        <div className="flex items-baseline justify-between mb-4">
+        <div className="flex items-baseline justify-between mb-4 gap-4 flex-wrap">
           <h2 className="font-display text-2xl">Projects · {projects.length}</h2>
-          <Link
-            href="/admin/projects/new"
-            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
-            style={{ background: "var(--ink)", color: "var(--paper)" }}
-          >
-            + New project
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin/work"
+              className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px] border border-[color:var(--rule)] hover:border-[color:var(--ink)] transition-colors"
+            >
+              Reorder
+            </Link>
+            <Link
+              href="/admin/work/new"
+              className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
+              style={{ background: "var(--ink)", color: "var(--paper)" }}
+            >
+              + New project
+            </Link>
+          </div>
         </div>
+
         <ul className="border-t border-[color:var(--rule)]">
-          {projects.map((p, i) => (
+          {projects.map((p) => (
             <li
-              key={p.slug}
+              key={p.id}
               className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
             >
               <Link
-                href={`/admin/projects/${p.slug}`}
+                href={`/admin/work/${p.id}`}
                 className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
               >
-                <span className="font-mono text-[color:var(--meta)] w-24 shrink-0 truncate">{p.brand}</span>
-                <span className="truncate">{p.title}</span>
+                <span className="font-mono text-[color:var(--meta)] w-32 shrink-0 truncate">
+                  {p.client || "—"}
+                </span>
+                <span className="truncate flex items-center gap-2">
+                  {p.title}
+                  {!p.visible && (
+                    <span
+                      className="font-mono uppercase tracking-[0.14em] text-[9px] px-2 py-0.5 rounded-full border"
+                      style={{ borderColor: "var(--rule)", color: "var(--meta)" }}
+                    >
+                      Hidden
+                    </span>
+                  )}
+                </span>
               </Link>
               <div className="flex items-center gap-3 shrink-0">
-                <span className="font-mono text-[color:var(--meta)] hidden md:inline">{p.tags.join(" · ")}</span>
-                <ReorderControls
-                  slug={p.slug}
-                  kind="project"
-                  isFirst={i === 0}
-                  isLast={i === projects.length - 1}
-                />
+                {p.accentColor && (
+                  <span
+                    aria-label={`Accent ${p.accentColor}`}
+                    className="h-4 w-4 rounded-full border"
+                    style={{ background: p.accentColor, borderColor: "var(--rule)" }}
+                  />
+                )}
+                <span className="font-mono text-[color:var(--meta)] hidden md:inline">
+                  {p.discipline}
+                </span>
+                <a
+                  href={`/work/${p.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em] hover:text-[color:var(--ink)]"
+                >
+                  View ↗
+                </a>
               </div>
             </li>
           ))}
         </ul>
-      </section>
 
-      {/* Experience — drives the /about timeline */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="font-display text-2xl">
-            CV experience · {experience.length}
-          </h2>
-          <Link
-            href="/admin/experience/new"
-            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
-            style={{ background: "var(--ink)", color: "var(--paper)" }}
-          >
-            + New role
-          </Link>
-        </div>
-        <ul className="border-t border-[color:var(--rule)]">
-          {experience.map((e) => (
-            <li
-              key={e.slug}
-              className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
-            >
-              <Link
-                href={`/admin/experience/${e.slug}`}
-                className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
-              >
-                <span className="font-mono text-[color:var(--meta)] w-24 shrink-0 truncate">
-                  {e.yearPill}
-                </span>
-                <span className="truncate">
-                  {e.title} — {e.company}
-                </span>
-              </Link>
-              <span className="font-mono text-[color:var(--meta)] hidden md:inline shrink-0">
-                {e.dates}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="font-mono text-[color:var(--meta)] text-[10px] mt-3">
-          Reorder + edit individual roles at{" "}
-          <Link
-            href="/admin/experience"
-            className="underline hover:text-[color:var(--ink)]"
-          >
-            /admin/experience
-          </Link>
-          .
-        </p>
-      </section>
-
-      {/* Case studies */}
-      <section>
-        <div className="flex items-baseline justify-between mb-4">
-          <h2 className="font-display text-2xl">Case studies · {caseStudies.length}</h2>
-          <Link
-            href="/admin/case-studies/new"
-            className="font-mono uppercase tracking-[0.14em] px-4 py-2 rounded-full text-[10px]"
-            style={{ background: "var(--ink)", color: "var(--paper)" }}
-          >
-            + New case study
-          </Link>
-        </div>
-        <ul className="border-t border-[color:var(--rule)]">
-          {caseStudies.map((c, i) => (
-            <li
-              key={c.slug}
-              className="border-b border-[color:var(--rule)] py-3 flex items-center justify-between gap-4"
-            >
-              <Link
-                href={`/admin/case-studies/${c.slug}`}
-                className="flex items-baseline gap-4 flex-1 min-w-0 hover:text-[color:var(--ink)]"
-              >
-                <span className="font-mono text-[color:var(--meta)] w-12 shrink-0">No. {c.no}</span>
-                <span className="truncate">{c.title}</span>
-              </Link>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="font-mono text-[color:var(--meta)] hidden md:inline">{c.client}</span>
-                <ReorderControls
-                  slug={c.slug}
-                  kind="case-study"
-                  isFirst={i === 0}
-                  isLast={i === caseStudies.length - 1}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        {notImported.length > 0 && (
+          <p className="font-mono text-[color:var(--meta)] text-[10px] mt-3">
+            {notImported.length} more render from code fixtures and need adding to
+            the database before they can be edited —{" "}
+            <Link href="/admin/work" className="underline hover:text-[color:var(--ink)]">
+              /admin/work
+            </Link>
+            .
+          </p>
+        )}
       </section>
     </div>
   );
