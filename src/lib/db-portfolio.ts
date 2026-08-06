@@ -97,9 +97,8 @@ export type PortfolioProject = {
   coverType: MediaType | null;
   deliverables: string[];
   creativeTeam: string[];
-  /** Drives the wordmark, section headings and meta row on this project's
-   *  page. Body copy stays charcoal regardless. Null falls back to the
-   *  site red. */
+  /** Drives every piece of type on this project's page — wordmark,
+   *  headings, meta row and body copy. Null falls back to the site red. */
   accentColor: string | null;
   overviewHeading: string | null;
   overviewBody: string | null;

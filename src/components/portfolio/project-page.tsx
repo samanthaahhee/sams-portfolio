@@ -9,13 +9,12 @@ import { WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
 
 /* ── Project page ──────────────────────────────────────────────────────
-   One accent colour drives the wordmark, the section headings and the
-   meta rows; body copy stays charcoal so it reads at length. The page
-   body is an ordered stream of blocks (image rows and paragraphs) that
-   the admin composes, so copy can sit anywhere between rows. */
+   One accent colour drives everything typographic: the wordmark, the
+   headings, the meta rows and the body copy. The page body is an
+   ordered stream of blocks (image rows and paragraphs) that the admin
+   composes, so copy can sit anywhere between rows. */
 
 const MONO = "var(--font-dm-mono)";
-const INK = "#1a1a1a";
 const PANEL = "#f6f6f6";
 const SIDE_PAD = "clamp(16px, 2.6vw, 44px)";
 const GUTTER = "clamp(16px, 2.6vw, 44px)";
@@ -124,8 +123,8 @@ function ProjectNav({
   );
 }
 
-/** A copy panel: accent heading, charcoal body. Used for the overview
- *  (which also carries the meta rail) and for every text block. */
+/** A copy panel, set entirely in the project's accent. Used for the
+ *  overview (which also carries the meta rail) and every text block. */
 function TextPanel({
   color,
   heading,
@@ -163,7 +162,7 @@ function TextPanel({
           </h2>
         )}
         {body && (
-          <div style={{ color: INK, fontSize: "clamp(13px, 1.05vw, 15px)", lineHeight: 1.62 }}>
+          <div style={{ color, fontSize: "clamp(13px, 1.05vw, 15px)", lineHeight: 1.62 }}>
             {body.split(/\n{2,}/).map((para, i) => (
               <p key={i} style={{ marginTop: i === 0 ? 0 : "1em" }}>
                 {para}
