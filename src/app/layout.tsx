@@ -47,7 +47,10 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{const t=localStorage.getItem('theme');const s=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';const x=t||s;if(x==='dark')document.documentElement.classList.add('dark');}catch{}})();`,
+            /* Light unless dark was explicitly chosen — must match
+               ThemeProvider's rule exactly or the page flashes the other
+               theme before hydration. */
+            __html: `(()=>{try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch{}})();`,
           }}
         />
       </head>

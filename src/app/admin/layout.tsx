@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { ForceLight } from "./_components/force-light";
 
 export const metadata = { title: { default: "Admin", template: "%s · Admin" } };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-[color:var(--paper)]">
+      <ForceLight />
       <header className="border-b border-[color:var(--rule)] px-6 py-4 flex items-center justify-between">
         <div className="flex items-baseline gap-6">
           <Link href="/admin" className="font-mono text-[color:var(--ink)]">
