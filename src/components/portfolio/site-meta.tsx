@@ -8,9 +8,14 @@ export const META = {
   handle: "@SAMANTHAAHHEE",
 };
 
+/* Three equal-weighted tracks rather than space-between: the outer labels
+   are different lengths, so distributing by text width pushed the year
+   ~23px right of true centre and it no longer lined up with the project
+   title beneath it. Equal 1fr side tracks put the middle item on the
+   row's actual midpoint whatever the labels say. */
 export const META_STYLE: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
+  display: "grid",
+  gridTemplateColumns: "1fr auto 1fr",
   alignItems: "center",
   gap: "4px 20px",
   fontSize: "clamp(10px, 2.6vw, 13px)",
@@ -22,8 +27,8 @@ export function MetaRowContent() {
   return (
     <>
       <span>{META.role}</span>
-      <span>{META.year}</span>
-      <span>{META.handle}</span>
+      <span style={{ textAlign: "center" }}>{META.year}</span>
+      <span style={{ textAlign: "right" }}>{META.handle}</span>
     </>
   );
 }
