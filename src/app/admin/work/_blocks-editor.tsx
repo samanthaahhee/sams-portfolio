@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 
 /* ── Project-page block editor ─────────────────────────────────────────
@@ -64,7 +64,7 @@ export function BlocksEditor({
   library: LibraryImage[];
 }) {
   /** Which slot the library picker is currently filling. */
-  const [picking, setPicking] = useState<{ blockId: number; slot: number; mediaId?: number } | null>(null);
+  const [picking, setPicking] = useState<{ blockId: number; slot: number } | null>(null);
   const [blocks, setBlocks] = useState(initialBlocks);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -88,7 +88,7 @@ export function BlocksEditor({
         ...prev,
         kind === "text"
           ? { kind: "text", id: json.id!, projectId, orderIndex: prev.length, heading: null, body: null }
-          : { kind: "images", id: json.id!, projectId, orderIndex: prev.length, layout: layout ?? "single", media: [] },
+          : { kind: "images", id: json.id!, projectId, orderIndex: prev.length, layout: layout ?? "single", slots: [] },
       ]);
     } catch (e) {
       fail(e);
@@ -133,12 +133,12 @@ export function BlocksEditor({
     if (!res.ok) setError("Reorder failed");
   }
 
-  async function setSlotImage(blockId: number, position: number, file: File, existingMediaId?: number) {
+  async function setSlotImage(blockId: number, position: number, file: File) {
     setBusy(true);
     setError(null);
     try {
       const [url, dims] = await Promise.all([uploadToBlob(file), readImageDims(file)]);
-      await attach(blockId, position, url, dims.width, dims.height, existingMediaId);
+      await attach(blockId, position, url, dims.width, dims.height);
     } catch (e) {
       fail(e);
     } finally {
@@ -146,51 +146,92 @@ export function BlocksEditor({
     }
   }
 
-  /** Point a slot at an image that already exists in storage — the same
-   *  call the upload path finishes with, minus the upload. */
+  /** Append a frame to a slot's sequence — the same call the upload path
+   *  finishes with, minus the upload. One frame is a still; more than one
+   *  loops on the page. */
   async function attach(
     blockId: number,
     position: number,
     url: string,
     width: number | null,
     height: number | null,
-    existingMediaId?: number,
   ) {
-    {
-      if (existingMediaId) {
-        await fetch(`/api/admin/work/blocks/media?id=${existingMediaId}&projectSlug=${projectSlug}`, { method: "DELETE" });
-      }
-      const res = await fetch("/api/admin/work/blocks/media", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, projectSlug, blockId, position, url, width, height }),
-      });
-      const json = (await res.json()) as { id?: number; error?: string };
-      if (!res.ok || !json.id) throw new Error(json.error ?? "Could not attach image");
+    const res = await fetch("/api/admin/work/blocks/media", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, projectSlug, blockId, position, url, width, height }),
+    });
+    const json = (await res.json()) as { id?: number; frameIndex?: number; error?: string };
+    if (!res.ok || !json.id) throw new Error(json.error ?? "Could not attach image");
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== blockId || b.kind !== "images") return b;
+        const slots = b.slots.map((f) => [...(f ?? [])]);
+        (slots[position] ??= []).push({
+          id: json.id!,
+          projectId,
+          surface: "project_page",
+          slotId: null,
+          type: "image",
+          url,
+          width,
+          height,
+          aspectRatio: width && height ? `${width}:${height}` : null,
+          orderIndex: position,
+          gridColStart: null,
+          gridColSpan: 1,
+          gridRowStart: null,
+          gridRowSpan: 1,
+          frameIndex: json.frameIndex ?? 0,
+          focalX: 0.5,
+          focalY: 0.5,
+        });
+        return { ...b, slots };
+      }),
+    );
+  }
+
+  async function removeFrame(blockId: number, position: number, mediaId: number) {
+    setBusy(true);
+    try {
+      await fetch(`/api/admin/work/blocks/media?id=${mediaId}&projectSlug=${projectSlug}`, { method: "DELETE" });
       setBlocks((prev) =>
         prev.map((b) => {
           if (b.id !== blockId || b.kind !== "images") return b;
-          const media = b.media.filter((m) => m.id !== existingMediaId);
-          media[position] = {
-            id: json.id!,
-            projectId,
-            surface: "project_page",
-            slotId: null,
-            type: "image",
-            url,
-            width,
-            height,
-            aspectRatio: width && height ? `${width}:${height}` : null,
-            orderIndex: position,
-            gridColStart: null,
-            gridColSpan: 1,
-            gridRowStart: null,
-            gridRowSpan: 1,
-          };
-          return { ...b, media };
+          const slots = b.slots.map((f) => [...(f ?? [])]);
+          slots[position] = (slots[position] ?? []).filter((m) => m.id !== mediaId);
+          return { ...b, slots };
         }),
       );
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
     }
+  }
+
+  /** Crop is a focal point: which part of the image survives the cover
+   *  crop. Saved on release, not on every pointer move. */
+  function setCropLocal(blockId: number, position: number, mediaId: number, fx: number, fy: number) {
+    setBlocks((prev) =>
+      prev.map((b) => {
+        if (b.id !== blockId || b.kind !== "images") return b;
+        const slots = b.slots.map((f) => [...(f ?? [])]);
+        slots[position] = (slots[position] ?? []).map((m) =>
+          m.id === mediaId ? { ...m, focalX: fx, focalY: fy } : m,
+        );
+        return { ...b, slots };
+      }),
+    );
+  }
+
+  async function saveCrop(mediaId: number, fx: number, fy: number) {
+    const res = await fetch("/api/admin/work/blocks/media", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: mediaId, focalX: fx, focalY: fy, projectSlug }),
+    });
+    if (!res.ok) setError("Could not save crop");
   }
 
   async function pickFromLibrary(m: LibraryImage) {
@@ -198,7 +239,7 @@ export function BlocksEditor({
     setBusy(true);
     setError(null);
     try {
-      await attach(picking.blockId, picking.slot, m.url, m.width, m.height, picking.mediaId);
+      await attach(picking.blockId, picking.slot, m.url, m.width, m.height);
       setPicking(null);
     } catch (e) {
       fail(e);
@@ -366,44 +407,64 @@ export function BlocksEditor({
 
                 <div className="grid grid-cols-2 gap-3">
                   {Array.from({ length: SLOTS[block.layout] }, (_, slot) => {
-                    const m = block.media[slot];
+                    const frames = block.slots[slot] ?? [];
                     return (
                       <div key={slot} className="space-y-2">
-                        <div className="border border-dashed border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden relative">
-                          {m ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={m.url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="absolute inset-0 grid place-items-center font-mono text-[10px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
-                              {busy ? "Working…" : `Image ${slot + 1}`}
+                        <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
+                          Image {slot + 1}
+                          {frames.length > 1 && ` · ${frames.length} frames, loops`}
+                        </p>
+
+                        {frames.length === 0 && (
+                          <div className="border border-dashed border-[color:var(--rule)] rounded-sm aspect-[4/3] grid place-items-center">
+                            <span className="font-mono text-[10px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
+                              {busy ? "Working…" : "Empty"}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
+
+                        {frames.map((m, fi) => (
+                          <CropBox
+                            key={m.id}
+                            media={m}
+                            index={fi}
+                            total={frames.length}
+                            onMove={(fx, fy) => setCropLocal(block.id, slot, m.id, fx, fy)}
+                            onCommit={(fx, fy) => saveCrop(m.id, fx, fy)}
+                            onRemove={() => removeFrame(block.id, slot, m.id)}
+                          />
+                        ))}
+
                         <div className="flex items-center gap-2">
                           {/* Choose first: reusing an existing asset should be
                               at least as easy as uploading a second copy. */}
                           <button
                             type="button"
                             disabled={busy || library.length === 0}
-                            onClick={() => setPicking({ blockId: block.id, slot, mediaId: m?.id })}
+                            onClick={() => setPicking({ blockId: block.id, slot })}
                             className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] disabled:opacity-40"
                           >
-                            Choose
+                            {frames.length ? "+ Choose" : "Choose"}
                           </button>
                           <label className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] cursor-pointer">
-                            Upload
+                            {frames.length ? "+ Upload" : "Upload"}
                             <input
                               type="file"
                               accept="image/*"
                               className="sr-only"
                               onChange={(e) => {
                                 const f = e.target.files?.[0];
-                                if (f) setSlotImage(block.id, slot, f, m?.id);
+                                if (f) setSlotImage(block.id, slot, f);
                                 e.target.value = "";
                               }}
                             />
                           </label>
                         </div>
+                        {frames.length === 1 && (
+                          <p className="font-mono text-[9px] text-[color:var(--meta)]">
+                            Add another image to make this slot loop.
+                          </p>
+                        )}
                       </div>
                     );
                   })}
@@ -414,5 +475,92 @@ export function BlocksEditor({
         ))}
       </ol>
     </section>
+  );
+}
+
+/** One frame, with its crop. The box is the slot's aspect and shows the
+ *  image cover-cropped exactly as the page will, so dragging the marker
+ *  is a direct preview rather than an abstract pair of numbers. */
+function CropBox({
+  media,
+  index,
+  total,
+  onMove,
+  onCommit,
+  onRemove,
+}: {
+  media: { id: number; url: string; focalX: number; focalY: number };
+  index: number;
+  total: number;
+  onMove: (fx: number, fy: number) => void;
+  onCommit: (fx: number, fy: number) => void;
+  onRemove: () => void;
+}) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false);
+
+  const pointTo = (clientX: number, clientY: number) => {
+    const el = boxRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      fx: Math.max(0, Math.min(1, (clientX - r.left) / r.width)),
+      fy: Math.max(0, Math.min(1, (clientY - r.top) / r.height)),
+    };
+  };
+
+  return (
+    <div className="space-y-1">
+      <div
+        ref={boxRef}
+        className="border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden relative cursor-crosshair select-none"
+        onPointerDown={(e) => {
+          (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+          setDragging(true);
+          const p = pointTo(e.clientX, e.clientY);
+          if (p) onMove(p.fx, p.fy);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging) return;
+          const p = pointTo(e.clientX, e.clientY);
+          if (p) onMove(p.fx, p.fy);
+        }}
+        onPointerUp={() => {
+          setDragging(false);
+          onCommit(media.focalX, media.focalY);
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={media.url}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover pointer-events-none"
+          style={{ objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%` }}
+        />
+        <span
+          aria-hidden
+          className="absolute w-5 h-5 rounded-full border-2 border-white pointer-events-none"
+          style={{
+            left: `${media.focalX * 100}%`,
+            top: `${media.focalY * 100}%`,
+            transform: "translate(-50%, -50%)",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.45)",
+          }}
+        />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-[9px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
+          {total > 1 ? `Frame ${index + 1}` : "Drag to set crop"}
+        </span>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)] hover:text-red-700"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
   );
 }

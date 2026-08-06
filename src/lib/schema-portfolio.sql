@@ -182,3 +182,17 @@ CREATE INDEX IF NOT EXISTS portfolio_media_block_idx
 ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
 ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
   CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split'));
+
+-- Image slots can hold a SEQUENCE of frames that loops like a GIF, and
+-- each frame carries its own crop. frame_index orders the frames within
+-- one slot (block_id + block_position identifies the slot); focal_x /
+-- focal_y are 0..1 and say which point of the source stays centred when
+-- the image is cover-cropped to the slot, so a subject that sits off to
+-- one side is not sliced in half by the automatic centre crop.
+ALTER TABLE portfolio_media
+  ADD COLUMN IF NOT EXISTS frame_index INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS focal_x REAL NOT NULL DEFAULT 0.5,
+  ADD COLUMN IF NOT EXISTS focal_y REAL NOT NULL DEFAULT 0.5;
+
+CREATE INDEX IF NOT EXISTS portfolio_media_slot_idx
+  ON portfolio_media (block_id, block_position, frame_index);

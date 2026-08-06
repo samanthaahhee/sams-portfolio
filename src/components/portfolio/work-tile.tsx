@@ -6,38 +6,96 @@ import { BAND_FRACTION, FLARE_CURVE, MASK_POINTS, MAX_FLARE, MAX_SHEAR } from ".
 
 const MONO = "var(--font-dm-mono)";
 
+/** How long each frame of a looping sequence holds. */
+export const FRAME_MS = 700;
+
+export type TileFrame = { url: string; focalX?: number; focalY?: number };
+
 /** A work tile whose image bends through the viewport's bottom band.
- *  Pass `src`; without one it renders a flat grey placeholder. */
+ *
+ *  `frames` may hold more than one image, in which case the tile loops
+ *  through them like a GIF. Each frame carries its own focal point: the
+ *  image is always cover-cropped to the slot, and focalX/focalY (0..1)
+ *  choose which part survives the crop instead of always taking the
+ *  centre. Pass `src` for the common single-still case. */
 export function WorkTile({
   aspect = "4 / 3",
   src,
+  frames,
   title,
   tags = [],
   href,
 }: {
   aspect?: string;
   src?: string;
+  frames?: TileFrame[];
   title?: string;
   tags?: string[];
   href?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+  const imgsRef = useRef<HTMLImageElement[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [frame, setFrame] = useState(0);
+
+  const seq: TileFrame[] = frames?.length ? frames : src ? [{ url: src }] : [];
+  const seqKey = seq.map((f) => `${f.url}|${f.focalX ?? 0.5}|${f.focalY ?? 0.5}`).join(",");
 
   useEffect(() => {
-    if (!src) return;
-    const img = new window.Image();
-    img.decoding = "async";
-    const done = () => {
-      imgRef.current = img;
-      setLoaded(true);
+    if (seq.length === 0) return;
+    let cancelled = false;
+    let done = 0;
+    const loadedImgs: HTMLImageElement[] = [];
+    seq.forEach((f, i) => {
+      const img = new window.Image();
+      img.decoding = "async";
+      const mark = () => {
+        if (cancelled) return;
+        loadedImgs[i] = img;
+        done += 1;
+        /* Show the first frame as soon as it arrives; later frames swap
+           in as they land, so a long sequence is not a blank tile. */
+        if (i === 0 || done === seq.length) {
+          imgsRef.current = loadedImgs;
+          setLoaded(true);
+        } else {
+          imgsRef.current = loadedImgs;
+        }
+      };
+      img.onload = mark;
+      img.src = f.url;
+      if (img.complete && img.naturalWidth) mark();
+    });
+    return () => {
+      cancelled = true;
     };
-    img.onload = done;
-    img.src = src;
-    if (img.complete && img.naturalWidth) done();
-  }, [src]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seqKey]);
+
+  /* Advance the loop only while the tile is on screen — a page of
+     sequences should not burn frames off-screen. */
+  useEffect(() => {
+    if (seq.length < 2) return;
+    const host = hostRef.current;
+    if (!host) return;
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (timer) return;
+      timer = setInterval(() => setFrame((f) => (f + 1) % seq.length), FRAME_MS);
+    };
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = null;
+    };
+    const io = new IntersectionObserver(([e]) => (e.isIntersecting ? start() : stop()));
+    io.observe(host);
+    return () => {
+      io.disconnect();
+      stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seqKey]);
 
   useEffect(() => {
     let raf = 0;
@@ -125,7 +183,7 @@ export function WorkTile({
          pixels never change: they draw once and are then skipped, which is
          what keeps the per-frame cost to the one or two tiles in the band. */
       const touchesBand = rect.bottom > bandTop && rect.top < vh;
-      const key = `${touchesBand ? rect.top.toFixed(2) : "flat"}|${sizeKey}|${loaded}`;
+      const key = `${touchesBand ? rect.top.toFixed(2) : "flat"}|${sizeKey}|${loaded}|${frame}`;
       if (key === lastKey) {
         raf = requestAnimationFrame(tick);
         return;
@@ -142,8 +200,13 @@ export function WorkTile({
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      const img = imgRef.current;
-      // object-fit: cover mapping from the source image onto the tile
+      const fi = seq.length ? frame % seq.length : 0;
+      const img = imgsRef.current[fi] ?? imgsRef.current[0];
+      /* object-fit: cover, but anchored on the frame's focal point rather
+         than always the centre, so an off-centre subject survives the
+         crop. focal 0.5 reproduces a plain centre crop exactly. */
+      const fx = seq[fi]?.focalX ?? 0.5;
+      const fy = seq[fi]?.focalY ?? 0.5;
       let sx = 0;
       let sy = 0;
       let sw = 0;
@@ -154,11 +217,11 @@ export function WorkTile({
         if (iw / ih > W / H) {
           sh = ih;
           sw = ih * (W / H);
-          sx = (iw - sw) / 2;
+          sx = (iw - sw) * fx;
         } else {
           sw = iw;
           sh = iw / (W / H);
-          sy = (ih - sh) / 2;
+          sy = (ih - sh) * fy;
         }
       }
 
@@ -228,7 +291,8 @@ export function WorkTile({
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [loaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, frame, seqKey]);
 
   return (
     /* overflow stays visible: the warped canvas deliberately extends past

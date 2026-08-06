@@ -25,6 +25,9 @@ export async function POST(req: Request) {
     gridColSpan: body.gridColSpan ?? 1,
     gridRowStart: body.gridRowStart ?? null,
     gridRowSpan: body.gridRowSpan ?? 1,
+    frameIndex: body.frameIndex ?? 0,
+    focalX: body.focalX ?? 0.5,
+    focalY: body.focalY ?? 0.5,
   });
 
   revalidatePath("/work");

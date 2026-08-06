@@ -1,5 +1,5 @@
 import localFont from "next/font/local";
-import { Plus_Jakarta_Sans, DM_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, DM_Mono, DM_Sans } from "next/font/google";
 
 /**
  * LORE — the portfolio's handwritten/display typeface, self-hosted.
@@ -56,5 +56,16 @@ export const dmMono = DM_Mono({
   subsets: ["latin"],
   variable: "--font-dm-mono",
   weight: ["300", "400", "500"],
+  display: "swap",
+});
+
+/**
+ * DM Sans — the project pages' copy voice.
+ * Used for: overview and text-block headers and body copy.
+ */
+export const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "700"],
   display: "swap",
 });

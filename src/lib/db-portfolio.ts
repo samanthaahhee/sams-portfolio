@@ -24,6 +24,11 @@ export type PortfolioMedia = {
   gridColSpan: number;
   gridRowStart: number | null;
   gridRowSpan: number;
+  /** Order within a slot's looping frame sequence. */
+  frameIndex: number;
+  /** 0..1 point of the source kept centred when cover-cropping. */
+  focalX: number;
+  focalY: number;
 };
 
 type MediaRow = {
@@ -41,6 +46,9 @@ type MediaRow = {
   grid_col_span: number;
   grid_row_start: number | null;
   grid_row_span: number;
+  frame_index?: number;
+  focal_x?: number;
+  focal_y?: number;
 };
 
 function mediaFromRow(r: MediaRow): PortfolioMedia {
@@ -59,6 +67,9 @@ function mediaFromRow(r: MediaRow): PortfolioMedia {
     gridColSpan: r.grid_col_span,
     gridRowStart: r.grid_row_start,
     gridRowSpan: r.grid_row_span,
+    frameIndex: r.frame_index ?? 0,
+    focalX: r.focal_x ?? 0.5,
+    focalY: r.focal_y ?? 0.5,
   };
 }
 
@@ -615,7 +626,9 @@ export type PortfolioBlock =
       projectId: number;
       orderIndex: number;
       layout: BlockLayout;
-      media: PortfolioMedia[];
+      /** One entry per slot; each is that slot's looping frame sequence.
+       *  A still image is simply a sequence of one. */
+      slots: PortfolioMedia[][];
     }
   | {
       kind: "text";
@@ -649,16 +662,18 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
       sql<MediaRow & { block_id: number | null; block_position: number }>`
         SELECT * FROM portfolio_media
         WHERE  block_id IS NOT NULL AND project_id = ${projectId}
-        ORDER  BY block_position ASC, id ASC
+        ORDER  BY block_position ASC, frame_index ASC, id ASC
       `,
     ]);
 
-    const byBlock = new Map<number, PortfolioMedia[]>();
+    /* block -> slot index -> frames, in frame order. */
+    const byBlock = new Map<number, PortfolioMedia[][]>();
     for (const m of mediaRows) {
       if (m.block_id === null) continue;
-      const list = byBlock.get(m.block_id) ?? [];
-      list.push(mediaFromRow(m));
-      byBlock.set(m.block_id, list);
+      const slots = byBlock.get(m.block_id) ?? [];
+      const slot = m.block_position ?? 0;
+      (slots[slot] ??= []).push(mediaFromRow(m));
+      byBlock.set(m.block_id, slots);
     }
 
     return blockRows.map((b) =>
@@ -677,7 +692,7 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
             projectId: b.project_id,
             orderIndex: b.order_index,
             layout: b.layout ?? "single",
-            media: byBlock.get(b.id) ?? [],
+            slots: byBlock.get(b.id) ?? [],
           },
     );
   } catch {
@@ -783,16 +798,32 @@ export async function createBlockMedia(m: {
   url: string;
   width: number | null;
   height: number | null;
-}): Promise<number> {
-  const { rows } = await sql<{ id: number }>`
+}): Promise<{ id: number; frameIndex: number }> {
+  /* Appends to the slot's sequence rather than assuming one image per
+     slot — that is what makes a slot able to loop like a GIF. */
+  const { rows } = await sql<{ id: number; frame_index: number }>`
     INSERT INTO portfolio_media
-      (project_id, surface, type, url, width, height, aspect_ratio, order_index, block_id, block_position)
+      (project_id, surface, type, url, width, height, aspect_ratio, order_index,
+       block_id, block_position, frame_index)
     VALUES
       (${m.projectId}, 'project_page', 'image', ${m.url}, ${m.width}, ${m.height},
-       ${m.width && m.height ? `${m.width}:${m.height}` : null}, ${m.position}, ${m.blockId}, ${m.position})
-    RETURNING id
+       ${m.width && m.height ? `${m.width}:${m.height}` : null}, ${m.position},
+       ${m.blockId}, ${m.position},
+       COALESCE((SELECT MAX(frame_index) + 1 FROM portfolio_media
+                 WHERE block_id = ${m.blockId} AND block_position = ${m.position}), 0))
+    RETURNING id, frame_index
   `;
-  return rows[0].id;
+  return { id: rows[0].id, frameIndex: rows[0].frame_index };
+}
+
+/** Move the crop's focal point. Values are clamped 0..1. */
+export async function setMediaCrop(id: number, focalX: number, focalY: number) {
+  const clamp = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0.5));
+  await sql`
+    UPDATE portfolio_media
+    SET focal_x = ${clamp(focalX)}, focal_y = ${clamp(focalY)}
+    WHERE id = ${id}
+  `;
 }
 
 /** Attach media to a block (or detach with blockId = null). */

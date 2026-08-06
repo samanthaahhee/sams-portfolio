@@ -207,6 +207,15 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
           </div>
         </Field>
 
+        <Field label="Overview header (all caps on the page)">
+          <input
+            value={form.overviewHeading ?? ""}
+            onChange={(e) => set("overviewHeading", e.target.value || null)}
+            className={fieldInput}
+            placeholder="Header"
+          />
+        </Field>
+
         <Field label="Overview copy">
           <textarea
             value={form.overviewBody ?? ""}

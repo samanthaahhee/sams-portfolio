@@ -15,7 +15,8 @@ import { META_STYLE, MetaRowContent } from "./site-meta";
    composes, so copy can sit anywhere between rows. */
 
 const MONO = "var(--font-dm-mono)";
-const PANEL = "#f6f6f6";
+const SANS = "var(--font-dm-sans)";
+const PANEL = "#FCF9F9";
 const SIDE_PAD = "clamp(16px, 2.6vw, 44px)";
 const GUTTER = "clamp(16px, 2.6vw, 44px)";
 
@@ -150,10 +151,11 @@ function TextPanel({
         {heading && (
           <h2
             style={{
+              fontFamily: SANS,
               color,
               fontSize: "clamp(13px, 1.15vw, 16px)",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
+              fontWeight: 500,
+              letterSpacing: "0.02em",
               textTransform: "uppercase",
               marginBottom: 14,
             }}
@@ -162,7 +164,15 @@ function TextPanel({
           </h2>
         )}
         {body && (
-          <div style={{ color, fontSize: "clamp(13px, 1.05vw, 15px)", lineHeight: 1.62 }}>
+          <div
+            style={{
+              fontFamily: SANS,
+              fontWeight: 500,
+              color,
+              fontSize: "clamp(13px, 1.05vw, 15px)",
+              lineHeight: 1.62,
+            }}
+          >
             {body.split(/\n{2,}/).map((para, i) => (
               <p key={i} style={{ marginTop: i === 0 ? 0 : "1em" }}>
                 {para}
@@ -213,7 +223,15 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
   return (
     <div className={className} style={{ gap: GUTTER }}>
       {aspects.map((aspect, i) => (
-        <WorkTile key={i} aspect={aspect} src={block.media[i]?.url} />
+        <WorkTile
+          key={i}
+          aspect={aspect}
+          frames={(block.slots[i] ?? []).map((m) => ({
+            url: m.url,
+            focalX: m.focalX,
+            focalY: m.focalY,
+          }))}
+        />
       ))}
     </div>
   );
@@ -260,10 +278,11 @@ export function ProjectPage({
         )}
 
         {/* overview: heading + body left, meta rail right */}
-        {(project.overviewBody || project.deliverables.length > 0) && (
+        {(project.overviewHeading || project.overviewBody || project.deliverables.length > 0) && (
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} variants={fadeUp}>
             <TextPanel
               color={accent}
+              heading={project.overviewHeading}
               body={project.overviewBody}
               rail={<MetaRail color={accent} project={project} />}
             />
