@@ -14,6 +14,9 @@ export type DragItem = {
   secondary?: string;
   /** Detail page in the admin (where the row link goes). */
   editHref: string;
+  /** Optional public URL — rendered as a "View ↗" link so the editor can
+   *  jump straight to the live page. */
+  viewHref?: string;
 };
 
 /**
@@ -167,6 +170,16 @@ export function DragReorderList({
                   <span className="font-mono text-[color:var(--meta)] hidden md:inline">
                     {item.secondary}
                   </span>
+                )}
+                {item.viewHref && (
+                  <a
+                    href={item.viewHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono text-[color:var(--meta)] text-[10px] uppercase tracking-[0.14em] hover:text-[color:var(--ink)]"
+                  >
+                    View ↗
+                  </a>
                 )}
                 <button
                   type="button"
