@@ -219,6 +219,10 @@ const ROW_LAYOUTS = {
   portrait_landscape: { className: "grid grid-cols-1 md:grid-cols-[1fr_2fr]", aspects: ["3 / 4", "3 / 2"] },
   landscape_portrait: { className: "grid grid-cols-1 md:grid-cols-[2fr_1fr]", aspects: ["3 / 2", "3 / 4"] },
   split: { className: "grid grid-cols-1 md:grid-cols-2", aspects: ["4 / 3", "4 / 3"] },
+  portrait_trio: {
+    className: "grid grid-cols-1 sm:grid-cols-3",
+    aspects: ["3 / 4", "3 / 4", "3 / 4"],
+  },
 } as const;
 
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {

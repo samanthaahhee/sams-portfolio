@@ -617,7 +617,12 @@ export async function getPortfolioContactStrips(): Promise<PortfolioContactStrip
    An ordered stream mixing image rows and copy, so paragraphs can sit
    anywhere between rows. `kind` discriminates the union.            */
 
-export type BlockLayout = "single" | "portrait_landscape" | "landscape_portrait" | "split";
+export type BlockLayout =
+  | "single"
+  | "portrait_landscape"
+  | "landscape_portrait"
+  | "split"
+  | "portrait_trio";
 
 export type PortfolioBlock =
   | {

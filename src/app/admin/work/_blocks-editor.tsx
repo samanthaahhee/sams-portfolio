@@ -16,6 +16,7 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "portrait_landscape", label: "Portrait + landscape", slots: 2 },
   { value: "landscape_portrait", label: "Landscape + portrait", slots: 2 },
   { value: "split", label: "Landscape 50/50", slots: 2 },
+  { value: "portrait_trio", label: "Three portraits", slots: 3 },
 ];
 
 const SLOTS: Record<BlockLayout, number> = {
@@ -23,6 +24,7 @@ const SLOTS: Record<BlockLayout, number> = {
   portrait_landscape: 2,
   landscape_portrait: 2,
   split: 2,
+  portrait_trio: 3,
 };
 
 function readImageDims(file: File): Promise<{ width: number; height: number }> {
@@ -405,7 +407,10 @@ export function BlocksEditor({
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: `repeat(${SLOTS[block.layout]}, minmax(0, 1fr))` }}
+                >
                   {Array.from({ length: SLOTS[block.layout] }, (_, slot) => {
                     const frames = block.slots[slot] ?? [];
                     return (
