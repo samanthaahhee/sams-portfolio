@@ -9,7 +9,7 @@ export type MediaType = "image" | "gif" | "mp4";
 export type PortfolioMedia = {
   id: number;
   projectId: number | null;
-  surface: "homepage" | "work_grid" | "thinking" | "carousel";
+  surface: "homepage" | "work_grid" | "thinking" | "carousel" | "project_page";
   slotId: string | null;
   type: MediaType;
   url: string;
@@ -728,6 +728,28 @@ export async function setBlockOrder(projectId: number, idsInOrder: number[]) {
       WHERE id = ${idsInOrder[i]} AND project_id = ${projectId}
     `;
   }
+}
+
+/** Insert an image straight into a block slot, returning its media id.
+ *  Block media lives on the 'project_page' surface so it never turns up in
+ *  the legacy work-grid or thinking queries. */
+export async function createBlockMedia(m: {
+  projectId: number;
+  blockId: number;
+  position: number;
+  url: string;
+  width: number | null;
+  height: number | null;
+}): Promise<number> {
+  const { rows } = await sql<{ id: number }>`
+    INSERT INTO portfolio_media
+      (project_id, surface, type, url, width, height, aspect_ratio, order_index, block_id, block_position)
+    VALUES
+      (${m.projectId}, 'project_page', 'image', ${m.url}, ${m.width}, ${m.height},
+       ${m.width && m.height ? `${m.width}:${m.height}` : null}, ${m.position}, ${m.blockId}, ${m.position})
+    RETURNING id
+  `;
+  return rows[0].id;
 }
 
 /** Attach media to a block (or detach with blockId = null). */

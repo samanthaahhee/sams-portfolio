@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getPortfolioProjectById, getProjectMedia, getThinkingSections } from "@/lib/db-portfolio";
+import { getPortfolioProjectById, getProjectMedia, getThinkingSections, getProjectBlocks } from "@/lib/db-portfolio";
 import { WorkProjectForm } from "../_form";
 
 export default async function EditWorkProjectPage({
@@ -14,9 +14,10 @@ export default async function EditWorkProjectPage({
   const project = await getPortfolioProjectById(projectId);
   if (!project) notFound();
 
-  const [media, thinkingSections] = await Promise.all([
+  const [media, thinkingSections, blocks] = await Promise.all([
     getProjectMedia(project.id, "work_grid"),
     getThinkingSections(project.id),
+    getProjectBlocks(project.id),
   ]);
 
   return (
@@ -25,7 +26,7 @@ export default async function EditWorkProjectPage({
       <h1 className="font-display text-3xl md:text-4xl mb-8" style={{ lineHeight: 0.95 }}>
         {project.client || project.title} · {project.title}
       </h1>
-      <WorkProjectForm project={project} media={media} thinkingSections={thinkingSections} mode="edit" />
+      <WorkProjectForm project={project} media={media} thinkingSections={thinkingSections} blocks={blocks} mode="edit" />
     </div>
   );
 }

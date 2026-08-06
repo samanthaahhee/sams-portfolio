@@ -3,12 +3,10 @@ import type { Metadata } from "next";
 import {
   getPortfolioProjects,
   getPortfolioProjectBySlug,
-  getProjectMedia,
-  getThinkingSections,
+  getProjectBlocks,
 } from "@/lib/db-portfolio";
-import { PLACEHOLDER_PROJECTS, PLACEHOLDER_WORK_MEDIA, PLACEHOLDER_THINKING } from "@/lib/portfolio-placeholders";
-import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
-import { WorkDeepDive } from "@/components/portfolio/work-deep-dive";
+import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
+import { ProjectPage, type ProjectNeighbour } from "@/components/portfolio/project-page";
 
 export async function generateStaticParams() {
   const projects = await getPortfolioProjects();
@@ -49,27 +47,27 @@ export default async function WorkDeepDivePage({
   if (!found) notFound();
   const { project, isPlaceholder } = found;
 
-  const [workMedia, thinkingMedia, dbThinkingSections] = isPlaceholder
-    ? [PLACEHOLDER_WORK_MEDIA[slug] ?? [], [], []]
-    : await Promise.all([
-        getProjectMedia(project.id, "work_grid"),
-        getProjectMedia(project.id, "thinking"),
-        getThinkingSections(project.id),
-      ]);
+  const blocks = isPlaceholder ? [] : await getProjectBlocks(project.id);
 
-  const thinkingSections = isPlaceholder
-    ? PLACEHOLDER_THINKING[slug]
-    : dbThinkingSections.map((s) => ({ title: s.title, body: s.body, image: s.imageUrl ?? undefined }));
+  /* prev/next follow the same order the work index uses, so the arrows
+     walk the list in the order Sam arranged it. */
+  const ordered = await getPortfolioProjects();
+  const list = [...ordered];
+  for (const p of PLACEHOLDER_PROJECTS) {
+    if (!list.some((q) => q.slug === p.slug)) list.push(p);
+  }
+  const i = list.findIndex((p) => p.slug === slug);
+  const at = (n: number): ProjectNeighbour => {
+    const p = list[(n + list.length) % list.length];
+    return p && p.slug !== slug ? { slug: p.slug, title: p.title } : null;
+  };
 
   return (
-    <div className="min-h-screen bg-white font-portfolio-sans">
-      <PortfolioNav active="work" />
-      <WorkDeepDive
-        project={project}
-        workMedia={workMedia}
-        thinkingMedia={thinkingMedia}
-        thinkingSections={thinkingSections}
-      />
-    </div>
+    <ProjectPage
+      project={project}
+      blocks={blocks}
+      prev={i > -1 ? at(i - 1) : null}
+      next={i > -1 ? at(i + 1) : null}
+    />
   );
 }

@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PortfolioProject, PortfolioMedia, PortfolioThinkingSection } from "@/lib/db-portfolio";
+import type { PortfolioProject, PortfolioMedia, PortfolioThinkingSection, PortfolioBlock } from "@/lib/db-portfolio";
 import { ImageUploadBox } from "@/app/admin/_components/image-uploads";
 import { GridBuilder } from "./_grid-builder";
+import { BlocksEditor } from "./_blocks-editor";
 
 type Props = {
   project?: PortfolioProject;
   media?: PortfolioMedia[];
   thinkingSections?: PortfolioThinkingSection[];
+  blocks?: PortfolioBlock[];
   mode: "create" | "edit";
 };
 
@@ -48,7 +50,7 @@ function VisibleToggle({ visible, onChange }: { visible: boolean; onChange: (v: 
   );
 }
 
-export function WorkProjectForm({ project, media, thinkingSections, mode }: Props) {
+export function WorkProjectForm({ project, media, thinkingSections, blocks, mode }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +179,44 @@ export function WorkProjectForm({ project, media, thinkingSections, mode }: Prop
           />
         </Field>
 
+        {/* One colour drives the wordmark, the headings and the meta rows on
+            this project's page; body copy stays charcoal. */}
+        <Field label="Accent colour (project page — wordmark, headers, meta)">
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              value={form.accentColor || "#FF2E31"}
+              onChange={(e) => set("accentColor", e.target.value)}
+              className="h-10 w-14 rounded-sm border border-[color:var(--rule)] bg-transparent"
+            />
+            <input
+              value={form.accentColor ?? ""}
+              onChange={(e) => set("accentColor", e.target.value || null)}
+              placeholder="#FF2E31 (blank = site red)"
+              className={fieldInput}
+            />
+          </div>
+        </Field>
+
+        <Field label="Overview header">
+          <input
+            value={form.overviewHeading ?? ""}
+            onChange={(e) => set("overviewHeading", e.target.value || null)}
+            className={fieldInput}
+            placeholder="Header"
+          />
+        </Field>
+
+        <Field label="Overview copy">
+          <textarea
+            value={form.overviewBody ?? ""}
+            onChange={(e) => set("overviewBody", e.target.value || null)}
+            rows={5}
+            className={fieldInput}
+            placeholder="Leave a blank line between paragraphs"
+          />
+        </Field>
+
         <Field label="Creative team (comma-separated)">
           <input
             value={form.creativeTeam.join(", ")}
@@ -212,6 +252,7 @@ export function WorkProjectForm({ project, media, thinkingSections, mode }: Prop
         </p>
       ) : (
         <>
+          <BlocksEditor projectId={project.id} projectSlug={form.slug} initialBlocks={blocks ?? []} />
           <WorkMediaSection projectId={project.id} projectSlug={form.slug} initialMedia={media ?? []} initialTemplate={form.workGridTemplate} />
           <ThinkingSection projectId={project.id} projectSlug={form.slug} initialSections={thinkingSections ?? []} />
         </>
