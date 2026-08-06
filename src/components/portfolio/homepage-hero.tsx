@@ -285,28 +285,17 @@ export function HomepageHero() {
       {/* no fade on the container itself — each tile runs its own measured
           entrance, and stacking the two would double-fade them */}
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
-        {/* Row 1 — two landscape tiles */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
           <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
             title="BOS Ice Tea" tags={["360 Campaign"]} href="/work/bos-ice-tea" />
           <WorkTile aspect="4 / 3" src="/images/bento/slot-4.jpg"
             title="BOS Ice Tea" tags={["Art Direction"]} href="/work/bos-ice-tea" />
         </div>
-        {/* Row 2 — three portrait tiles */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="3 / 4" src="/images/bento/slot-7.jpg"
-            title="BOS Ice Tea" tags={["Packaging"]} href="/work/bos-ice-tea" />
-          <WorkTile aspect="3 / 4" src="/images/bento/slot-2.png"
-            title="Temper" tags={["Product"]} href="/work/temper" />
-          <WorkTile aspect="3 / 4" src="/images/bento/slot-5.png"
-            title="Small Stitch" tags={["Brand Identity"]} href="/work/small-stitch" />
-        </div>
-        {/* Row 3 — two landscape tiles */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png"
-            title="Temper" tags={["Brand Design"]} href="/work/temper" />
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-6.png"
-            title="Recharge.com" tags={["Brand"]} href="/work/recharge" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-7.jpg"
+            title="BOS Ice Tea" tags={["Packaging"]} href="/work/bos-ice-tea" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png"
+            title="Temper" tags={["Product"]} href="/work/temper" />
         </div>
 
         {/* About — one panel, laid out as two rows rather than two columns:
@@ -385,6 +374,18 @@ export function HomepageHero() {
         </BendingPanel>
         </motion.div>
 
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginTop: GUTTER, marginBottom: GUTTER }}>
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png"
+            title="Temper" tags={["Brand Design"]} href="/work/temper" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-5.png"
+            title="Small Stitch" tags={["Brand Identity"]} href="/work/small-stitch" />
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-6.png"
+            title="Recharge.com" tags={["Brand"]} href="/work/recharge" />
+          <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
+            title="BOS Ice Tea" tags={["360 Campaign"]} href="/work/bos-ice-tea" />
+        </div>
       </div>
 
       {/* ── Contact banner ────────────────────────────────────────── */}
