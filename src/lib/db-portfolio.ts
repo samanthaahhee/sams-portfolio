@@ -757,11 +757,10 @@ export type LibraryImage = {
  *
  *  Deliberately not limited to portfolio_media: most of Sam's uploads
  *  predate these tables and still live on the legacy project and case
- *  study rows, so a library that read portfolio_media alone showed 19 of
- *  the 40 images she actually has. Only portfolio_media stores
- *  dimensions; the rest come back null, which is fine — the page reads
- *  natural size off the image itself. */
-export async function getMediaLibrary(): Promise<LibraryImage[]> {
+ *  study rows. Only portfolio_media stores dimensions; the rest come
+ *  back null, which is fine — the page reads natural size off the image
+ *  itself. */
+async function getDatabaseImages(): Promise<LibraryImage[]> {
   try {
     const { rows } = await sql<{ url: string; width: number | null; height: number | null; source: string }>`
       WITH all_images AS (
@@ -786,6 +785,47 @@ export async function getMediaLibrary(): Promise<LibraryImage[]> {
   } catch {
     return [];
   }
+}
+
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
+
+/** Everything in Blob storage, which is the real library — the database
+ *  only knows about files something happens to reference, so anything
+ *  uploaded for a page that was later edited or deleted is invisible to
+ *  it. Needs BLOB_READ_WRITE_TOKEN; without it this returns nothing and
+ *  the picker falls back to the database-only list. */
+async function getStorageImages(): Promise<LibraryImage[]> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return [];
+  try {
+    const { list } = await import("@vercel/blob");
+    const out: LibraryImage[] = [];
+    let cursor: string | undefined;
+    /* Paginate, but stop at a sane ceiling — the picker is a grid, not
+       an archive browser. */
+    for (let page = 0; page < 10; page++) {
+      const res = await list({ cursor, limit: 1000 });
+      for (const b of res.blobs) {
+        if (!IMAGE_EXT.test(b.pathname)) continue;
+        out.push({ url: b.url, width: null, height: null, source: "Storage" });
+      }
+      if (!res.hasMore || !res.cursor) break;
+      cursor = res.cursor;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/** The picker's library: every image in Blob storage plus anything the
+ *  database references, deduplicated by URL. Database entries win, since
+ *  they carry a meaningful source label and real dimensions. */
+export async function getMediaLibrary(): Promise<LibraryImage[]> {
+  const [dbImages, storageImages] = await Promise.all([getDatabaseImages(), getStorageImages()]);
+  const byUrl = new Map<string, LibraryImage>();
+  for (const img of storageImages) byUrl.set(img.url, img);
+  for (const img of dbImages) byUrl.set(img.url, img);
+  return Array.from(byUrl.values());
 }
 
 /** Insert an image straight into a block slot, returning its media id.

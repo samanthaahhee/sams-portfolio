@@ -9,13 +9,16 @@ import { WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
 
 /* ── Project page ──────────────────────────────────────────────────────
-   One accent colour drives everything typographic: the wordmark, the
-   headings, the meta rows and the body copy. The page body is an
-   ordered stream of blocks (image rows and paragraphs) that the admin
-   composes, so copy can sit anywhere between rows. */
+   One accent colour drives the wordmark, the headings and the meta
+   rows; body copy stays near-black so it reads at length. The page body
+   is an ordered stream of blocks (image rows and paragraphs) that the
+   admin composes, so copy can sit anywhere between rows. */
 
 const MONO = "var(--font-dm-mono)";
 const SANS = "var(--font-dm-sans)";
+/* Body copy sits at near-black rather than the accent — the accent is
+   for headers, meta and the wordmark. */
+const INK = "#232323";
 const PANEL = "#FCF9F9";
 const SIDE_PAD = "clamp(16px, 2.6vw, 44px)";
 const GUTTER = "clamp(16px, 2.6vw, 44px)";
@@ -154,7 +157,7 @@ function TextPanel({
               fontFamily: SANS,
               color,
               fontSize: "clamp(13px, 1.15vw, 16px)",
-              fontWeight: 500,
+              fontWeight: 700,
               letterSpacing: "0.02em",
               textTransform: "uppercase",
               marginBottom: 14,
@@ -168,7 +171,7 @@ function TextPanel({
             style={{
               fontFamily: SANS,
               fontWeight: 500,
-              color,
+              color: INK,
               fontSize: "clamp(13px, 1.05vw, 15px)",
               lineHeight: 1.62,
             }}
