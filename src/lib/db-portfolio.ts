@@ -884,6 +884,23 @@ export async function createBlockMedia(m: {
   return { id: rows[0].id, frameIndex: rows[0].frame_index };
 }
 
+/** Set the project's cover — the image the homepage tile and the project
+ *  page's hero both use. Stored as its single 'carousel' media row, which
+ *  is where getPortfolioProjects joins the cover from. */
+export async function setProjectCover(
+  projectId: number,
+  url: string,
+  width: number | null,
+  height: number | null,
+) {
+  const type: MediaType = /\.gif(\?|$)/i.test(url) ? "gif" : "image";
+  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = 'carousel'`;
+  await sql`
+    INSERT INTO portfolio_media (project_id, surface, type, url, width, height, order_index)
+    VALUES (${projectId}, 'carousel', ${type}, ${url}, ${width}, ${height}, 0)
+  `;
+}
+
 /** Move the crop's focal point. Values are clamped 0..1. */
 export async function setMediaCrop(id: number, focalX: number, focalY: number) {
   const clamp = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0.5));

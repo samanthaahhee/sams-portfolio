@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { PortfolioProject, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { BlocksEditor } from "./_blocks-editor";
 import { PagePreview } from "./_page-preview";
+import { CoverField } from "./_cover-field";
 
 type Props = {
   project?: PortfolioProject;
@@ -150,6 +151,15 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
             {saving ? "Saving…" : mode === "edit" ? "Save changes" : "Create"}
           </button>
         </div>
+
+        {project && (
+          <CoverField
+            projectId={project.id}
+            projectSlug={form.slug}
+            initialUrl={project.coverUrl}
+            library={library ?? []}
+          />
+        )}
 
         <Field label="Slug (URL path — /work/…)">
           <input
