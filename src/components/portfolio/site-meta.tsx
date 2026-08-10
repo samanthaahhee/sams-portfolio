@@ -5,7 +5,9 @@
 export const META = {
   role: "VISUAL COMMS DESIGNER",
   year: "2026",
-  handle: "@SAMANTHAAHHEE",
+  /* Lowercase deliberately, unlike its neighbours: an address set in caps
+     reads as shouting and is harder to transcribe. */
+  handle: "samantha.ahhee@gmail.com",
 };
 
 /* Three equal-weighted tracks rather than space-between: the outer labels
