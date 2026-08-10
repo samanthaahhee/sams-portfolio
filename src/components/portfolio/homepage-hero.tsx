@@ -192,16 +192,42 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
   );
 }
 
-export type TileLabels = Record<string, { client: string; title: string }>;
+export type HomeTile = {
+  slug: string;
+  client: string;
+  title: string;
+  src?: string;
+};
 
-export function HomepageHero({ labels = {} }: { labels?: TileLabels }) {
+export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
+  /* Two-up rows, as many as there are projects. The about panel sits
+     after the second row, so the grid reads as work / about / more work
+     however long the list gets. */
+  const rows: HomeTile[][] = [];
+  for (let i = 0; i < tiles.length; i += 2) rows.push(tiles.slice(i, i + 2));
+  const ROW_STYLE: React.CSSProperties = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+    gap: GUTTER,
+    marginBottom: GUTTER,
+  };
   /* Both pills come from the project row: client on the solid pill,
      title on the frosted one — the same pair the project page shows as
      "CLIENT | TITLE". */
-  const pillsFor = (slug: string) => {
-    const l = labels[slug];
-    return { title: l?.client ?? "", tags: l?.title ? [l.title] : [] };
-  };
+  const renderRow = (row: HomeTile[], key: number) => (
+    <div key={key} style={ROW_STYLE}>
+      {row.map((t) => (
+        <WorkTile
+          key={t.slug}
+          aspect="4 / 3"
+          src={t.src}
+          title={t.client}
+          tags={t.title ? [t.title] : []}
+          href={`/work/${t.slug}`}
+        />
+      ))}
+    </div>
+  );
 
   /* The intro runs in strict order, matching the reference exactly:
      screen starts full white (a fixed overlay hides the nav and page
@@ -279,18 +305,7 @@ export function HomepageHero({ labels = {} }: { labels?: TileLabels }) {
       {/* no fade on the container itself — each tile runs its own measured
           entrance, and stacking the two would double-fade them */}
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
-            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-4.jpg"
-            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-7.jpg"
-            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-2.png"
-            {...pillsFor("temper")} href="/work/temper" />
-        </div>
+        {rows.slice(0, 2).map(renderRow)}
 
         {/* About — one panel, laid out as two rows rather than two columns:
             the intro occupies the first row on its own, then the contact
@@ -368,18 +383,7 @@ export function HomepageHero({ labels = {} }: { labels?: TileLabels }) {
         </BendingPanel>
         </motion.div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER, marginTop: GUTTER, marginBottom: GUTTER }}>
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-3.png"
-            {...pillsFor("temper")} href="/work/temper" />
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-5.png"
-            {...pillsFor("small-stitch")} href="/work/small-stitch" />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: GUTTER }}>
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-6.png"
-            {...pillsFor("recharge")} href="/work/recharge" />
-          <WorkTile aspect="4 / 3" src="/images/bento/slot-1.jpg"
-            {...pillsFor("bos-ice-tea")} href="/work/bos-ice-tea" />
-        </div>
+        <div style={{ marginTop: GUTTER }}>{rows.slice(2).map(renderRow)}</div>
       </div>
 
       {/* ── Contact banner ────────────────────────────────────────── */}

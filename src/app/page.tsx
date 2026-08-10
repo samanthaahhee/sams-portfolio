@@ -1,4 +1,4 @@
-import { HomepageHero } from "@/components/portfolio/homepage-hero";
+import { HomepageHero, type HomeTile } from "@/components/portfolio/homepage-hero";
 import { getPortfolioProjects } from "@/lib/db-portfolio";
 import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
 
@@ -11,20 +11,22 @@ export const metadata = {
 /* No nav on the homepage — the reference leads with the meta row and
    wordmark alone. The other routes still render PortfolioNav. */
 export default async function Home() {
-  /* Tile pills read client + title straight from the project rows, so
-     renaming a project in the admin moves its pills too rather than
-     leaving the homepage saying something the project page contradicts.
-     Fixtures fill in for projects with no row yet. */
+  /* The work grid is the project list: every visible project, in the
+     order set in the admin, with its own cover and its own client/title
+     pills. Nothing about the grid is hardcoded any more, so renaming,
+     reordering or hiding a project moves the homepage with it. */
   const rows = await getPortfolioProjects();
-  const bySlug = new Map(rows.map((p) => [p.slug, p]));
-  for (const p of PLACEHOLDER_PROJECTS) if (!bySlug.has(p.slug)) bySlug.set(p.slug, p);
-  const labels = Object.fromEntries(
-    Array.from(bySlug.values()).map((p) => [p.slug, { client: p.client, title: p.title }]),
-  );
+  const source = rows.length > 0 ? rows : PLACEHOLDER_PROJECTS;
+  const tiles: HomeTile[] = source.map((p) => ({
+    slug: p.slug,
+    client: p.client,
+    title: p.title,
+    src: p.coverUrl ?? undefined,
+  }));
 
   return (
     <div className="bg-white font-portfolio-sans">
-      <HomepageHero labels={labels} />
+      <HomepageHero tiles={tiles} />
     </div>
   );
 }
