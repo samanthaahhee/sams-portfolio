@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
+import { slotAspect, slotCount } from "@/lib/block-layouts";
 
 /* ── Project-page block editor ─────────────────────────────────────────
    The project page body is an ordered stream, so paragraphs can be
@@ -19,15 +20,6 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "portrait_trio", label: "Three portraits", slots: 3 },
   { value: "native", label: "Original size / GIF", slots: 1 },
 ];
-
-const SLOTS: Record<BlockLayout, number> = {
-  single: 1,
-  portrait_landscape: 2,
-  landscape_portrait: 2,
-  split: 2,
-  portrait_trio: 3,
-  native: 1,
-};
 
 function readImageDims(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -411,10 +403,13 @@ export function BlocksEditor({
 
                 <div
                   className="grid gap-3"
-                  style={{ gridTemplateColumns: `repeat(${SLOTS[block.layout]}, minmax(0, 1fr))` }}
+                  style={{ gridTemplateColumns: `repeat(${slotCount(block.layout)}, minmax(0, 1fr))` }}
                 >
-                  {Array.from({ length: SLOTS[block.layout] }, (_, slot) => {
+                  {Array.from({ length: slotCount(block.layout) }, (_, slot) => {
                     const frames = block.slots[slot] ?? [];
+                    /* The exact frame this slot crops to, so the preview
+                       below is the real thing rather than a stand-in. */
+                    const aspect = slotAspect(block.layout, slot);
                     return (
                       <div key={slot} className="space-y-2">
                         <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
@@ -423,7 +418,10 @@ export function BlocksEditor({
                         </p>
 
                         {frames.length === 0 && (
-                          <div className="border border-dashed border-[color:var(--rule)] rounded-sm aspect-[4/3] grid place-items-center">
+                          <div
+                            className="border border-dashed border-[color:var(--rule)] rounded-sm grid place-items-center"
+                            style={{ aspectRatio: aspect ?? "4 / 3" }}
+                          >
                             <span className="font-mono text-[10px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
                               {busy ? "Working…" : "Empty"}
                             </span>
@@ -436,7 +434,7 @@ export function BlocksEditor({
                             media={m}
                             index={fi}
                             total={frames.length}
-                            native={block.layout === "native"}
+                            aspect={aspect}
                             onMove={(fx, fy) => setCropLocal(block.id, slot, m.id, fx, fy)}
                             onCommit={(fx, fy) => saveCrop(m.id, fx, fy)}
                             onRemove={() => removeFrame(block.id, slot, m.id)}
@@ -493,7 +491,7 @@ function CropBox({
   media,
   index,
   total,
-  native = false,
+  aspect,
   onMove,
   onCommit,
   onRemove,
@@ -501,14 +499,16 @@ function CropBox({
   media: { id: number; url: string; focalX: number; focalY: number; width?: number | null; height?: number | null };
   index: number;
   total: number;
-  /** Native rows show the whole image, so there is no crop to set. */
-  native?: boolean;
+  /** The frame this slot is cropped to, or null when it is not cropped
+   *  (a native row shows the whole image, so there is nothing to set). */
+  aspect: string | null;
   onMove: (fx: number, fy: number) => void;
   onCommit: (fx: number, fy: number) => void;
   onRemove: () => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
+  const native = aspect === null;
 
   const pointTo = (clientX: number, clientY: number) => {
     const el = boxRef.current;
@@ -525,8 +525,9 @@ function CropBox({
       <div
         ref={boxRef}
         className={`border border-[color:var(--rule)] rounded-sm overflow-hidden relative select-none ${
-          native ? "" : "aspect-[4/3] cursor-crosshair"
+          native ? "" : "cursor-crosshair"
         }`}
+        style={aspect ? { aspectRatio: aspect } : undefined}
         onPointerDown={native ? undefined : (e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           setDragging(true);
@@ -569,7 +570,8 @@ function CropBox({
           {/* The uploaded file's own pixel dimensions, so it is obvious
               what is actually being served. */}
           {media.width && media.height ? `${media.width} × ${media.height}` : "size unknown"}
-          {total > 1 ? ` · frame ${index + 1}` : native ? "" : " · drag to crop"}
+          {total > 1 ? ` · frame ${index + 1}` : ""}
+          {aspect ? ` · crops to ${aspect.replace(/\s/g, "")}` : " · uncropped"}
         </span>
         <button
           type="button"

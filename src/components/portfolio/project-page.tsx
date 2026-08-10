@@ -8,6 +8,7 @@ import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
+import { ROW_LAYOUTS } from "@/lib/block-layouts";
 
 /* ── Project page ──────────────────────────────────────────────────────
    One accent colour drives the wordmark, the headings and the meta
@@ -212,19 +213,6 @@ function MetaRail({ color, project }: { color: string; project: PortfolioProject
     </div>
   );
 }
-
-/* Column templates and per-tile aspects chosen so both tiles in a row end
-   up exactly the same height whatever the viewport width. */
-const ROW_LAYOUTS: Record<string, { className: string; aspects: readonly string[] }> = {
-  single: { className: "grid grid-cols-1", aspects: ["2 / 1"] },
-  portrait_landscape: { className: "grid grid-cols-1 md:grid-cols-[1fr_2fr]", aspects: ["3 / 4", "3 / 2"] },
-  landscape_portrait: { className: "grid grid-cols-1 md:grid-cols-[2fr_1fr]", aspects: ["3 / 2", "3 / 4"] },
-  split: { className: "grid grid-cols-1 md:grid-cols-2", aspects: ["4 / 3", "4 / 3"] },
-  portrait_trio: {
-    className: "grid grid-cols-1 sm:grid-cols-3",
-    aspects: ["3 / 4", "3 / 4", "3 / 4"],
-  },
-};
 
 /** One image at its own aspect ratio, full width, uncropped.
  *
