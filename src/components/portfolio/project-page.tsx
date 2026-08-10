@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import type { PortfolioBlock, PortfolioProject } from "@/lib/db-portfolio";
+import type { PortfolioBlock, PortfolioMedia, PortfolioProject } from "@/lib/db-portfolio";
 import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { WorkTile } from "./work-tile";
@@ -214,7 +214,7 @@ function MetaRail({ color, project }: { color: string; project: PortfolioProject
 
 /* Column templates and per-tile aspects chosen so both tiles in a row end
    up exactly the same height whatever the viewport width. */
-const ROW_LAYOUTS = {
+const ROW_LAYOUTS: Record<string, { className: string; aspects: readonly string[] }> = {
   single: { className: "grid grid-cols-1", aspects: ["2 / 1"] },
   portrait_landscape: { className: "grid grid-cols-1 md:grid-cols-[1fr_2fr]", aspects: ["3 / 4", "3 / 2"] },
   landscape_portrait: { className: "grid grid-cols-1 md:grid-cols-[2fr_1fr]", aspects: ["3 / 2", "3 / 4"] },
@@ -223,9 +223,37 @@ const ROW_LAYOUTS = {
     className: "grid grid-cols-1 sm:grid-cols-3",
     aspects: ["3 / 4", "3 / 4", "3 / 4"],
   },
-} as const;
+};
+
+/** One image at its own aspect ratio, full width, uncropped.
+ *
+ *  A plain <img>, not the warping canvas: canvas drawImage paints only
+ *  an animated GIF's first frame, so anything animated would freeze.
+ *  The trade-off is that this row does not bend through the viewport's
+ *  bottom band the way the cropped rows do. */
+function NativeImage({ media }: { media?: PortfolioMedia }) {
+  if (!media) {
+    return <div style={{ aspectRatio: "2 / 1", background: "#e5e5e5", borderRadius: 4 }} />;
+  }
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={media.url}
+      alt=""
+      /* Deliberately no width/height attributes and no aspect-ratio: the
+         stored dimensions are missing for library picks and can be stale
+         for anything else, and either would force a box the file does not
+         actually have — which stretches it. Letting the image size itself
+         costs a little layout shift and can never distort. */
+      style={{ display: "block", width: "100%", height: "auto", borderRadius: 4 }}
+    />
+  );
+}
 
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
+  if (block.layout === "native") {
+    return <NativeImage media={block.slots[0]?.[0]} />;
+  }
   const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
   return (
     <div className={className} style={{ gap: GUTTER }}>

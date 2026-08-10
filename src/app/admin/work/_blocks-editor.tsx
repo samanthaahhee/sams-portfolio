@@ -17,6 +17,7 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "landscape_portrait", label: "Landscape + portrait", slots: 2 },
   { value: "split", label: "Landscape 50/50", slots: 2 },
   { value: "portrait_trio", label: "Three portraits", slots: 3 },
+  { value: "native", label: "Original size / GIF", slots: 1 },
 ];
 
 const SLOTS: Record<BlockLayout, number> = {
@@ -25,6 +26,7 @@ const SLOTS: Record<BlockLayout, number> = {
   landscape_portrait: 2,
   split: 2,
   portrait_trio: 3,
+  native: 1,
 };
 
 function readImageDims(file: File): Promise<{ width: number; height: number }> {
@@ -434,6 +436,7 @@ export function BlocksEditor({
                             media={m}
                             index={fi}
                             total={frames.length}
+                            native={block.layout === "native"}
                             onMove={(fx, fy) => setCropLocal(block.id, slot, m.id, fx, fy)}
                             onCommit={(fx, fy) => saveCrop(m.id, fx, fy)}
                             onRemove={() => removeFrame(block.id, slot, m.id)}
@@ -490,13 +493,16 @@ function CropBox({
   media,
   index,
   total,
+  native = false,
   onMove,
   onCommit,
   onRemove,
 }: {
-  media: { id: number; url: string; focalX: number; focalY: number };
+  media: { id: number; url: string; focalX: number; focalY: number; width?: number | null; height?: number | null };
   index: number;
   total: number;
+  /** Native rows show the whole image, so there is no crop to set. */
+  native?: boolean;
   onMove: (fx: number, fy: number) => void;
   onCommit: (fx: number, fy: number) => void;
   onRemove: () => void;
@@ -518,19 +524,21 @@ function CropBox({
     <div className="space-y-1">
       <div
         ref={boxRef}
-        className="border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden relative cursor-crosshair select-none"
-        onPointerDown={(e) => {
+        className={`border border-[color:var(--rule)] rounded-sm overflow-hidden relative select-none ${
+          native ? "" : "aspect-[4/3] cursor-crosshair"
+        }`}
+        onPointerDown={native ? undefined : (e) => {
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           setDragging(true);
           const p = pointTo(e.clientX, e.clientY);
           if (p) onMove(p.fx, p.fy);
         }}
-        onPointerMove={(e) => {
+        onPointerMove={native ? undefined : (e) => {
           if (!dragging) return;
           const p = pointTo(e.clientX, e.clientY);
           if (p) onMove(p.fx, p.fy);
         }}
-        onPointerUp={() => {
+        onPointerUp={native ? undefined : () => {
           setDragging(false);
           onCommit(media.focalX, media.focalY);
         }}
@@ -540,23 +548,28 @@ function CropBox({
           src={media.url}
           alt=""
           draggable={false}
-          className="w-full h-full object-cover pointer-events-none"
-          style={{ objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%` }}
+          className={native ? "w-full h-auto block pointer-events-none" : "w-full h-full object-cover pointer-events-none"}
+          style={native ? undefined : { objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%` }}
         />
-        <span
-          aria-hidden
-          className="absolute w-5 h-5 rounded-full border-2 border-white pointer-events-none"
-          style={{
-            left: `${media.focalX * 100}%`,
-            top: `${media.focalY * 100}%`,
-            transform: "translate(-50%, -50%)",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.45)",
-          }}
-        />
+        {!native && (
+          <span
+            aria-hidden
+            className="absolute w-5 h-5 rounded-full border-2 border-white pointer-events-none"
+            style={{
+              left: `${media.focalX * 100}%`,
+              top: `${media.focalY * 100}%`,
+              transform: "translate(-50%, -50%)",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.45)",
+            }}
+          />
+        )}
       </div>
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[9px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
-          {total > 1 ? `Frame ${index + 1}` : "Drag to set crop"}
+          {/* The uploaded file's own pixel dimensions, so it is obvious
+              what is actually being served. */}
+          {media.width && media.height ? `${media.width} × ${media.height}` : "size unknown"}
+          {total > 1 ? ` · frame ${index + 1}` : native ? "" : " · drag to crop"}
         </span>
         <button
           type="button"

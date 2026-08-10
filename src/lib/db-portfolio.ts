@@ -622,7 +622,9 @@ export type BlockLayout =
   | "portrait_landscape"
   | "landscape_portrait"
   | "split"
-  | "portrait_trio";
+  | "portrait_trio"
+  /** One image at its own aspect ratio, uncropped. Animated GIFs play. */
+  | "native";
 
 export type PortfolioBlock =
   | {
@@ -864,12 +866,15 @@ export async function createBlockMedia(m: {
 }): Promise<{ id: number; frameIndex: number }> {
   /* Appends to the slot's sequence rather than assuming one image per
      slot — that is what makes a slot able to loop like a GIF. */
+  /* Record GIFs as such: a native row plays them as a real <img>, and
+     "type" is the only thing that says so. */
+  const type: MediaType = /\.gif(\?|$)/i.test(m.url) ? "gif" : "image";
   const { rows } = await sql<{ id: number; frame_index: number }>`
     INSERT INTO portfolio_media
       (project_id, surface, type, url, width, height, aspect_ratio, order_index,
        block_id, block_position, frame_index)
     VALUES
-      (${m.projectId}, 'project_page', 'image', ${m.url}, ${m.width}, ${m.height},
+      (${m.projectId}, 'project_page', ${type}, ${m.url}, ${m.width}, ${m.height},
        ${m.width && m.height ? `${m.width}:${m.height}` : null}, ${m.position},
        ${m.blockId}, ${m.position},
        COALESCE((SELECT MAX(frame_index) + 1 FROM portfolio_media

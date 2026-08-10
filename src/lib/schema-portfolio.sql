@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS portfolio_blocks (
   order_index INTEGER NOT NULL DEFAULT 0,
   kind        TEXT    NOT NULL CHECK (kind IN ('images', 'text')),
   -- image blocks: how the row is composed
-  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split', 'portrait_trio')),
+  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split', 'portrait_trio', 'native')),
   -- text blocks
   heading     TEXT,
   body        TEXT,
@@ -182,7 +182,7 @@ CREATE INDEX IF NOT EXISTS portfolio_media_block_idx
 ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
 ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
   CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait',
-                    'split', 'portrait_trio'));
+                    'split', 'portrait_trio', 'native'));
 
 -- Image slots can hold a SEQUENCE of frames that loops like a GIF, and
 -- each frame carries its own crop. frame_index orders the frames within

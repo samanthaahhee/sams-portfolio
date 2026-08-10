@@ -8,6 +8,7 @@ const LAYOUTS: BlockLayout[] = [
   "landscape_portrait",
   "split",
   "portrait_trio",
+  "native",
 ];
 
 function bust(slug?: string | null) {
