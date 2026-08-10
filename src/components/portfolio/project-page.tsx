@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import type { PortfolioBlock, PortfolioMedia, PortfolioProject } from "@/lib/db-portfolio";
 import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
-import { WorkTile } from "./work-tile";
+import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
 
 /* ── Project page ──────────────────────────────────────────────────────
@@ -231,7 +232,17 @@ const ROW_LAYOUTS: Record<string, { className: string; aspects: readonly string[
  *  an animated GIF's first frame, so anything animated would freeze.
  *  The trade-off is that this row does not bend through the viewport's
  *  bottom band the way the cropped rows do. */
-function NativeImage({ media }: { media?: PortfolioMedia }) {
+function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
+  const [i, setI] = useState(0);
+  /* A native slot can hold a sequence too, so an original-size row loops
+     the same way a cropped one does. */
+  useEffect(() => {
+    if (frames.length < 2) return;
+    const t = setInterval(() => setI((n) => (n + 1) % frames.length), FRAME_MS);
+    return () => clearInterval(t);
+  }, [frames.length]);
+
+  const media = frames[i % Math.max(frames.length, 1)];
   if (!media) {
     return <div style={{ aspectRatio: "2 / 1", background: "#e5e5e5", borderRadius: 4 }} />;
   }
@@ -252,7 +263,7 @@ function NativeImage({ media }: { media?: PortfolioMedia }) {
 
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
   if (block.layout === "native") {
-    return <NativeImage media={block.slots[0]?.[0]} />;
+    return <NativeImage frames={block.slots[0] ?? []} />;
   }
   const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
   return (
