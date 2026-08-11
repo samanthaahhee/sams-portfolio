@@ -28,6 +28,15 @@ export const ROW_LAYOUTS: Record<
     className: "grid grid-cols-1 sm:grid-cols-3",
     aspects: ["3 / 4", "3 / 4", "3 / 4"],
   },
+  portrait_portrait: {
+    className: "grid grid-cols-1 sm:grid-cols-2",
+    aspects: ["3 / 4", "3 / 4"],
+  },
+  /** Before and after, behind a draggable divider. Both halves must share
+   *  one frame or the wipe would reveal a differently-shaped picture. */
+  compare: { className: "grid grid-cols-1", aspects: ["4 / 3", "4 / 3"] },
+  /** Layered images that cycle. One slot holding however many layers. */
+  stack: { className: "grid grid-cols-1", aspects: ["4 / 3"] },
   /** Uncropped — sized by the file itself, so it has no fixed aspect. */
   native: { className: "grid grid-cols-1", aspects: ["auto"] },
 };

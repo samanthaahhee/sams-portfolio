@@ -9,6 +9,8 @@ import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
 import { ROW_LAYOUTS } from "@/lib/block-layouts";
+import { BeforeAfterSlider } from "@/components/before-after-slider";
+import { ImageStack } from "@/components/image-stack";
 
 /* ── Project page ──────────────────────────────────────────────────────
    One accent colour drives the wordmark, the headings and the meta
@@ -252,6 +254,26 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
   if (block.layout === "native") {
     return <NativeImage frames={block.slots[0] ?? []} />;
+  }
+
+  /* Before/after and the layered stack reuse the components the legacy
+     pages already used, so the interaction is the one that shipped
+     rather than a second implementation of it. */
+  if (block.layout === "compare") {
+    const before = block.slots[0]?.[0]?.url;
+    const after = block.slots[1]?.[0]?.url;
+    if (!before || !after) {
+      return <div style={{ aspectRatio: "4 / 3", background: "#e5e5e5", borderRadius: 4 }} />;
+    }
+    return <BeforeAfterSlider before={before} after={after} aspect="4 / 3" />;
+  }
+
+  if (block.layout === "stack") {
+    const images = (block.slots[0] ?? []).map((m) => m.url);
+    if (images.length === 0) {
+      return <div style={{ aspectRatio: "4 / 3", background: "#e5e5e5", borderRadius: 4 }} />;
+    }
+    return <ImageStack images={images} />;
   }
   const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
   return (

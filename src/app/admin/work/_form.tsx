@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PortfolioProject, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
+import type { PortfolioProject, PortfolioProjectInput, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { BlocksEditor } from "./_blocks-editor";
 import { PagePreview } from "./_page-preview";
 import { CoverField } from "./_cover-field";
@@ -56,7 +56,7 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  const [form, setForm] = useState<Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number }>(
+  const [form, setForm] = useState<PortfolioProjectInput>(
     project ?? {
       slug: "",
       accentColor: null,
@@ -153,12 +153,28 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
         </div>
 
         {project && (
-          <CoverField
-            projectId={project.id}
-            projectSlug={form.slug}
-            initialUrl={project.coverUrl}
-            library={library ?? []}
-          />
+          <>
+            <CoverField
+              projectId={project.id}
+              projectSlug={form.slug}
+              initialUrl={project.thumbUrl}
+              initialFocalX={project.thumbFocalX}
+              initialFocalY={project.thumbFocalY}
+              library={library ?? []}
+              endpoint="/api/admin/work/thumbnail"
+              label="Homepage thumbnail"
+              hint="Drag on the image to set its crop. Leave empty to use the hero image."
+              croppable
+              clearable
+            />
+            <CoverField
+              projectId={project.id}
+              projectSlug={form.slug}
+              initialUrl={project.coverUrl}
+              library={library ?? []}
+              label="Hero image (top of the project page)"
+            />
+          </>
         )}
 
         <Field label="Slug (URL path — /work/…)">

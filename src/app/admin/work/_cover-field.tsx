@@ -1,42 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LibraryImage } from "@/lib/db-portfolio";
 import { LibraryPicker } from "./_library-picker";
 
-/** The project's cover image — the homepage thumbnail and the hero at the
- *  top of its own page, which are the same picture.
+/** One image field — the hero cover, or the homepage thumbnail with its
+ *  own crop. Both write a media row rather than a project column, so
+ *  both save on their own rather than waiting for the form's Save.
  *
- *  Saves on its own rather than waiting for the form's Save button: it
- *  writes a media row, not a project column, so it has nothing to do with
- *  the surrounding form submit. */
+ *  The thumbnail variant carries a focal point, previewed in a 4:3 box
+ *  because that is exactly the frame the homepage tile crops to. */
 export function CoverField({
   projectId,
   projectSlug,
   initialUrl,
   library,
+  endpoint = "/api/admin/work/cover",
+  label = "Cover image (hero at the top of the project page)",
+  hint,
+  croppable = false,
+  initialFocalX = 0.5,
+  initialFocalY = 0.5,
+  clearable = false,
 }: {
   projectId: number;
   projectSlug: string;
   initialUrl: string | null;
   library: LibraryImage[];
+  endpoint?: string;
+  label?: string;
+  hint?: string;
+  croppable?: boolean;
+  initialFocalX?: number;
+  initialFocalY?: number;
+  clearable?: boolean;
 }) {
   const router = useRouter();
   const [url, setUrl] = useState(initialUrl);
+  const [focal, setFocal] = useState({ x: initialFocalX, y: initialFocalY });
+  const [dragging, setDragging] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
   const [picking, setPicking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
 
-  async function save(nextUrl: string, width: number | null, height: number | null) {
+  async function save(nextUrl: string | null, width: number | null, height: number | null) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/work/cover", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectId, projectSlug, url: nextUrl, width, height }),
+        body: JSON.stringify({
+          projectId,
+          projectSlug,
+          url: nextUrl,
+          width,
+          height,
+          focalX: focal.x,
+          focalY: focal.y,
+        }),
       });
       if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? "Save failed");
       setUrl(nextUrl);
@@ -49,6 +74,27 @@ export function CoverField({
       setBusy(false);
     }
   }
+
+  async function saveCrop(x: number, y: number) {
+    if (!url) return;
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, projectSlug, url, focalX: x, focalY: y }),
+    });
+    setSavedAt(new Date());
+    router.refresh();
+  }
+
+  const pointTo = (clientX: number, clientY: number) => {
+    const el = boxRef.current;
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (clientX - r.left) / r.width)),
+      y: Math.max(0, Math.min(1, (clientY - r.top) / r.height)),
+    };
+  };
 
   async function upload(file: File) {
     setBusy(true);
@@ -81,9 +127,8 @@ export function CoverField({
 
   return (
     <div className="space-y-2">
-      <span className="font-mono text-[color:var(--meta)] block">
-        Cover image (homepage thumbnail + hero)
-      </span>
+      <span className="font-mono text-[color:var(--meta)] block">{label}</span>
+      {hint && <p className="font-mono text-[10px] text-[color:var(--meta)]">{hint}</p>}
 
       {picking && (
         <LibraryPicker
@@ -95,10 +140,62 @@ export function CoverField({
       )}
 
       <div className="flex items-start gap-4 flex-wrap">
-        <div className="border border-[color:var(--rule)] rounded-sm overflow-hidden w-48 aspect-[4/3] grid place-items-center shrink-0">
+        <div
+          ref={boxRef}
+          className={`border border-[color:var(--rule)] rounded-sm overflow-hidden w-48 aspect-[4/3] grid place-items-center shrink-0 relative ${
+            croppable && url ? "cursor-crosshair select-none" : ""
+          }`}
+          onPointerDown={
+            croppable && url
+              ? (e) => {
+                  (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+                  setDragging(true);
+                  const pt = pointTo(e.clientX, e.clientY);
+                  if (pt) setFocal(pt);
+                }
+              : undefined
+          }
+          onPointerMove={
+            croppable && url
+              ? (e) => {
+                  if (!dragging) return;
+                  const pt = pointTo(e.clientX, e.clientY);
+                  if (pt) setFocal(pt);
+                }
+              : undefined
+          }
+          onPointerUp={
+            croppable && url
+              ? () => {
+                  setDragging(false);
+                  saveCrop(focal.x, focal.y);
+                }
+              : undefined
+          }
+        >
           {url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={url} alt="" className="w-full h-full object-cover" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt=""
+                draggable={false}
+                className="w-full h-full object-cover pointer-events-none"
+                style={croppable ? { objectPosition: `${focal.x * 100}% ${focal.y * 100}%` } : undefined}
+              />
+              {croppable && (
+                <span
+                  aria-hidden
+                  className="absolute w-5 h-5 rounded-full border-2 border-white pointer-events-none"
+                  style={{
+                    left: `${focal.x * 100}%`,
+                    top: `${focal.y * 100}%`,
+                    transform: "translate(-50%, -50%)",
+                    boxShadow: "0 0 0 1px rgba(0,0,0,0.45)",
+                  }}
+                />
+              )}
+            </>
           ) : (
             <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
               None
@@ -128,11 +225,22 @@ export function CoverField({
               }}
             />
           </label>
+          {clearable && url && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setUrl(null);
+                save(null, null, null);
+              }}
+              className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] text-[color:var(--meta)] disabled:opacity-40"
+            >
+              Clear
+            </button>
+          )}
           {busy && <span className="font-mono text-[10px] text-[color:var(--meta)]">Saving…</span>}
           {savedAt && !busy && (
-            <span className="font-mono text-[10px] text-[color:var(--meta)]">
-              ✓ Saved — shown on the homepage
-            </span>
+            <span className="font-mono text-[10px] text-[color:var(--meta)]">✓ Saved</span>
           )}
         </div>
       </div>

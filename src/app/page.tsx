@@ -21,7 +21,11 @@ export default async function Home() {
     slug: p.slug,
     client: p.client,
     title: p.title,
-    src: p.coverUrl ?? undefined,
+    /* The tile prefers its own thumbnail, cropped how the admin set it,
+       and only falls back to the hero cover when none is chosen. */
+    src: p.thumbUrl ?? p.coverUrl ?? undefined,
+    focalX: p.thumbUrl ? p.thumbFocalX : 0.5,
+    focalY: p.thumbUrl ? p.thumbFocalY : 0.5,
   }));
 
   return (

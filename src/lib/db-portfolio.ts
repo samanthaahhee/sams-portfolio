@@ -9,7 +9,7 @@ export type MediaType = "image" | "gif" | "mp4";
 export type PortfolioMedia = {
   id: number;
   projectId: number | null;
-  surface: "homepage" | "work_grid" | "thinking" | "carousel" | "project_page";
+  surface: "homepage" | "work_grid" | "thinking" | "carousel" | "project_page" | "thumbnail";
   slotId: string | null;
   type: MediaType;
   url: string;
@@ -106,6 +106,11 @@ export type PortfolioProject = {
   workGridTemplate: string | null;
   coverUrl: string | null;
   coverType: MediaType | null;
+  /** The homepage tile's own image + crop, independent of the hero.
+   *  Null means the tile falls back to the cover. */
+  thumbUrl: string | null;
+  thumbFocalX: number;
+  thumbFocalY: number;
   deliverables: string[];
   creativeTeam: string[];
   /** Drives every piece of type on this project's page — wordmark,
@@ -114,6 +119,13 @@ export type PortfolioProject = {
   overviewHeading: string | null;
   overviewBody: string | null;
 };
+
+/** The project's own columns — cover and thumbnail are joined from media
+ *  rows, so they are read-only on the project and never written here. */
+export type PortfolioProjectInput = Omit<
+  PortfolioProject,
+  "id" | "coverUrl" | "coverType" | "thumbUrl" | "thumbFocalX" | "thumbFocalY"
+> & { id?: number };
 
 type ProjectRow = {
   id: number;
@@ -128,6 +140,9 @@ type ProjectRow = {
   work_grid_template: string | null;
   cover_url: string | null;
   cover_type: string | null;
+  thumb_url?: string | null;
+  thumb_focal_x?: number | null;
+  thumb_focal_y?: number | null;
   deliverables: string[] | string;
   creative_team: string[] | string;
   accent_color: string | null;
@@ -154,6 +169,9 @@ function projectFromRow(r: ProjectRow): PortfolioProject {
     workGridTemplate: r.work_grid_template,
     coverUrl: r.cover_url,
     coverType: r.cover_type as MediaType | null,
+    thumbUrl: r.thumb_url ?? null,
+    thumbFocalX: r.thumb_focal_x ?? 0.5,
+    thumbFocalY: r.thumb_focal_y ?? 0.5,
     deliverables: parseJsonArray(r.deliverables ?? []),
     creativeTeam: parseJsonArray(r.creative_team ?? []),
     accentColor: r.accent_color ?? null,
@@ -169,7 +187,10 @@ export async function getPortfolioProjects(): Promise<PortfolioProject[]> {
     const { rows } = await sql<ProjectRow>`
       SELECT p.*,
              m.url  AS cover_url,
-             m.type AS cover_type
+             m.type AS cover_type,
+             t.url  AS thumb_url,
+             t.focal_x AS thumb_focal_x,
+             t.focal_y AS thumb_focal_y
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
         SELECT url, type FROM portfolio_media
@@ -177,6 +198,12 @@ export async function getPortfolioProjects(): Promise<PortfolioProject[]> {
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
+      LEFT JOIN LATERAL (
+        SELECT url, focal_x, focal_y FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'thumbnail'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) t ON true
       WHERE  p.visible = true
       ORDER  BY p.order_index ASC, p.id ASC
     `;
@@ -191,7 +218,10 @@ export async function getPortfolioProjectBySlug(slug: string): Promise<Portfolio
     const { rows } = await sql<ProjectRow>`
       SELECT p.*,
              m.url  AS cover_url,
-             m.type AS cover_type
+             m.type AS cover_type,
+             t.url  AS thumb_url,
+             t.focal_x AS thumb_focal_x,
+             t.focal_y AS thumb_focal_y
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
         SELECT url, type FROM portfolio_media
@@ -199,6 +229,12 @@ export async function getPortfolioProjectBySlug(slug: string): Promise<Portfolio
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
+      LEFT JOIN LATERAL (
+        SELECT url, focal_x, focal_y FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'thumbnail'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) t ON true
       WHERE  p.slug = ${slug}
       LIMIT  1
     `;
@@ -213,7 +249,10 @@ export async function getPortfolioProjectById(id: number): Promise<PortfolioProj
     const { rows } = await sql<ProjectRow>`
       SELECT p.*,
              m.url  AS cover_url,
-             m.type AS cover_type
+             m.type AS cover_type,
+             t.url  AS thumb_url,
+             t.focal_x AS thumb_focal_x,
+             t.focal_y AS thumb_focal_y
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
         SELECT url, type FROM portfolio_media
@@ -221,6 +260,12 @@ export async function getPortfolioProjectById(id: number): Promise<PortfolioProj
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
+      LEFT JOIN LATERAL (
+        SELECT url, focal_x, focal_y FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'thumbnail'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) t ON true
       WHERE  p.id = ${id}
       LIMIT  1
     `;
@@ -236,7 +281,10 @@ export async function getAllPortfolioProjects(): Promise<PortfolioProject[]> {
     const { rows } = await sql<ProjectRow>`
       SELECT p.*,
              m.url  AS cover_url,
-             m.type AS cover_type
+             m.type AS cover_type,
+             t.url  AS thumb_url,
+             t.focal_x AS thumb_focal_x,
+             t.focal_y AS thumb_focal_y
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
         SELECT url, type FROM portfolio_media
@@ -244,6 +292,12 @@ export async function getAllPortfolioProjects(): Promise<PortfolioProject[]> {
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
+      LEFT JOIN LATERAL (
+        SELECT url, focal_x, focal_y FROM portfolio_media
+        WHERE  project_id = p.id AND surface = 'thumbnail'
+        ORDER  BY order_index ASC, id ASC
+        LIMIT  1
+      ) t ON true
       ORDER  BY p.order_index ASC, p.id ASC
     `;
     return rows.map(projectFromRow);
@@ -269,9 +323,7 @@ export async function getProjectMedia(
   }
 }
 
-export async function upsertPortfolioProject(
-  p: Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & { id?: number },
-): Promise<number> {
+export async function upsertPortfolioProject(p: PortfolioProjectInput): Promise<number> {
   const deliverables = JSON.stringify(p.deliverables ?? []);
   const creativeTeam = JSON.stringify(p.creativeTeam ?? []);
   if (p.id) {
@@ -623,6 +675,11 @@ export type BlockLayout =
   | "landscape_portrait"
   | "split"
   | "portrait_trio"
+  | "portrait_portrait"
+  /** Two images behind a draggable before/after divider. */
+  | "compare"
+  /** Layered images that cycle, as on the legacy BOS page. */
+  | "stack"
   /** One image at its own aspect ratio, uncropped. Animated GIFs play. */
   | "native";
 
@@ -898,6 +955,24 @@ export async function setProjectCover(
   await sql`
     INSERT INTO portfolio_media (project_id, surface, type, url, width, height, order_index)
     VALUES (${projectId}, 'carousel', ${type}, ${url}, ${width}, ${height}, 0)
+  `;
+}
+
+/** Set the homepage thumbnail and its crop. Passing a null url clears it,
+ *  so the tile goes back to using the cover. */
+export async function setProjectThumbnail(
+  projectId: number,
+  url: string | null,
+  focalX = 0.5,
+  focalY = 0.5,
+) {
+  const clamp = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0.5));
+  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = 'thumbnail'`;
+  if (!url) return;
+  const type: MediaType = /\.gif(\?|$)/i.test(url) ? "gif" : "image";
+  await sql`
+    INSERT INTO portfolio_media (project_id, surface, type, url, order_index, focal_x, focal_y)
+    VALUES (${projectId}, 'thumbnail', ${type}, ${url}, 0, ${clamp(focalX)}, ${clamp(focalY)})
   `;
 }
 

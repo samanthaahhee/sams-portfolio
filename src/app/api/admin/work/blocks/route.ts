@@ -8,6 +8,9 @@ const LAYOUTS: BlockLayout[] = [
   "landscape_portrait",
   "split",
   "portrait_trio",
+  "portrait_portrait",
+  "compare",
+  "stack",
   "native",
 ];
 

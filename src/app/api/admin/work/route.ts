@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import {
   upsertPortfolioProject,
   deletePortfolioProject,
-  type PortfolioProject,
+  type PortfolioProjectInput,
 } from "@/lib/db-portfolio";
 
 function revalidateWorkSurfaces(slug?: string) {
@@ -12,7 +12,7 @@ function revalidateWorkSurfaces(slug?: string) {
   revalidatePath("/admin/work");
 }
 
-type Body = Omit<PortfolioProject, "id" | "coverUrl" | "coverType"> & {
+type Body = PortfolioProjectInput & {
   id?: number;
   _mode: "create" | "edit";
 };
