@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PortfolioProject, PortfolioProjectInput, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { BlocksEditor } from "./_blocks-editor";
-import { PagePreview } from "./_page-preview";
 import { CoverField } from "./_cover-field";
 
 type Props = {
@@ -286,15 +285,13 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
           Save the project first, then compose the page from image rows and paragraphs.
         </p>
       ) : (
-        <>
-          <BlocksEditor
-            projectId={project.id}
-            projectSlug={form.slug}
-            initialBlocks={blocks ?? []}
-            library={library ?? []}
-          />
-          <PagePreview slug={project.slug} />
-        </>
+        <BlocksEditor
+          projectId={project.id}
+          projectSlug={form.slug}
+          initialBlocks={blocks ?? []}
+          library={library ?? []}
+          accent={form.accentColor || "#FF2E31"}
+        />
       )}
     </div>
   );

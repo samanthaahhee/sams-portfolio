@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { slotAspect, slotCount } from "@/lib/block-layouts";
 import { LibraryPicker } from "./_library-picker";
+import { LayoutPreview } from "./_layout-preview";
 
 /* ── Project-page block editor ─────────────────────────────────────────
    The project page body is an ordered stream, so paragraphs can be
@@ -55,6 +56,7 @@ export function BlocksEditor({
   projectSlug,
   initialBlocks,
   library,
+  accent,
 }: {
   projectId: number;
   projectSlug: string;
@@ -62,6 +64,8 @@ export function BlocksEditor({
   /** Everything already uploaded, so an existing asset can be reused
    *  rather than uploaded again. */
   library: LibraryImage[];
+  /** Only for the preview, so its headings match the real page. */
+  accent: string;
 }) {
   /** Which slot the library picker is currently filling. */
   const [picking, setPicking] = useState<{ blockId: number; slot: number } | null>(null);
@@ -447,6 +451,9 @@ export function BlocksEditor({
           </li>
         ))}
       </ol>
+
+      {/* Driven by this component's own state, so it is never stale */}
+      <LayoutPreview blocks={blocks} accent={accent} />
     </section>
   );
 }
