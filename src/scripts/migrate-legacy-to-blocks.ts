@@ -8,7 +8,8 @@
  *
  * Mapping, by how many images a legacy visual holds:
  *   1  -> native        (original size, uncropped; animated GIFs play)
- *   2  -> split         (landscape 50/50)
+ *   2  -> split         (landscape 50/50), or compare for a before/after
+ *                       pair, which is a slider rather than two images
  *   3  -> portrait_trio (three across)
  *   4+ -> one native block each, so nothing is hidden
  * 'video' entries are skipped — the block stream has no video row.
@@ -35,7 +36,10 @@ function blocksFromVisuals(visuals: Visual[]): PlannedBlock[] {
     if (e.kind === "video") continue;
     const urls = urlsOf(e);
     if (urls.length === 0) continue;
-    if (urls.length === 1) out.push({ layout: "native", urls });
+    /* A legacy 'compare' is a before/after slider, not two images sitting
+       side by side — it has its own layout, so keep it. */
+    if (e.kind === "compare" && urls.length === 2) out.push({ layout: "compare", urls });
+    else if (urls.length === 1) out.push({ layout: "native", urls });
     else if (urls.length === 2) out.push({ layout: "split", urls });
     else if (urls.length === 3) out.push({ layout: "portrait_trio", urls });
     else for (const u of urls) out.push({ layout: "native", urls: [u] });
