@@ -199,6 +199,7 @@ export type HomeTile = {
   src?: string;
   focalX?: number;
   focalY?: number;
+  zoom?: number;
 };
 
 export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
@@ -222,7 +223,7 @@ export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
         <WorkTile
           key={t.slug}
           aspect="4 / 3"
-          frames={t.src ? [{ url: t.src, focalX: t.focalX, focalY: t.focalY }] : []}
+          frames={t.src ? [{ url: t.src, focalX: t.focalX, focalY: t.focalY, zoom: t.zoom }] : []}
           title={t.client}
           tags={t.title ? [t.title] : []}
           href={`/work/${t.slug}`}

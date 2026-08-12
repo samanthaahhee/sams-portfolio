@@ -22,6 +22,8 @@ export function CoverField({
   croppable = false,
   initialFocalX = 0.5,
   initialFocalY = 0.5,
+  initialZoom = 1,
+  aspect = "4 / 3",
   clearable = false,
 }: {
   projectId: number;
@@ -34,11 +36,15 @@ export function CoverField({
   croppable?: boolean;
   initialFocalX?: number;
   initialFocalY?: number;
+  initialZoom?: number;
+  /** The frame this image is cropped to on the page. */
+  aspect?: string;
   clearable?: boolean;
 }) {
   const router = useRouter();
   const [url, setUrl] = useState(initialUrl);
   const [focal, setFocal] = useState({ x: initialFocalX, y: initialFocalY });
+  const [zoom, setZoom] = useState(initialZoom);
   const [dragging, setDragging] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const [picking, setPicking] = useState(false);
@@ -61,6 +67,7 @@ export function CoverField({
           height,
           focalX: focal.x,
           focalY: focal.y,
+          zoom,
         }),
       });
       if (!res.ok) throw new Error(((await res.json()) as { error?: string }).error ?? "Save failed");
@@ -75,12 +82,12 @@ export function CoverField({
     }
   }
 
-  async function saveCrop(x: number, y: number) {
+  async function saveCrop(x: number, y: number, z: number) {
     if (!url) return;
     await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId, projectSlug, url, focalX: x, focalY: y }),
+      body: JSON.stringify({ projectId, projectSlug, url, focalX: x, focalY: y, zoom: z }),
     });
     setSavedAt(new Date());
     router.refresh();
@@ -142,9 +149,10 @@ export function CoverField({
       <div className="flex items-start gap-4 flex-wrap">
         <div
           ref={boxRef}
-          className={`border border-[color:var(--rule)] rounded-sm overflow-hidden w-48 aspect-[4/3] grid place-items-center shrink-0 relative ${
+          className={`border border-[color:var(--rule)] rounded-sm overflow-hidden w-48 grid place-items-center shrink-0 relative ${
             croppable && url ? "cursor-crosshair select-none" : ""
           }`}
+          style={{ aspectRatio: aspect }}
           onPointerDown={
             croppable && url
               ? (e) => {
@@ -168,7 +176,7 @@ export function CoverField({
             croppable && url
               ? () => {
                   setDragging(false);
-                  saveCrop(focal.x, focal.y);
+                  saveCrop(focal.x, focal.y, zoom);
                 }
               : undefined
           }
@@ -181,7 +189,15 @@ export function CoverField({
                 alt=""
                 draggable={false}
                 className="w-full h-full object-cover pointer-events-none"
-                style={croppable ? { objectPosition: `${focal.x * 100}% ${focal.y * 100}%` } : undefined}
+                style={
+                  croppable
+                    ? {
+                        objectPosition: `${focal.x * 100}% ${focal.y * 100}%`,
+                        transform: zoom > 1 ? `scale(${zoom})` : undefined,
+                        transformOrigin: `${focal.x * 100}% ${focal.y * 100}%`,
+                      }
+                    : undefined
+                }
               />
               {croppable && (
                 <span
@@ -204,6 +220,24 @@ export function CoverField({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {croppable && url && (
+            <label className="flex items-center gap-2 w-full">
+              <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
+                Zoom {zoom.toFixed(1)}x
+              </span>
+              <input
+                type="range"
+                min={1}
+                max={4}
+                step={0.1}
+                value={zoom}
+                onChange={(e) => setZoom(Number(e.target.value))}
+                onPointerUp={() => saveCrop(focal.x, focal.y, zoom)}
+                onKeyUp={() => saveCrop(focal.x, focal.y, zoom)}
+                className="flex-1 max-w-[160px]"
+              />
+            </label>
+          )}
           <button
             type="button"
             disabled={busy || library.length === 0}

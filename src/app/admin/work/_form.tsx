@@ -162,7 +162,9 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               library={library ?? []}
               endpoint="/api/admin/work/thumbnail"
               label="Homepage thumbnail"
-              hint="Drag on the image to set its crop. Leave empty to use the hero image."
+              hint="Drag to set the crop, slide to zoom. Leave empty to use the hero image."
+              initialZoom={project.thumbZoom}
+              aspect="4 / 3"
               croppable
               clearable
             />
@@ -170,8 +172,14 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               projectId={project.id}
               projectSlug={form.slug}
               initialUrl={project.coverUrl}
+              initialFocalX={project.coverFocalX}
+              initialFocalY={project.coverFocalY}
+              initialZoom={project.coverZoom}
               library={library ?? []}
               label="Hero image (top of the project page)"
+              hint="Drag to set the crop, slide to zoom. Cropped to 2:1 on the page."
+              aspect="2 / 1"
+              croppable
             />
           </>
         )}

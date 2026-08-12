@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     frameIndex: body.frameIndex ?? 0,
     focalX: body.focalX ?? 0.5,
     focalY: body.focalY ?? 0.5,
+    zoom: body.zoom ?? 1,
   });
 
   revalidatePath("/work");

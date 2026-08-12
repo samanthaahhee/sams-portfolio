@@ -189,6 +189,7 @@ export function BlocksEditor({
           frameIndex: json.frameIndex ?? 0,
           focalX: 0.5,
           focalY: 0.5,
+          zoom: 1,
         });
         return { ...b, slots };
       }),
@@ -216,24 +217,24 @@ export function BlocksEditor({
 
   /** Crop is a focal point: which part of the image survives the cover
    *  crop. Saved on release, not on every pointer move. */
-  function setCropLocal(blockId: number, position: number, mediaId: number, fx: number, fy: number) {
+  function setCropLocal(blockId: number, position: number, mediaId: number, fx: number, fy: number, z?: number) {
     setBlocks((prev) =>
       prev.map((b) => {
         if (b.id !== blockId || b.kind !== "images") return b;
         const slots = b.slots.map((f) => [...(f ?? [])]);
         slots[position] = (slots[position] ?? []).map((m) =>
-          m.id === mediaId ? { ...m, focalX: fx, focalY: fy } : m,
+          m.id === mediaId ? { ...m, focalX: fx, focalY: fy, zoom: z ?? m.zoom } : m,
         );
         return { ...b, slots };
       }),
     );
   }
 
-  async function saveCrop(mediaId: number, fx: number, fy: number) {
+  async function saveCrop(mediaId: number, fx: number, fy: number, z: number) {
     const res = await fetch("/api/admin/work/blocks/media", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: mediaId, focalX: fx, focalY: fy, projectSlug }),
+      body: JSON.stringify({ id: mediaId, focalX: fx, focalY: fy, zoom: z, projectSlug }),
     });
     if (!res.ok) setError("Could not save crop");
   }
@@ -406,8 +407,8 @@ export function BlocksEditor({
                             index={fi}
                             total={frames.length}
                             aspect={aspect}
-                            onMove={(fx, fy) => setCropLocal(block.id, slot, m.id, fx, fy)}
-                            onCommit={(fx, fy) => saveCrop(m.id, fx, fy)}
+                            onMove={(fx, fy, z) => setCropLocal(block.id, slot, m.id, fx, fy, z)}
+                            onCommit={(fx, fy, z) => saveCrop(m.id, fx, fy, z)}
                             onRemove={() => removeFrame(block.id, slot, m.id)}
                           />
                         ))}
@@ -470,14 +471,14 @@ function CropBox({
   onCommit,
   onRemove,
 }: {
-  media: { id: number; url: string; focalX: number; focalY: number; width?: number | null; height?: number | null };
+  media: { id: number; url: string; focalX: number; focalY: number; zoom: number; width?: number | null; height?: number | null };
   index: number;
   total: number;
   /** The frame this slot is cropped to, or null when it is not cropped
    *  (a native row shows the whole image, so there is nothing to set). */
   aspect: string | null;
-  onMove: (fx: number, fy: number) => void;
-  onCommit: (fx: number, fy: number) => void;
+  onMove: (fx: number, fy: number, zoom: number) => void;
+  onCommit: (fx: number, fy: number, zoom: number) => void;
   onRemove: () => void;
 }) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -506,16 +507,16 @@ function CropBox({
           (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
           setDragging(true);
           const p = pointTo(e.clientX, e.clientY);
-          if (p) onMove(p.fx, p.fy);
+          if (p) onMove(p.fx, p.fy, media.zoom);
         }}
         onPointerMove={native ? undefined : (e) => {
           if (!dragging) return;
           const p = pointTo(e.clientX, e.clientY);
-          if (p) onMove(p.fx, p.fy);
+          if (p) onMove(p.fx, p.fy, media.zoom);
         }}
         onPointerUp={native ? undefined : () => {
           setDragging(false);
-          onCommit(media.focalX, media.focalY);
+          onCommit(media.focalX, media.focalY, media.zoom);
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -524,7 +525,15 @@ function CropBox({
           alt=""
           draggable={false}
           className={native ? "w-full h-auto block pointer-events-none" : "w-full h-full object-cover pointer-events-none"}
-          style={native ? undefined : { objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%` }}
+          style={
+            native
+              ? undefined
+              : {
+                  objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%`,
+                  transform: media.zoom > 1 ? `scale(${media.zoom})` : undefined,
+                  transformOrigin: `${media.focalX * 100}% ${media.focalY * 100}%`,
+                }
+          }
         />
         {!native && (
           <span
@@ -539,6 +548,24 @@ function CropBox({
           />
         )}
       </div>
+      {!native && (
+        <label className="flex items-center gap-2">
+          <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
+            Zoom {media.zoom.toFixed(1)}x
+          </span>
+          <input
+            type="range"
+            min={1}
+            max={4}
+            step={0.1}
+            value={media.zoom}
+            onChange={(e) => onMove(media.focalX, media.focalY, Number(e.target.value))}
+            onPointerUp={() => onCommit(media.focalX, media.focalY, media.zoom)}
+            onKeyUp={() => onCommit(media.focalX, media.focalY, media.zoom)}
+            className="flex-1"
+          />
+        </label>
+      )}
       <div className="flex items-center justify-between gap-2">
         <span className="font-mono text-[9px] text-[color:var(--meta)] uppercase tracking-[0.14em]">
           {/* The uploaded file's own pixel dimensions, so it is obvious

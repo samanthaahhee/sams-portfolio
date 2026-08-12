@@ -24,8 +24,9 @@ export default async function Home() {
     /* The tile prefers its own thumbnail, cropped how the admin set it,
        and only falls back to the hero cover when none is chosen. */
     src: p.thumbUrl ?? p.coverUrl ?? undefined,
-    focalX: p.thumbUrl ? p.thumbFocalX : 0.5,
-    focalY: p.thumbUrl ? p.thumbFocalY : 0.5,
+    focalX: p.thumbUrl ? p.thumbFocalX : p.coverFocalX,
+    focalY: p.thumbUrl ? p.thumbFocalY : p.coverFocalY,
+    zoom: p.thumbUrl ? p.thumbZoom : p.coverZoom,
   }));
 
   return (

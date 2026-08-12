@@ -29,6 +29,8 @@ export type PortfolioMedia = {
   /** 0..1 point of the source kept centred when cover-cropping. */
   focalX: number;
   focalY: number;
+  /** 1 = plain cover crop; higher magnifies, taking a smaller window. */
+  zoom: number;
 };
 
 type MediaRow = {
@@ -49,6 +51,7 @@ type MediaRow = {
   frame_index?: number;
   focal_x?: number;
   focal_y?: number;
+  zoom?: number;
 };
 
 function mediaFromRow(r: MediaRow): PortfolioMedia {
@@ -70,6 +73,7 @@ function mediaFromRow(r: MediaRow): PortfolioMedia {
     frameIndex: r.frame_index ?? 0,
     focalX: r.focal_x ?? 0.5,
     focalY: r.focal_y ?? 0.5,
+    zoom: r.zoom ?? 1,
   };
 }
 
@@ -111,6 +115,10 @@ export type PortfolioProject = {
   thumbUrl: string | null;
   thumbFocalX: number;
   thumbFocalY: number;
+  thumbZoom: number;
+  coverFocalX: number;
+  coverFocalY: number;
+  coverZoom: number;
   deliverables: string[];
   creativeTeam: string[];
   /** Drives every piece of type on this project's page — wordmark,
@@ -124,7 +132,9 @@ export type PortfolioProject = {
  *  rows, so they are read-only on the project and never written here. */
 export type PortfolioProjectInput = Omit<
   PortfolioProject,
-  "id" | "coverUrl" | "coverType" | "thumbUrl" | "thumbFocalX" | "thumbFocalY"
+  | "id" | "coverUrl" | "coverType"
+  | "thumbUrl" | "thumbFocalX" | "thumbFocalY" | "thumbZoom"
+  | "coverFocalX" | "coverFocalY" | "coverZoom"
 > & { id?: number };
 
 type ProjectRow = {
@@ -143,6 +153,10 @@ type ProjectRow = {
   thumb_url?: string | null;
   thumb_focal_x?: number | null;
   thumb_focal_y?: number | null;
+  thumb_zoom?: number | null;
+  cover_focal_x?: number | null;
+  cover_focal_y?: number | null;
+  cover_zoom?: number | null;
   deliverables: string[] | string;
   creative_team: string[] | string;
   accent_color: string | null;
@@ -172,6 +186,10 @@ function projectFromRow(r: ProjectRow): PortfolioProject {
     thumbUrl: r.thumb_url ?? null,
     thumbFocalX: r.thumb_focal_x ?? 0.5,
     thumbFocalY: r.thumb_focal_y ?? 0.5,
+    thumbZoom: r.thumb_zoom ?? 1,
+    coverFocalX: r.cover_focal_x ?? 0.5,
+    coverFocalY: r.cover_focal_y ?? 0.5,
+    coverZoom: r.cover_zoom ?? 1,
     deliverables: parseJsonArray(r.deliverables ?? []),
     creativeTeam: parseJsonArray(r.creative_team ?? []),
     accentColor: r.accent_color ?? null,
@@ -190,16 +208,20 @@ export async function getPortfolioProjects(): Promise<PortfolioProject[]> {
              m.type AS cover_type,
              t.url  AS thumb_url,
              t.focal_x AS thumb_focal_x,
-             t.focal_y AS thumb_focal_y
+             t.focal_y AS thumb_focal_y,
+             t.zoom AS thumb_zoom,
+             m.focal_x AS cover_focal_x,
+             m.focal_y AS cover_focal_y,
+             m.zoom AS cover_zoom
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
-        SELECT url, type FROM portfolio_media
+        SELECT url, type, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'carousel'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
       LEFT JOIN LATERAL (
-        SELECT url, focal_x, focal_y FROM portfolio_media
+        SELECT url, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'thumbnail'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
@@ -221,16 +243,20 @@ export async function getPortfolioProjectBySlug(slug: string): Promise<Portfolio
              m.type AS cover_type,
              t.url  AS thumb_url,
              t.focal_x AS thumb_focal_x,
-             t.focal_y AS thumb_focal_y
+             t.focal_y AS thumb_focal_y,
+             t.zoom AS thumb_zoom,
+             m.focal_x AS cover_focal_x,
+             m.focal_y AS cover_focal_y,
+             m.zoom AS cover_zoom
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
-        SELECT url, type FROM portfolio_media
+        SELECT url, type, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'carousel'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
       LEFT JOIN LATERAL (
-        SELECT url, focal_x, focal_y FROM portfolio_media
+        SELECT url, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'thumbnail'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
@@ -252,16 +278,20 @@ export async function getPortfolioProjectById(id: number): Promise<PortfolioProj
              m.type AS cover_type,
              t.url  AS thumb_url,
              t.focal_x AS thumb_focal_x,
-             t.focal_y AS thumb_focal_y
+             t.focal_y AS thumb_focal_y,
+             t.zoom AS thumb_zoom,
+             m.focal_x AS cover_focal_x,
+             m.focal_y AS cover_focal_y,
+             m.zoom AS cover_zoom
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
-        SELECT url, type FROM portfolio_media
+        SELECT url, type, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'carousel'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
       LEFT JOIN LATERAL (
-        SELECT url, focal_x, focal_y FROM portfolio_media
+        SELECT url, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'thumbnail'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
@@ -284,16 +314,20 @@ export async function getAllPortfolioProjects(): Promise<PortfolioProject[]> {
              m.type AS cover_type,
              t.url  AS thumb_url,
              t.focal_x AS thumb_focal_x,
-             t.focal_y AS thumb_focal_y
+             t.focal_y AS thumb_focal_y,
+             t.zoom AS thumb_zoom,
+             m.focal_x AS cover_focal_x,
+             m.focal_y AS cover_focal_y,
+             m.zoom AS cover_zoom
       FROM   portfolio_projects p
       LEFT JOIN LATERAL (
-        SELECT url, type FROM portfolio_media
+        SELECT url, type, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'carousel'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
       ) m ON true
       LEFT JOIN LATERAL (
-        SELECT url, focal_x, focal_y FROM portfolio_media
+        SELECT url, focal_x, focal_y, zoom FROM portfolio_media
         WHERE  project_id = p.id AND surface = 'thumbnail'
         ORDER  BY order_index ASC, id ASC
         LIMIT  1
@@ -946,16 +980,14 @@ export async function createBlockMedia(m: {
  *  is where getPortfolioProjects joins the cover from. */
 export async function setProjectCover(
   projectId: number,
-  url: string,
+  url: string | null,
   width: number | null,
   height: number | null,
+  focalX = 0.5,
+  focalY = 0.5,
+  zoom = 1,
 ) {
-  const type: MediaType = /\.gif(\?|$)/i.test(url) ? "gif" : "image";
-  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = 'carousel'`;
-  await sql`
-    INSERT INTO portfolio_media (project_id, surface, type, url, width, height, order_index)
-    VALUES (${projectId}, 'carousel', ${type}, ${url}, ${width}, ${height}, 0)
-  `;
+  await replaceSingleMedia(projectId, "carousel", url, focalX, focalY, zoom, width, height);
 }
 
 /** Set the homepage thumbnail and its crop. Passing a null url clears it,
@@ -965,23 +997,43 @@ export async function setProjectThumbnail(
   url: string | null,
   focalX = 0.5,
   focalY = 0.5,
+  zoom = 1,
+) {
+  await replaceSingleMedia(projectId, "thumbnail", url, focalX, focalY, zoom);
+}
+
+/** Shared by the two single-image surfaces: replace the row, keeping its
+ *  crop. Passing a null url just clears it. */
+async function replaceSingleMedia(
+  projectId: number,
+  surface: "thumbnail" | "carousel",
+  url: string | null,
+  focalX: number,
+  focalY: number,
+  zoom: number,
+  width: number | null = null,
+  height: number | null = null,
 ) {
   const clamp = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0.5));
-  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = 'thumbnail'`;
+  const z = Math.max(1, Math.min(4, Number.isFinite(zoom) ? zoom : 1));
+  await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = ${surface}`;
   if (!url) return;
   const type: MediaType = /\.gif(\?|$)/i.test(url) ? "gif" : "image";
   await sql`
-    INSERT INTO portfolio_media (project_id, surface, type, url, order_index, focal_x, focal_y)
-    VALUES (${projectId}, 'thumbnail', ${type}, ${url}, 0, ${clamp(focalX)}, ${clamp(focalY)})
+    INSERT INTO portfolio_media
+      (project_id, surface, type, url, width, height, order_index, focal_x, focal_y, zoom)
+    VALUES (${projectId}, ${surface}, ${type}, ${url}, ${width}, ${height}, 0,
+            ${clamp(focalX)}, ${clamp(focalY)}, ${z})
   `;
 }
 
-/** Move the crop's focal point. Values are clamped 0..1. */
-export async function setMediaCrop(id: number, focalX: number, focalY: number) {
+/** Move the crop — focal point 0..1, zoom 1..4. */
+export async function setMediaCrop(id: number, focalX: number, focalY: number, zoom = 1) {
   const clamp = (v: number) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0.5));
+  const z = Math.max(1, Math.min(4, Number.isFinite(zoom) ? zoom : 1));
   await sql`
     UPDATE portfolio_media
-    SET focal_x = ${clamp(focalX)}, focal_y = ${clamp(focalY)}
+    SET focal_x = ${clamp(focalX)}, focal_y = ${clamp(focalY)}, zoom = ${z}
     WHERE id = ${id}
   `;
 }

@@ -36,10 +36,11 @@ export async function PATCH(req: Request) {
     id?: number;
     focalX?: number;
     focalY?: number;
+    zoom?: number;
     projectSlug?: string;
   };
   if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
-  await setMediaCrop(body.id, body.focalX ?? 0.5, body.focalY ?? 0.5);
+  await setMediaCrop(body.id, body.focalX ?? 0.5, body.focalY ?? 0.5, body.zoom ?? 1);
   revalidatePath("/work");
   if (body.projectSlug) revalidatePath(`/work/${body.projectSlug}`);
   return NextResponse.json({ ok: true });

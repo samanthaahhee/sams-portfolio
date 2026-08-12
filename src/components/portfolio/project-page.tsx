@@ -218,12 +218,21 @@ function MetaRail({ color, project }: { color: string; project: PortfolioProject
 
 /** One image at its own aspect ratio, full width, uncropped.
  *
- *  A plain <img>, not the warping canvas: canvas drawImage paints only
- *  an animated GIF's first frame, so anything animated would freeze.
- *  The trade-off is that this row does not bend through the viewport's
- *  bottom band the way the cropped rows do. */
+ *  Stills go through the warping canvas like every other row, sized to
+ *  the file's own proportions so "original size" still means uncropped —
+ *  a cover crop to the image's own ratio takes nothing off. That way an
+ *  original-size row bends through the viewport's bottom band exactly
+ *  like its neighbours.
+ *
+ *  Animated GIFs cannot: canvas drawImage paints only their first frame,
+ *  so routing them through it would silently freeze them. They stay a
+ *  plain <img>, animating but not bending. That trade is unavoidable —
+ *  the warp needs per-row redrawing and a GIF's animation is owned by
+ *  the browser's image decoder. */
 function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
   const [i, setI] = useState(0);
+  const [measured, setMeasured] = useState<string | null>(null);
+
   /* A native slot can hold a sequence too, so an original-size row loops
      the same way a cropped one does. */
   useEffect(() => {
@@ -233,9 +242,53 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
   }, [frames.length]);
 
   const media = frames[i % Math.max(frames.length, 1)];
+  const isGif = media?.type === "gif" || /\.gif(\?|$)/i.test(media?.url ?? "");
+
+  /* The canvas needs a box before it can draw. Stored dimensions are
+     used when present; most migrated rows have none, so the file itself
+     is measured once. */
+  const stored = media?.width && media?.height ? `${media.width} / ${media.height}` : null;
+  const ratio = stored ?? measured;
+  const needsMeasuring = !!media && !isGif && !stored && !measured;
+  const measureUrl = needsMeasuring ? media.url : null;
+
+  useEffect(() => {
+    if (!measureUrl) return;
+    let cancelled = false;
+    const probe = new window.Image();
+    probe.onload = () => {
+      if (!cancelled && probe.naturalWidth && probe.naturalHeight) {
+        setMeasured(`${probe.naturalWidth} / ${probe.naturalHeight}`);
+      }
+    };
+    probe.src = measureUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [measureUrl]);
+
   if (!media) {
     return <div style={{ aspectRatio: "2 / 1", background: "#e5e5e5", borderRadius: 4 }} />;
   }
+
+  if (!isGif && ratio) {
+    /* WorkTile measures its siblings to work out how the row leans; as an
+       only child it sits centred, which is what a full-width row wants. */
+    return (
+      <div className="grid grid-cols-1">
+        <WorkTile
+          aspect={ratio}
+          frames={frames.map((m) => ({
+            url: m.url,
+            focalX: m.focalX,
+            focalY: m.focalY,
+            zoom: m.zoom,
+          }))}
+        />
+      </div>
+    );
+  }
+
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
@@ -244,8 +297,7 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
       /* Deliberately no width/height attributes and no aspect-ratio: the
          stored dimensions are missing for library picks and can be stale
          for anything else, and either would force a box the file does not
-         actually have — which stretches it. Letting the image size itself
-         costs a little layout shift and can never distort. */
+         actually have — which stretches it. */
       style={{ display: "block", width: "100%", height: "auto", borderRadius: 4 }}
     />
   );
@@ -286,6 +338,7 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
             url: m.url,
             focalX: m.focalX,
             focalY: m.focalY,
+            zoom: m.zoom,
           }))}
         />
       ))}
@@ -329,7 +382,17 @@ export function ProjectPage({
         {/* hero */}
         {project.coverUrl && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr" }}>
-            <WorkTile aspect="2 / 1" src={project.coverUrl} />
+            <WorkTile
+              aspect="2 / 1"
+              frames={[
+                {
+                  url: project.coverUrl,
+                  focalX: project.coverFocalX,
+                  focalY: project.coverFocalY,
+                  zoom: project.coverZoom,
+                },
+              ]}
+            />
           </div>
         )}
 

@@ -9,7 +9,7 @@ const MONO = "var(--font-dm-mono)";
 /** How long each frame of a looping sequence holds. */
 export const FRAME_MS = 700;
 
-export type TileFrame = { url: string; focalX?: number; focalY?: number };
+export type TileFrame = { url: string; focalX?: number; focalY?: number; zoom?: number };
 
 /** A work tile whose image bends through the viewport's bottom band.
  *
@@ -40,7 +40,7 @@ export function WorkTile({
   const [frame, setFrame] = useState(0);
 
   const seq: TileFrame[] = frames?.length ? frames : src ? [{ url: src }] : [];
-  const seqKey = seq.map((f) => `${f.url}|${f.focalX ?? 0.5}|${f.focalY ?? 0.5}`).join(",");
+  const seqKey = seq.map((f) => `${f.url}|${f.focalX ?? 0.5}|${f.focalY ?? 0.5}|${f.zoom ?? 1}`).join(",");
 
   useEffect(() => {
     if (seq.length === 0) return;
@@ -207,6 +207,7 @@ export function WorkTile({
          crop. focal 0.5 reproduces a plain centre crop exactly. */
       const fx = seq[fi]?.focalX ?? 0.5;
       const fy = seq[fi]?.focalY ?? 0.5;
+      const zoom = Math.max(1, seq[fi]?.zoom ?? 1);
       let sx = 0;
       let sy = 0;
       let sw = 0;
@@ -217,12 +218,18 @@ export function WorkTile({
         if (iw / ih > W / H) {
           sh = ih;
           sw = ih * (W / H);
-          sx = (iw - sw) * fx;
         } else {
           sw = iw;
           sh = iw / (W / H);
-          sy = (ih - sh) * fy;
         }
+        /* Zoom takes a smaller window of the source, which magnifies it.
+           Both axes then have slack, so the focal point steers both — at
+           zoom 1 the fitted axis has zero slack and this reduces to the
+           plain centre-anchored cover crop. */
+        sw /= zoom;
+        sh /= zoom;
+        sx = (iw - sw) * fx;
+        sy = (ih - sh) * fy;
       }
 
       const drawSpan = (yTop: number, yBot: number) => {

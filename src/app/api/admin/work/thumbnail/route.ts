@@ -10,12 +10,19 @@ export async function POST(req: Request) {
     url?: string | null;
     focalX?: number;
     focalY?: number;
+    zoom?: number;
     projectSlug?: string;
   };
   if (!body.projectId) {
     return NextResponse.json({ error: "projectId is required" }, { status: 400 });
   }
-  await setProjectThumbnail(body.projectId, body.url ?? null, body.focalX ?? 0.5, body.focalY ?? 0.5);
+  await setProjectThumbnail(
+    body.projectId,
+    body.url ?? null,
+    body.focalX ?? 0.5,
+    body.focalY ?? 0.5,
+    body.zoom ?? 1,
+  );
   /* The grid lives on the homepage, so that is the page to bust. */
   revalidatePath("/");
   revalidatePath("/work");

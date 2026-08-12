@@ -7,15 +7,26 @@ import { setProjectCover } from "@/lib/db-portfolio";
 export async function POST(req: Request) {
   const body = (await req.json()) as {
     projectId?: number;
-    url?: string;
+    url?: string | null;
     width?: number | null;
     height?: number | null;
+    focalX?: number;
+    focalY?: number;
+    zoom?: number;
     projectSlug?: string;
   };
-  if (!body.projectId || !body.url) {
-    return NextResponse.json({ error: "projectId and url are required" }, { status: 400 });
+  if (!body.projectId) {
+    return NextResponse.json({ error: "projectId is required" }, { status: 400 });
   }
-  await setProjectCover(body.projectId, body.url, body.width ?? null, body.height ?? null);
+  await setProjectCover(
+    body.projectId,
+    body.url ?? null,
+    body.width ?? null,
+    body.height ?? null,
+    body.focalX ?? 0.5,
+    body.focalY ?? 0.5,
+    body.zoom ?? 1,
+  );
   /* The homepage grid reads covers, so it has to be busted too. */
   revalidatePath("/");
   revalidatePath("/work");

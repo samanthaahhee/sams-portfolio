@@ -203,3 +203,10 @@ CREATE INDEX IF NOT EXISTS portfolio_media_slot_idx
 -- row, so a tile can be cropped and art-directed independently of the
 -- big hero at the top of the project's own page. Falls back to the
 -- 'carousel' cover when absent.
+
+-- Zoom for cropped images: 1 = fit the frame (plain cover crop), 2 = twice
+-- the magnification, taking half the source window. Combined with
+-- focal_x/focal_y this is a full crop rectangle without needing to store
+-- one, and it degrades to the old behaviour at 1.
+ALTER TABLE portfolio_media
+  ADD COLUMN IF NOT EXISTS zoom REAL NOT NULL DEFAULT 1;
