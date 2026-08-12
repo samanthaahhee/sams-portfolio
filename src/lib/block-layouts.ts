@@ -46,6 +46,21 @@ export function slotCount(layout: BlockLayout): number {
   return ROW_LAYOUTS[layout]?.aspects.length ?? 1;
 }
 
+/** An image's own proportions as a CSS aspect-ratio, when known. */
+export function mediaAspect(m?: { width?: number | null; height?: number | null } | null): string | null {
+  return m?.width && m?.height ? `${m.width} / ${m.height}` : null;
+}
+
+/** The frame a before/after row uses.
+ *
+ *  Both halves must share one frame or the wipe would reveal a
+ *  differently-shaped picture, so the FIRST image's proportions win and
+ *  the second is cover-cropped to match. A fixed 4:3 was wrong for any
+ *  pair that is not 4:3 — which is most of them. */
+export function compareAspect(first?: { width?: number | null; height?: number | null } | null): string {
+  return mediaAspect(first) ?? "4 / 3";
+}
+
 /** The aspect one slot is cropped to, or null when it is not cropped. */
 export function slotAspect(layout: BlockLayout, slot: number): string | null {
   const a = ROW_LAYOUTS[layout]?.aspects[slot];

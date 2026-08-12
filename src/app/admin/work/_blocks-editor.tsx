@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
-import { slotAspect, slotCount } from "@/lib/block-layouts";
+import { compareAspect, slotAspect, slotCount } from "@/lib/block-layouts";
 import { LibraryPicker } from "./_library-picker";
 import { LayoutPreview } from "./_layout-preview";
 
@@ -381,7 +381,10 @@ export function BlocksEditor({
                     const frames = block.slots[slot] ?? [];
                     /* The exact frame this slot crops to, so the preview
                        below is the real thing rather than a stand-in. */
-                    const aspect = slotAspect(block.layout, slot);
+                    const aspect =
+                      block.layout === "compare"
+                        ? compareAspect(block.slots[0]?.[0])
+                        : slotAspect(block.layout, slot);
                     return (
                       <div key={slot} className="space-y-2">
                         <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">

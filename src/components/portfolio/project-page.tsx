@@ -8,7 +8,7 @@ import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
-import { ROW_LAYOUTS } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, compareAspect } from "@/lib/block-layouts";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { ImageStack } from "@/components/image-stack";
 
@@ -312,12 +312,14 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
      pages already used, so the interaction is the one that shipped
      rather than a second implementation of it. */
   if (block.layout === "compare") {
-    const before = block.slots[0]?.[0]?.url;
+    const first = block.slots[0]?.[0];
     const after = block.slots[1]?.[0]?.url;
-    if (!before || !after) {
+    if (!first?.url || !after) {
       return <div style={{ aspectRatio: "4 / 3", background: "#e5e5e5", borderRadius: 4 }} />;
     }
-    return <BeforeAfterSlider before={before} after={after} aspect="4 / 3" />;
+    /* The frame is the BEFORE image's own shape, so it is shown whole and
+       the after is cropped to meet it. */
+    return <BeforeAfterSlider before={first.url} after={after} aspect={compareAspect(first)} />;
   }
 
   if (block.layout === "stack") {

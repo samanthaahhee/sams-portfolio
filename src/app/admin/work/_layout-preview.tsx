@@ -1,7 +1,7 @@
 "use client";
 
 import type { PortfolioBlock } from "@/lib/db-portfolio";
-import { ROW_LAYOUTS } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, compareAspect } from "@/lib/block-layouts";
 
 /* A true-to-the-page preview of the composed rows.
  *
@@ -107,7 +107,17 @@ export function LayoutPreview({
             <div key={block.id} className="space-y-1">
               <div className={layout.className} style={{ gap: 12 }}>
                 {layout.aspects.map((a, i) => (
-                  <Slot key={i} media={frames(i)} aspect={a === "auto" ? null : a} />
+                  <Slot
+                    key={i}
+                    media={frames(i)}
+                    aspect={
+                      block.layout === "compare"
+                        ? compareAspect(block.slots[0]?.[0])
+                        : a === "auto"
+                          ? null
+                          : a
+                    }
+                  />
                 ))}
               </div>
               {/* Say plainly where the still preview differs from the page */}
