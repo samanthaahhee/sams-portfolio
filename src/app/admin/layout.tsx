@@ -21,6 +21,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/work" className="hover:text-[color:var(--ink)]">
               Projects
             </Link>
+            <Link href="/admin/homepage" className="hover:text-[color:var(--ink)]">
+              Homepage
+            </Link>
             <Link href="/admin/hero" className="hover:text-[color:var(--ink)]">
               Hero deck
             </Link>

@@ -7,6 +7,7 @@ import { BendingPanel } from "./bending-panel";
 import { WorkTile } from "./work-tile";
 import { SiteFooter } from "./site-footer";
 import { META_STYLE, MetaRowContent } from "./site-meta";
+import type { AboutSection } from "@/lib/db-portfolio";
 
 /* ── Homepage ─────────────────────────────────────────────────────────
    Recreates Sam's reference design (red lettering logo, meta row, work
@@ -19,18 +20,6 @@ const RED = "#FF2E31";
 /* DM Mono, referenced by variable: the next/font class is on <html>, so the
    custom property resolves anywhere without needing a Tailwind utility. */
 const MONO = "var(--font-dm-mono)";
-
-const FIELDS = ["Fintech", "FMCG", "Retail", "Consumer Tech"];
-
-const SERVICES = [
-  "Art Direction",
-  "Packaging",
-  "Creative Strategy",
-  "Brand Design",
-  "Activation Design",
-  "Brand Experience",
-  "Illustration",
-];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },
@@ -202,12 +191,21 @@ export type HomeTile = {
   zoom?: number;
 };
 
-export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
+export function HomepageHero({
+  tiles = [],
+  about,
+}: {
+  tiles?: HomeTile[];
+  about: AboutSection;
+}) {
   /* Two-up rows, as many as there are projects. The about panel sits
      after the second row, so the grid reads as work / about / more work
      however long the list gets. */
   const rows: HomeTile[][] = [];
   for (let i = 0; i < tiles.length; i += 2) rows.push(tiles.slice(i, i + 2));
+  /* Where the about panel sits, clamped so a stale setting cannot push
+     it past the end of a shortened grid. */
+  const splitAt = Math.max(0, Math.min(about.afterRows, rows.length));
   const ROW_STYLE: React.CSSProperties = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
@@ -308,7 +306,7 @@ export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
       {/* no fade on the container itself — each tile runs its own measured
           entrance, and stacking the two would double-fade them */}
       <div style={{ padding: `0 ${SIDE_PAD} ${GUTTER}`, marginTop: GAP_SUB_GRID }}>
-        {rows.slice(0, 2).map(renderRow)}
+        {rows.slice(0, splitAt).map(renderRow)}
 
         {/* About — one panel, laid out as two rows rather than two columns:
             the intro occupies the first row on its own, then the contact
@@ -341,18 +339,17 @@ export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
               maxWidth: "26ch",
             }}
           >
-            Hey I&rsquo;m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy
-            helping start-ups and scale-ups create memorable brand experiences.
+            {about.intro}
           </p>
           {/* holds the intro row open across the second column */}
           <div className="hidden md:block" aria-hidden />
 
           <Link
-            href="/contact"
+            href={about.linkHref}
             className="hover:opacity-70 transition-opacity self-start"
             style={{ color: RED, fontSize: "clamp(0.9rem, 1.15vw, 1rem)", fontWeight: 500 }}
           >
-            Lets work together &rarr;
+            {about.linkLabel}
           </Link>
 
           {/* Two mono rails, both flush to the panel's right padding so the
@@ -366,8 +363,8 @@ export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
             }}
           >
             {[
-              { label: "Fields", items: FIELDS },
-              { label: "Services", items: SERVICES },
+              { label: "Fields", items: about.fields },
+              { label: "Services", items: about.services },
             ].map(({ label, items }) => (
               <div key={label}>
                 <p style={{ fontFamily: MONO, fontStyle: "italic", fontSize: 14, color: RED, marginBottom: 18 }}>
@@ -386,7 +383,7 @@ export function HomepageHero({ tiles = [] }: { tiles?: HomeTile[] }) {
         </BendingPanel>
         </motion.div>
 
-        <div style={{ marginTop: GUTTER }}>{rows.slice(2).map(renderRow)}</div>
+        <div style={{ marginTop: GUTTER }}>{rows.slice(splitAt).map(renderRow)}</div>
       </div>
 
       {/* ── Contact banner ────────────────────────────────────────── */}

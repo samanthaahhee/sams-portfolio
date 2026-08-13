@@ -1048,3 +1048,66 @@ export async function setMediaBlock(mediaId: number, blockId: number | null, pos
     WHERE id = ${mediaId}
   `;
 }
+
+/* ── Homepage about section ──────────────────────────────────────────
+   Copy and placement for the panel that sits inside the work grid. It
+   lives in portfolio_settings rather than a table of its own — it is one
+   record, not a list. */
+
+export type AboutSection = {
+  intro: string;
+  fields: string[];
+  services: string[];
+  linkLabel: string;
+  linkHref: string;
+  /** How many two-up work rows come before the panel. */
+  afterRows: number;
+};
+
+export const ABOUT_DEFAULTS: AboutSection = {
+  intro:
+    "Hey I’m Sam, a South African Visual Comms Designer living in Amsterdam. I enjoy helping start-ups and scale-ups create memorable brand experiences.",
+  fields: ["Fintech", "FMCG", "Retail", "Consumer Tech"],
+  services: [
+    "Art Direction",
+    "Packaging",
+    "Creative Strategy",
+    "Brand Design",
+    "Activation Design",
+    "Brand Experience",
+    "Illustration",
+  ],
+  linkLabel: "Lets work together →",
+  linkHref: "/contact",
+  afterRows: 2,
+};
+
+const splitList = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
+
+/** The about panel's saved copy, falling back to the shipped defaults for
+ *  anything never set — so the homepage reads correctly on a fresh
+ *  database and an empty field means "use the default", not "blank". */
+export async function getAboutSection(): Promise<AboutSection> {
+  const s = await getPortfolioSettings();
+  return {
+    intro: s.about_intro?.trim() || ABOUT_DEFAULTS.intro,
+    fields: s.about_fields ? splitList(s.about_fields) : ABOUT_DEFAULTS.fields,
+    services: s.about_services ? splitList(s.about_services) : ABOUT_DEFAULTS.services,
+    linkLabel: s.about_link_label?.trim() || ABOUT_DEFAULTS.linkLabel,
+    linkHref: s.about_link_href?.trim() || ABOUT_DEFAULTS.linkHref,
+    afterRows: Number.isFinite(Number(s.about_after_rows))
+      ? Math.max(0, Math.round(Number(s.about_after_rows)))
+      : ABOUT_DEFAULTS.afterRows,
+  };
+}
+
+export async function setAboutSection(a: AboutSection) {
+  await Promise.all([
+    setPortfolioSetting("about_intro", a.intro),
+    setPortfolioSetting("about_fields", a.fields.join(", ")),
+    setPortfolioSetting("about_services", a.services.join(", ")),
+    setPortfolioSetting("about_link_label", a.linkLabel),
+    setPortfolioSetting("about_link_href", a.linkHref),
+    setPortfolioSetting("about_after_rows", String(a.afterRows)),
+  ]);
+}
