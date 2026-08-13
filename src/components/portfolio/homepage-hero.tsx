@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { BendingPanel } from "./bending-panel";
 import { WorkTile } from "./work-tile";
@@ -17,6 +17,44 @@ import type { AboutSection } from "@/lib/db-portfolio";
    real assets are picked/uploaded. */
 
 const RED = "#FF2E31";
+/** Marks the loading sequence as already played for this visit.
+ *
+ *  Read through useSyncExternalStore rather than an effect: sessionStorage
+ *  does not exist on the server, so reading it during render would break
+ *  hydration, and reading it in an effect would set state on mount. This
+ *  is exactly the "external store" the hook is for. */
+const INTRO_SEEN = "samahhee:intro-seen";
+
+const introListeners = new Set<() => void>();
+
+function introSubscribe(listener: () => void) {
+  introListeners.add(listener);
+  return () => {
+    introListeners.delete(listener);
+  };
+}
+
+function introSeen() {
+  try {
+    return sessionStorage.getItem(INTRO_SEEN) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** The server has no session, so it always renders the intro. */
+const introSeenOnServer = () => false;
+
+function setIntroSeen(seen: boolean) {
+  try {
+    if (seen) sessionStorage.setItem(INTRO_SEEN, "1");
+    else sessionStorage.removeItem(INTRO_SEEN);
+  } catch {}
+  /* Mirrors the pre-paint script's class, so replaying actually shows
+     the sequence again rather than running it behind display:none. */
+  document.documentElement.classList.toggle("intro-seen", seen);
+  introListeners.forEach((l) => l());
+}
 /* DM Mono, referenced by variable: the next/font class is on <html>, so the
    custom property resolves anywhere without needing a Tailwind utility. */
 const MONO = "var(--font-dm-mono)";
@@ -91,7 +129,10 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
     const unsubY = springY.on("change", (v) => y.set(v));
 
     let started = false;
+    let snapped = false;
     const snap = () => {
+      if (snapped) return;
+      snapped = true;
       setIsTracking(false);
       /* Detach from the springs first. Left attached they keep driving
          toward the last cursor position, which is what bent the flight
@@ -114,17 +155,38 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
       setTimeout(onSettled, ENLARGE_SECONDS * 1000);
     };
 
-    const handleMove = (e: MouseEvent) => {
+    const begin = () => {
+      if (started) return;
+      started = true;
+      animate(reveal, 100, { duration: WIPE_SECONDS, ease: "linear", onComplete: snap });
+    };
+
+    /* pointermove covers mouse, pen and touch-drag alike. */
+    const handleMove = (e: PointerEvent) => {
       mouseX.set(e.clientX);
       mouseY.set(e.clientY);
-      if (!started) {
-        started = true;
-        animate(reveal, 100, { duration: WIPE_SECONDS, ease: "linear", onComplete: snap });
-      }
+      begin();
     };
-    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("pointermove", handleMove);
+
+    /* A touch device never moves a cursor, so waiting for one left the
+       page stuck behind the intro veil forever — nothing loaded and
+       nothing could be tapped. The wipe now starts by itself shortly
+       after mount; a pointer arriving first simply starts it sooner.
+       The logo sits centred when there is no cursor to follow. */
+    const kick = setTimeout(begin, 500);
+
+    /* Belt and braces. The wipe finishes via requestAnimationFrame, which
+       a browser does not run while the tab is hidden — so a visitor who
+       opens the site in a background tab could return to a page still
+       behind its veil. This settles it regardless once the sequence has
+       had more than long enough. */
+    const failsafe = setTimeout(snap, (WIPE_SECONDS + ENLARGE_SECONDS) * 1000 + 1200);
+
     return () => {
-      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("pointermove", handleMove);
+      clearTimeout(kick);
+      clearTimeout(failsafe);
       unsubX();
       unsubY();
     };
@@ -137,7 +199,7 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
           needed until settled: the real settled logo below takes over
           that same flow space, so keeping both mounted would double it. */}
       {!settled && (
-        <div ref={targetRef} aria-hidden style={{ visibility: "hidden", width: "100%" }}>
+        <div ref={targetRef} aria-hidden data-intro="placeholder" style={{ visibility: "hidden", width: "100%" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/samahhee.svg" alt="" style={{ width: "100%", height: "auto", display: "block" }} />
         </div>
@@ -145,6 +207,7 @@ function CursorLogo({ settled, onSettled }: { settled: boolean; onSettled: () =>
 
       {!settled && (
         <motion.div
+          data-intro="logo"
           style={{
             position: "fixed",
             top: 0,
@@ -234,8 +297,24 @@ export function HomepageHero({
      screen starts full white (a fixed overlay hides the nav and page
      underneath) → the logo loads + enlarges into place on top of it →
      only then does the overlay clear and everything else fade in. */
-  const [settled, setSettled] = useState(false);
-  const onSettled = useCallback(() => setSettled(true), []);
+  /* The intro belongs to arriving at the site, not to every render of
+     the homepage — coming back from a project replayed the whole load. */
+  const alreadySeen = useSyncExternalStore(introSubscribe, introSeen, introSeenOnServer);
+  const [justFinished, setJustFinished] = useState(false);
+  /* Bumped to replay the sequence: it remounts CursorLogo, resetting it. */
+  const [runId, setRunId] = useState(0);
+  const settled = alreadySeen || justFinished;
+
+  const onSettled = useCallback(() => {
+    setJustFinished(true);
+    setIntroSeen(true);
+  }, []);
+
+  const replayIntro = useCallback(() => {
+    setJustFinished(false);
+    setIntroSeen(false);
+    setRunId((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     if (settled) return;
@@ -252,6 +331,7 @@ export function HomepageHero({
         {!settled && (
           <motion.div
             key="intro-veil"
+            data-intro="veil"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
@@ -271,12 +351,12 @@ export function HomepageHero({
           className="font-portfolio-sans"
           style={{ ...META_STYLE, color: RED }}
         >
-          <MetaRowContent />
+          <MetaRowContent onReplayIntro={replayIntro} />
         </motion.div>
 
         {/* logo: fills the full padded width, no max-width cap */}
         <div style={{ width: "100%", marginTop: GAP_META_LOGO }}>
-          <CursorLogo settled={settled} onSettled={onSettled} />
+          <CursorLogo key={runId} settled={settled} onSettled={onSettled} />
         </div>
 
         <motion.p

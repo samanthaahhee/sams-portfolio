@@ -25,10 +25,24 @@ export const META_STYLE: React.CSSProperties = {
   letterSpacing: "0.08em",
 };
 
-export function MetaRowContent() {
+/** `onReplayIntro` turns the role label into the control that replays the
+ *  loading sequence. Without it the label is plain text, which is what
+ *  every page other than the homepage wants. */
+export function MetaRowContent({ onReplayIntro }: { onReplayIntro?: () => void } = {}) {
   return (
     <>
-      <span>{META.role}</span>
+      {onReplayIntro ? (
+        <button
+          type="button"
+          onClick={onReplayIntro}
+          className="hover:opacity-70 transition-opacity"
+          style={{ font: "inherit", letterSpacing: "inherit", color: "inherit", textAlign: "left", cursor: "pointer" }}
+        >
+          {META.role}
+        </button>
+      ) : (
+        <span>{META.role}</span>
+      )}
       <span style={{ textAlign: "center" }}>{META.year}</span>
       <span style={{ textAlign: "right" }}>{META.handle}</span>
     </>

@@ -50,7 +50,14 @@ export default function RootLayout({
             /* Light unless dark was explicitly chosen — must match
                ThemeProvider's rule exactly or the page flashes the other
                theme before hydration. */
-            __html: `(()=>{try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch{}})();`,
+            /* The homepage loading sequence runs once a visit. React only
+               learns that after hydration, so a returning visitor would
+               otherwise watch the white veil mount and fade — most of the
+               effect the flag exists to skip. Deciding it here, before
+               first paint, removes the flash; React unmounts the elements
+               a moment later. The rule ships inline rather than in the
+               stylesheet so it cannot arrive after the markup it hides. */
+            __html: `(()=>{try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch{}var s=document.createElement('style');s.textContent='.intro-seen [data-intro]{display:none!important}';document.head.appendChild(s);try{if(sessionStorage.getItem('samahhee:intro-seen')==='1')document.documentElement.classList.add('intro-seen');}catch{}})();`,
           }}
         />
       </head>
