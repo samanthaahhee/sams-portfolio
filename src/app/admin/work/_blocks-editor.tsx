@@ -14,6 +14,12 @@ import { LayoutPreview } from "./_layout-preview";
 const fieldInput =
   "w-full px-3 py-2 border border-[color:var(--rule)] bg-transparent rounded-sm focus:outline-none focus:border-[color:var(--ink)] transition-colors";
 
+/* A dropdown rather than a row of ten pills: the layouts are a single
+   choice from a closed set, and laid out as buttons they read as ten
+   competing actions. */
+const selectInput =
+  "px-3 py-1.5 border border-[color:var(--rule)] bg-transparent rounded-sm font-mono text-[11px] focus:outline-none focus:border-[color:var(--ink)]";
+
 const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "single", label: "Single landscape", slots: 1 },
   { value: "portrait_landscape", label: "Portrait + landscape", slots: 2 },
@@ -70,6 +76,8 @@ export function BlocksEditor({
 }) {
   /** Which slot the library picker is currently filling. */
   const [picking, setPicking] = useState<{ blockId: number; slot: number } | null>(null);
+  /** What the add control at the foot of the list will create next. */
+  const [pending, setPending] = useState<string>("single");
   const [blocks, setBlocks] = useState(initialBlocks);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -269,35 +277,16 @@ export function BlocksEditor({
 
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h2 className="font-mono uppercase tracking-[0.14em] text-[11px]">Page blocks</h2>
-        <div className="flex items-center gap-2 flex-wrap">
-          {LAYOUTS.map((l) => (
-            <button
-              key={l.value}
-              type="button"
-              disabled={busy}
-              onClick={() => addBlock("images", l.value)}
-              className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border border-[color:var(--rule)] disabled:opacity-50"
-            >
-              + {l.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => addBlock("text")}
-            className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full disabled:opacity-50"
-            style={{ background: "var(--ink)", color: "var(--paper)" }}
-          >
-            + Text
-          </button>
-        </div>
+        <p className="font-mono text-[10px] text-[color:var(--meta)]">
+          Sections render top to bottom
+        </p>
       </div>
 
       {error && <p className="font-mono text-red-700 bg-red-50 px-3 py-2 rounded">{error}</p>}
 
       {blocks.length === 0 && (
         <p className="font-mono text-[color:var(--meta)] text-[11px]">
-          No blocks yet. Add image rows and paragraphs — they render top to bottom in this order.
+          No sections yet — add one below.
         </p>
       )}
 
@@ -350,29 +339,28 @@ export function BlocksEditor({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {LAYOUTS.map((l) => (
-                    <button
-                      key={l.value}
-                      type="button"
-                      onClick={() => {
-                        setBlocks((prev) =>
-                          prev.map((b) => (b.id === block.id && b.kind === "images" ? { ...b, layout: l.value } : b)),
-                        );
-                        patch(block.id, { layout: l.value, heading: null, body: null });
-                      }}
-                      aria-pressed={block.layout === l.value}
-                      className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
-                      style={{
-                        background: block.layout === l.value ? "var(--ink)" : "transparent",
-                        color: block.layout === l.value ? "var(--paper)" : "var(--ink-soft)",
-                        borderColor: block.layout === l.value ? "var(--ink)" : "var(--rule)",
-                      }}
-                    >
-                      {l.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
+                    Layout
+                  </span>
+                  <select
+                    value={block.layout}
+                    onChange={(e) => {
+                      const next = e.target.value as BlockLayout;
+                      setBlocks((prev) =>
+                        prev.map((b) => (b.id === block.id && b.kind === "images" ? { ...b, layout: next } : b)),
+                      );
+                      patch(block.id, { layout: next, heading: null, body: null });
+                    }}
+                    className={selectInput}
+                  >
+                    {LAYOUTS.map((l) => (
+                      <option key={l.value} value={l.value}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
                 <div
                   className="grid gap-3"
@@ -455,6 +443,40 @@ export function BlocksEditor({
           </li>
         ))}
       </ol>
+
+      {/* The add control sits after the sections, not above them: new
+          sections append to the end, so this is where you already are
+          when you want one. */}
+      <div className="flex items-center gap-2 flex-wrap pt-2">
+        <select
+          value={pending}
+          onChange={(e) => setPending(e.target.value)}
+          className={selectInput}
+          aria-label="Section type to add"
+        >
+          <option value="text">Text paragraph</option>
+          <optgroup label="Image row">
+            {LAYOUTS.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.label}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() =>
+            pending === "text"
+              ? addBlock("text")
+              : addBlock("images", pending as BlockLayout)
+          }
+          className="font-mono uppercase tracking-[0.14em] text-[10px] px-4 py-2 rounded-full disabled:opacity-50"
+          style={{ background: "var(--ink)", color: "var(--paper)" }}
+        >
+          + Add section
+        </button>
+      </div>
 
       {/* Driven by this component's own state, so it is never stale */}
       <LayoutPreview blocks={blocks} accent={accent} />
