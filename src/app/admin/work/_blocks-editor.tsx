@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
-import { compareAspect, slotAspect, slotCount } from "@/lib/block-layouts";
+import { rowAspect, slotAspect, slotCount } from "@/lib/block-layouts";
 import { LibraryPicker } from "./_library-picker";
 import { LayoutPreview } from "./_layout-preview";
 
@@ -20,6 +20,7 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "landscape_portrait", label: "Landscape + portrait", slots: 2 },
   { value: "split", label: "Landscape 50/50", slots: 2 },
   { value: "portrait_trio", label: "Three portraits", slots: 3 },
+  { value: "trio", label: "Three across (original ratio)", slots: 3 },
   { value: "portrait_portrait", label: "Two portraits", slots: 2 },
   { value: "compare", label: "Before / after", slots: 2 },
   { value: "stack", label: "Layered stack", slots: 1 },
@@ -382,9 +383,8 @@ export function BlocksEditor({
                     /* The exact frame this slot crops to, so the preview
                        below is the real thing rather than a stand-in. */
                     const aspect =
-                      block.layout === "compare"
-                        ? compareAspect(block.slots[0]?.[0])
-                        : slotAspect(block.layout, slot);
+                      rowAspect(block.layout, block.slots[0]?.[0]) ??
+                      slotAspect(block.layout, slot);
                     return (
                       <div key={slot} className="space-y-2">
                         <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">

@@ -8,7 +8,7 @@ import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
-import { ROW_LAYOUTS, compareAspect } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, compareAspect, rowAspect } from "@/lib/block-layouts";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { ImageStack } from "@/components/image-stack";
 
@@ -303,6 +303,39 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
   );
 }
 
+/** A GIF in a cropped row.
+ *
+ *  Never the canvas: drawImage paints only a GIF's first frame, so any
+ *  animated image routed through the warp silently froze — which is what
+ *  happened to six of them in three-up rows. A plain <img> with the same
+ *  cover crop, focal point and zoom keeps the frame identical to its
+ *  neighbours and keeps the animation. It forfeits only the scroll warp,
+ *  which is the trade animation always costs. */
+function CroppedGif({ media, aspect }: { media: PortfolioMedia; aspect: string }) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={media.url}
+      alt=""
+      style={{
+        display: "block",
+        width: "100%",
+        height: "100%",
+        aspectRatio: aspect,
+        objectFit: "cover",
+        objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%`,
+        transform: media.zoom > 1 ? `scale(${media.zoom})` : undefined,
+        transformOrigin: `${media.focalX * 100}% ${media.focalY * 100}%`,
+        borderRadius: 4,
+      }}
+    />
+  );
+}
+
+function isAnimated(m?: PortfolioMedia) {
+  return !!m && (m.type === "gif" || /\.gif(\?|$)/i.test(m.url));
+}
+
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
   if (block.layout === "native") {
     return <NativeImage frames={block.slots[0] ?? []} />;
@@ -330,20 +363,27 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
     return <ImageStack images={images} />;
   }
   const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
+  /* Rows whose frame comes from the pictures rather than a fixed ratio. */
+  const shared = rowAspect(block.layout, block.slots[0]?.[0]);
   return (
     <div className={className} style={{ gap: GUTTER }}>
-      {aspects.map((aspect, i) => (
-        <WorkTile
-          key={i}
-          aspect={aspect}
-          frames={(block.slots[i] ?? []).map((m) => ({
-            url: m.url,
-            focalX: m.focalX,
-            focalY: m.focalY,
-            zoom: m.zoom,
-          }))}
-        />
-      ))}
+      {aspects.map((a, i) => {
+        const frame = shared ?? a;
+        const first = block.slots[i]?.[0];
+        if (isAnimated(first)) return <CroppedGif key={i} media={first!} aspect={frame} />;
+        return (
+          <WorkTile
+            key={i}
+            aspect={frame}
+            frames={(block.slots[i] ?? []).map((m) => ({
+              url: m.url,
+              focalX: m.focalX,
+              focalY: m.focalY,
+              zoom: m.zoom,
+            }))}
+          />
+        );
+      })}
     </div>
   );
 }

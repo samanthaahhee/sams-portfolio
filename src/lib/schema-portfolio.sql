@@ -210,3 +210,12 @@ CREATE INDEX IF NOT EXISTS portfolio_media_slot_idx
 -- one, and it degrades to the old behaviour at 1.
 ALTER TABLE portfolio_media
   ADD COLUMN IF NOT EXISTS zoom REAL NOT NULL DEFAULT 1;
+
+-- 'trio' is three across at the images' own proportions, for rows whose
+-- pictures are not portraits — the migration forced every three-image
+-- row into portrait_trio's 3:4, which cut the sides off landscape ones.
+ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
+ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
+  CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait',
+                    'split', 'portrait_trio', 'trio', 'native',
+                    'portrait_portrait', 'compare', 'stack'));

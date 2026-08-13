@@ -709,6 +709,8 @@ export type BlockLayout =
   | "landscape_portrait"
   | "split"
   | "portrait_trio"
+  /** Three across at the images' own proportions. */
+  | "trio"
   | "portrait_portrait"
   /** Two images behind a draggable before/after divider. */
   | "compare"

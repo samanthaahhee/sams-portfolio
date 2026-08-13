@@ -28,6 +28,10 @@ export const ROW_LAYOUTS: Record<
     className: "grid grid-cols-1 sm:grid-cols-3",
     aspects: ["3 / 4", "3 / 4", "3 / 4"],
   },
+  /* Three across, sized by the pictures rather than a fixed portrait
+     frame. The first image's proportions set the row so all three share
+     a height; see rowAspect. */
+  trio: { className: "grid grid-cols-1 sm:grid-cols-3", aspects: ["auto", "auto", "auto"] },
   portrait_portrait: {
     className: "grid grid-cols-1 sm:grid-cols-2",
     aspects: ["3 / 4", "3 / 4"],
@@ -59,6 +63,19 @@ export function mediaAspect(m?: { width?: number | null; height?: number | null 
  *  pair that is not 4:3 — which is most of them. */
 export function compareAspect(first?: { width?: number | null; height?: number | null } | null): string {
   return mediaAspect(first) ?? "4 / 3";
+}
+
+/** Layouts whose frame comes from the pictures, not a fixed ratio. */
+const IMAGE_LED = new Set<BlockLayout>(["compare", "trio"]);
+
+/** The frame a whole row uses, when the row takes it from its first
+ *  image rather than from a fixed ratio. Null means each slot is sized
+ *  independently (native) or by the static table. */
+export function rowAspect(
+  layout: BlockLayout,
+  first?: { width?: number | null; height?: number | null } | null,
+): string | null {
+  return IMAGE_LED.has(layout) ? compareAspect(first) : null;
 }
 
 /** The aspect one slot is cropped to, or null when it is not cropped. */
