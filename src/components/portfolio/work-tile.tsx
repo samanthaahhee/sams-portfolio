@@ -133,9 +133,21 @@ export function WorkTile({
          three-up row has B = 0 and opens both ways about itself. Nothing
          stays parallel, and gutters cannot part because the tiles either
          side shift by exactly what the tiles between them grew. */
-      const siblings = Array.from(row.children).filter(
-        (c) => (c as HTMLElement).dataset.worktile !== undefined,
-      ) as HTMLElement[];
+      /* Only tiles actually beside this one count. A grid that has
+         collapsed to a single column still holds every tile in the same
+         row element, and treating those stacked tiles as neighbours gave
+         each a lean it should not have — on mobile the images slid in
+         from the left or the right instead of bending straight down like
+         the footer. Overlapping vertical ranges is what "beside" means. */
+      const siblings = (
+        Array.from(row.children).filter(
+          (c) => (c as HTMLElement).dataset.worktile !== undefined,
+        ) as HTMLElement[]
+      ).filter((c) => {
+        if (c === host) return true;
+        const r = c.getBoundingClientRect();
+        return r.bottom > rect.top + 1 && r.top < rect.bottom - 1;
+      });
       const idx = siblings.indexOf(host);
       let widthsBefore = 0;
       let totalWidths = 0;
