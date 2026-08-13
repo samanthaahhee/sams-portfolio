@@ -35,16 +35,24 @@ export function MetaRowContent({ onReplayIntro }: { onReplayIntro?: () => void }
         <button
           type="button"
           onClick={onReplayIntro}
-          className="hover:opacity-70 transition-opacity"
+          className="hidden sm:block hover:opacity-70 transition-opacity"
           style={{ font: "inherit", letterSpacing: "inherit", color: "inherit", textAlign: "left", cursor: "pointer" }}
         >
           {META.role}
         </button>
       ) : (
-        <span>{META.role}</span>
+        <span className="hidden sm:block">{META.role}</span>
       )}
-      <span style={{ textAlign: "center" }}>{META.year}</span>
-      <span style={{ textAlign: "right" }}>{META.handle}</span>
+      {/* Pinned to the middle track rather than left to flow: with the
+          other two hidden it would otherwise slide into the first track
+          and sit a quarter of the way across. */}
+      <span style={{ gridColumn: 2, textAlign: "center" }}>{META.year}</span>
+      {/* Role and address are dropped on the narrowest screens: at 375px
+          the three labels collide, and the year alone reads as intended
+          because the grid's outer tracks still hold it centred. */}
+      <span className="hidden sm:block" style={{ textAlign: "right" }}>
+        {META.handle}
+      </span>
     </>
   );
 }
