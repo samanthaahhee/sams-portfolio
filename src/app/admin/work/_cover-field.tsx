@@ -25,6 +25,7 @@ export function CoverField({
   initialZoom = 1,
   aspect = "4 / 3",
   clearable = false,
+  pills,
 }: {
   projectId: number;
   projectSlug: string;
@@ -40,6 +41,9 @@ export function CoverField({
   /** The frame this image is cropped to on the page. */
   aspect?: string;
   clearable?: boolean;
+  /** Drawn over the preview exactly as the live tile draws them, so it is
+   *  obvious which fields produce the tile's labels. */
+  pills?: string[];
 }) {
   const router = useRouter();
   const [url, setUrl] = useState(initialUrl);
@@ -199,6 +203,27 @@ export function CoverField({
                     : undefined
                 }
               />
+              {pills && pills.some(Boolean) && (
+                <span className="absolute left-1.5 top-1.5 flex flex-wrap items-center gap-1 pointer-events-none">
+                  {pills.filter(Boolean).map((t, i) => (
+                    <span
+                      key={t + i}
+                      className="rounded-full px-2 py-0.5 whitespace-nowrap"
+                      style={{
+                        fontFamily: "var(--font-dm-mono)",
+                        fontSize: 8,
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        color: i === 0 ? "#1a1a1a" : "rgba(26,26,26,0.62)",
+                        background: i === 0 ? "#fff" : "rgba(255,255,255,0.7)",
+                        backdropFilter: "blur(8px)",
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </span>
+              )}
               {croppable && (
                 <span
                   aria-hidden

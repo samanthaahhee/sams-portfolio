@@ -162,7 +162,8 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               library={library ?? []}
               endpoint="/api/admin/work/thumbnail"
               label="Homepage thumbnail"
-              hint="Drag to set the crop, slide to zoom. Leave empty to use the hero image."
+              hint="Drag to set the crop, slide to zoom. Leave empty to use the hero image. The pills shown on it are the Client and Title fields below."
+              pills={[form.client, form.title]}
               initialZoom={project.thumbZoom}
               aspect="4 / 3"
               croppable
@@ -195,13 +196,15 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
         </Field>
 
         {/* Client + Title are the pair shown as "CLIENT | TITLE" on the
-            project page and as the two pills on the homepage. */}
-        <Field label="Title (shown after the client, e.g. Brand Expansion)">
+            project page and as the two pills on the homepage tile. Their
+            labels say so — "tags" was the obvious guess for where the
+            pills came from, and there is no such field. */}
+        <Field label="Title — second pill on the tile, e.g. Brand Expansion">
           <input required value={form.title} onChange={(e) => set("title", e.target.value)} className={fieldInput} />
         </Field>
 
         <div className="grid grid-cols-3 gap-4">
-          <Field label="Client">
+          <Field label="Client — first pill on the tile">
             <input value={form.client} onChange={(e) => set("client", e.target.value)} className={fieldInput} />
           </Field>
           <Field label="Role">
