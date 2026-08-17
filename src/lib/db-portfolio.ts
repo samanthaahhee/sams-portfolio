@@ -6,6 +6,22 @@ import { sql } from "@vercel/postgres";
 
 export type MediaType = "image" | "gif" | "mp4";
 
+/** What a file is, from its extension — the only signal a URL carries.
+ *  Videos and GIFs both have to bypass the warping canvas, which paints
+ *  a single frame, so knowing which is which decides how a slot renders. */
+export function mediaTypeFor(url: string): MediaType {
+  if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)) return "mp4";
+  if (/\.gif(\?|$)/i.test(url)) return "gif";
+  return "image";
+}
+
+/** True for anything the canvas cannot draw without freezing it. */
+export function isMotionMedia(m?: { type?: MediaType; url?: string } | null) {
+  if (!m) return false;
+  if (m.type === "gif" || m.type === "mp4") return true;
+  return m.url ? mediaTypeFor(m.url) !== "image" : false;
+}
+
 export type PortfolioMedia = {
   id: number;
   projectId: number | null;
@@ -905,7 +921,7 @@ async function getDatabaseImages(): Promise<LibraryImage[]> {
   }
 }
 
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
+const MEDIA_EXT = /\.(png|jpe?g|gif|webp|avif|svg|mp4|webm|mov|m4v)$/i;
 
 /** Everything in Blob storage, which is the real library — the database
  *  only knows about files something happens to reference, so anything
@@ -923,7 +939,7 @@ async function getStorageImages(): Promise<LibraryImage[]> {
     for (let page = 0; page < 10; page++) {
       const res = await list({ cursor, limit: 1000 });
       for (const b of res.blobs) {
-        if (!IMAGE_EXT.test(b.pathname)) continue;
+        if (!MEDIA_EXT.test(b.pathname)) continue;
         out.push({ url: b.url, width: null, height: null, source: "Storage" });
       }
       if (!res.hasMore || !res.cursor) break;
@@ -961,7 +977,7 @@ export async function createBlockMedia(m: {
      slot — that is what makes a slot able to loop like a GIF. */
   /* Record GIFs as such: a native row plays them as a real <img>, and
      "type" is the only thing that says so. */
-  const type: MediaType = /\.gif(\?|$)/i.test(m.url) ? "gif" : "image";
+  const type = mediaTypeFor(m.url);
   const { rows } = await sql<{ id: number; frame_index: number }>`
     INSERT INTO portfolio_media
       (project_id, surface, type, url, width, height, aspect_ratio, order_index,
@@ -1020,7 +1036,7 @@ async function replaceSingleMedia(
   const z = Math.max(1, Math.min(4, Number.isFinite(zoom) ? zoom : 1));
   await sql`DELETE FROM portfolio_media WHERE project_id = ${projectId} AND surface = ${surface}`;
   if (!url) return;
-  const type: MediaType = /\.gif(\?|$)/i.test(url) ? "gif" : "image";
+  const type = mediaTypeFor(url);
   await sql`
     INSERT INTO portfolio_media
       (project_id, surface, type, url, width, height, order_index, focal_x, focal_y, zoom)

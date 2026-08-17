@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LibraryImage } from "@/lib/db-portfolio";
 import { LibraryPicker } from "./_library-picker";
+import { readMediaDims } from "./_media-dims";
+import { MediaBox } from "./_media-preview";
 
 /** One image field — the hero cover, or the homepage thumbnail with its
  *  own crop. Both write a media row rather than a project column, so
@@ -111,19 +113,7 @@ export function CoverField({
     setBusy(true);
     setError(null);
     try {
-      const dims = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-        const objectUrl = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-          resolve({ width: img.naturalWidth, height: img.naturalHeight });
-          URL.revokeObjectURL(objectUrl);
-        };
-        img.onerror = () => {
-          URL.revokeObjectURL(objectUrl);
-          reject(new Error("Could not read image dimensions"));
-        };
-        img.src = objectUrl;
-      });
+      const dims = await readMediaDims(file);
       const fd = new FormData();
       fd.append("file", file);
       const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
@@ -187,10 +177,8 @@ export function CoverField({
         >
           {url ? (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={url}
-                alt=""
+              <MediaBox
+                url={url}
                 draggable={false}
                 className="w-full h-full object-cover pointer-events-none"
                 style={
@@ -275,7 +263,7 @@ export function CoverField({
             Upload
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,video/mp4,video/webm"
               className="sr-only"
               onChange={(e) => {
                 const f = e.target.files?.[0];

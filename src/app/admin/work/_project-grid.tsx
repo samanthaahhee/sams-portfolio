@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { MediaBox } from "./_media-preview";
 
 export type GridProject = {
   id: number;
@@ -130,10 +131,8 @@ export function ProjectGrid({ projects }: { projects: GridProject[] }) {
             <Link href={`/admin/work/${p.id}`} className="block group">
               <div className="aspect-[4/3] overflow-hidden rounded-t-sm bg-[color:var(--paper-soft)] grid place-items-center">
                 {p.src ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.src}
-                    alt=""
+                  <MediaBox
+                    url={p.src}
                     draggable={false}
                     className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
                     style={{

@@ -2,6 +2,7 @@
 
 import type { PortfolioBlock } from "@/lib/db-portfolio";
 import { ROW_LAYOUTS, rowAspect } from "@/lib/block-layouts";
+import { MediaBox } from "./_media-preview";
 
 /* A true-to-the-page preview of the composed rows.
  *
@@ -39,10 +40,8 @@ function Slot({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={media.url}
-      alt=""
+    <MediaBox
+      url={media.url}
       className="w-full rounded-sm"
       style={{
         display: "block",

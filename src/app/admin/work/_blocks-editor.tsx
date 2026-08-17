@@ -1,9 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { mediaTypeFor } from "@/lib/db-portfolio";
 import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfolio";
 import { rowAspect, slotAspect, slotCount } from "@/lib/block-layouts";
 import { LibraryPicker } from "./_library-picker";
+import { readMediaDims } from "./_media-dims";
+import { MediaBox } from "./_media-preview";
 import { LayoutPreview } from "./_layout-preview";
 
 /* ── Project-page block editor ─────────────────────────────────────────
@@ -32,22 +35,6 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "stack", label: "Layered stack", slots: 1 },
   { value: "native", label: "Original size / GIF", slots: 1 },
 ];
-
-function readImageDims(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-      URL.revokeObjectURL(url);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Could not read image dimensions"));
-    };
-    img.src = url;
-  });
-}
 
 async function uploadToBlob(file: File): Promise<string> {
   const fd = new FormData();
@@ -150,7 +137,7 @@ export function BlocksEditor({
     setBusy(true);
     setError(null);
     try {
-      const [url, dims] = await Promise.all([uploadToBlob(file), readImageDims(file)]);
+      const [url, dims] = await Promise.all([uploadToBlob(file), readMediaDims(file)]);
       await attach(blockId, position, url, dims.width, dims.height);
     } catch (e) {
       fail(e);
@@ -185,7 +172,7 @@ export function BlocksEditor({
           projectId,
           surface: "project_page",
           slotId: null,
-          type: "image",
+          type: mediaTypeFor(url),
           url,
           width,
           height,
@@ -419,7 +406,7 @@ export function BlocksEditor({
                             {frames.length ? "+ Upload" : "Upload"}
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/*,video/mp4,video/webm"
                               className="sr-only"
                               onChange={(e) => {
                                 const f = e.target.files?.[0];
@@ -544,10 +531,8 @@ function CropBox({
           onCommit(media.focalX, media.focalY, media.zoom);
         }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={media.url}
-          alt=""
+        <MediaBox
+          url={media.url}
           draggable={false}
           className={native ? "w-full h-auto block pointer-events-none" : "w-full h-full object-cover pointer-events-none"}
           style={

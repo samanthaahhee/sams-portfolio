@@ -50,7 +50,10 @@ export async function POST(req: Request): Promise<NextResponse> {
   if (file.size > 4 * 1024 * 1024) {
     return NextResponse.json(
       {
-        error: `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Vercel serverless caps uploads at 4.5 MB — please resize the image first.`,
+        error:
+          `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Uploads go through a serverless function, ` +
+          `which caps the body at 4.5 MB. For a video, shortening the clip or exporting at a lower bitrate is ` +
+          `usually enough — a few seconds of muted loop should sit well under it.`,
       },
       { status: 413 },
     );

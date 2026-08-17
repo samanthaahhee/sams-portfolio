@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
+import { isMotionMedia } from "@/lib/db-portfolio";
 import type { PortfolioBlock, PortfolioMedia, PortfolioProject } from "@/lib/db-portfolio";
 import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
@@ -242,7 +243,7 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
   }, [frames.length]);
 
   const media = frames[i % Math.max(frames.length, 1)];
-  const isGif = media?.type === "gif" || /\.gif(\?|$)/i.test(media?.url ?? "");
+  const isGif = isMotionMedia(media);
 
   /* The canvas needs a box before it can draw. Stored dimensions are
      used when present; most migrated rows have none, so the file itself
@@ -289,6 +290,17 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
     );
   }
 
+  const naturalStyle: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    height: "auto",
+    borderRadius: 4,
+  };
+
+  if (media.type === "mp4") {
+    return <video src={media.url} autoPlay loop muted playsInline style={naturalStyle} />;
+  }
+
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
@@ -298,7 +310,7 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
          stored dimensions are missing for library picks and can be stale
          for anything else, and either would force a box the file does not
          actually have — which stretches it. */
-      style={{ display: "block", width: "100%", height: "auto", borderRadius: 4 }}
+      style={naturalStyle}
     />
   );
 }
@@ -311,7 +323,28 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
  *  cover crop, focal point and zoom keeps the frame identical to its
  *  neighbours and keeps the animation. It forfeits only the scroll warp,
  *  which is the trade animation always costs. */
-function CroppedGif({ media, aspect }: { media: PortfolioMedia; aspect: string }) {
+function CroppedMotion({ media, aspect }: { media: PortfolioMedia; aspect: string }) {
+  const style: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    height: "100%",
+    aspectRatio: aspect,
+    objectFit: "cover",
+    objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%`,
+    transform: media.zoom > 1 ? `scale(${media.zoom})` : undefined,
+    transformOrigin: `${media.focalX * 100}% ${media.focalY * 100}%`,
+    borderRadius: 4,
+  };
+
+  if (media.type === "mp4") {
+    return (
+      /* muted + playsInline are what let a browser autoplay at all, and
+         a silent looping clip is the point here — it stands in for a GIF
+         at a fraction of the weight. */
+      <video src={media.url} autoPlay loop muted playsInline style={style} />
+    );
+  }
+
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
@@ -333,7 +366,7 @@ function CroppedGif({ media, aspect }: { media: PortfolioMedia; aspect: string }
 }
 
 function isAnimated(m?: PortfolioMedia) {
-  return !!m && (m.type === "gif" || /\.gif(\?|$)/i.test(m.url));
+  return isMotionMedia(m);
 }
 
 function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
@@ -370,7 +403,7 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
       {aspects.map((a, i) => {
         const frame = shared ?? a;
         const first = block.slots[i]?.[0];
-        if (isAnimated(first)) return <CroppedGif key={i} media={first!} aspect={frame} />;
+        if (isAnimated(first)) return <CroppedMotion key={i} media={first!} aspect={frame} />;
         return (
           <WorkTile
             key={i}

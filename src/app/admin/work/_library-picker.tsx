@@ -1,6 +1,7 @@
 "use client";
 
 import type { LibraryImage } from "@/lib/db-portfolio";
+import { MediaBox } from "./_media-preview";
 
 /** Every image already on the site, offered so an existing asset can be
  *  reused rather than uploaded a second time. Shared by the cover field
@@ -49,8 +50,7 @@ export function LibraryPicker({
               className="text-left hover:opacity-70 transition-opacity disabled:opacity-40"
             >
               <span className="block border border-[color:var(--rule)] rounded-sm aspect-[4/3] overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={m.url} alt="" className="w-full h-full object-cover" />
+                <MediaBox url={m.url} className="w-full h-full object-cover" />
               </span>
               <span className="block font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)] mt-1">
                 {m.source}

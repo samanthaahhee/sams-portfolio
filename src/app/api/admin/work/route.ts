@@ -7,9 +7,14 @@ import {
 } from "@/lib/db-portfolio";
 
 function revalidateWorkSurfaces(slug?: string) {
+  /* The homepage grid is built from these rows — its tiles, their order
+     and the client/title pills on them — so renaming a project without
+     busting "/" left the front page showing the old labels. */
+  revalidatePath("/");
   revalidatePath("/work");
   if (slug) revalidatePath(`/work/${slug}`);
   revalidatePath("/admin/work");
+  revalidatePath("/admin");
 }
 
 type Body = PortfolioProjectInput & {
