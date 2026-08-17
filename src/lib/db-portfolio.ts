@@ -124,6 +124,9 @@ export type PortfolioProject = {
   orderIndex: number;
   visible: boolean;
   workGridTemplate: string | null;
+  /** Whether the project page opens on its 2:1 hero banner. The image
+   *  stays attached either way, so it can be switched back on. */
+  showHero: boolean;
   coverUrl: string | null;
   coverType: MediaType | null;
   /** The homepage tile's own image + crop, independent of the hero.
@@ -164,6 +167,7 @@ type ProjectRow = {
   order_index: number;
   visible: boolean;
   work_grid_template: string | null;
+  show_hero?: boolean | null;
   cover_url: string | null;
   cover_type: string | null;
   thumb_url?: string | null;
@@ -197,6 +201,7 @@ function projectFromRow(r: ProjectRow): PortfolioProject {
     orderIndex: r.order_index,
     visible: r.visible,
     workGridTemplate: r.work_grid_template,
+    showHero: r.show_hero ?? true,
     coverUrl: r.cover_url,
     coverType: r.cover_type as MediaType | null,
     thumbUrl: r.thumb_url ?? null,
@@ -383,6 +388,7 @@ export async function upsertPortfolioProject(p: PortfolioProjectInput): Promise<
         client = ${p.client}, role = ${p.role}, year = ${p.year},
         order_index = ${p.orderIndex}, visible = ${p.visible},
         work_grid_template = ${p.workGridTemplate},
+        show_hero = ${p.showHero},
         deliverables = ${deliverables}::jsonb, creative_team = ${creativeTeam}::jsonb,
         accent_color = ${p.accentColor ?? null},
         overview_heading = ${p.overviewHeading ?? null},
@@ -395,10 +401,11 @@ export async function upsertPortfolioProject(p: PortfolioProjectInput): Promise<
   const { rows } = await sql<{ id: number }>`
     INSERT INTO portfolio_projects
       (slug, title, discipline, client, role, year, order_index, visible, work_grid_template,
-       deliverables, creative_team, accent_color, overview_heading, overview_body)
+       show_hero, deliverables, creative_team, accent_color, overview_heading, overview_body)
     VALUES
       (${p.slug}, ${p.title}, ${p.discipline}, ${p.client}, ${p.role}, ${p.year},
-       ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${deliverables}::jsonb, ${creativeTeam}::jsonb,
+       ${p.orderIndex}, ${p.visible}, ${p.workGridTemplate}, ${p.showHero},
+       ${deliverables}::jsonb, ${creativeTeam}::jsonb,
        ${p.accentColor ?? null}, ${p.overviewHeading ?? null}, ${p.overviewBody ?? null})
     RETURNING id
   `;

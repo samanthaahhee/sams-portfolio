@@ -68,6 +68,7 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
       year: "",
       orderIndex: 0,
       visible: true,
+      showHero: true,
       workGridTemplate: null,
       deliverables: [],
       creativeTeam: [],
@@ -178,11 +179,34 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               initialZoom={project.coverZoom}
               library={library ?? []}
               label="Hero image (top of the project page)"
-              hint="Drag to set the crop, slide to zoom. Cropped to 2:1 on the page. Clear it to start the page on its first section instead."
+              hint="Drag to set the crop, slide to zoom. Cropped to 2:1 on the page."
               aspect="2 / 1"
               croppable
-              clearable
             />
+            {/* A switch, not a delete: turning the banner off keeps the
+                image attached so it can come back untouched. */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="font-mono text-[color:var(--meta)]">Hero banner</span>
+              {[true, false].map((v) => (
+                <button
+                  key={String(v)}
+                  type="button"
+                  onClick={() => set("showHero", v)}
+                  aria-pressed={form.showHero === v}
+                  className="font-mono uppercase tracking-[0.14em] text-[10px] px-3 py-1.5 rounded-full border transition-colors"
+                  style={{
+                    background: form.showHero === v ? "var(--ink)" : "transparent",
+                    color: form.showHero === v ? "var(--paper)" : "var(--ink-soft)",
+                    borderColor: form.showHero === v ? "var(--ink)" : "var(--rule)",
+                  }}
+                >
+                  {v ? "Shown" : "Hidden"}
+                </button>
+              ))}
+              <span className="font-mono text-[10px] text-[color:var(--meta)]">
+                Hiding it keeps the image — the page just opens on its first section.
+              </span>
+            </div>
           </>
         )}
 

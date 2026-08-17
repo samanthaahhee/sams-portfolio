@@ -177,13 +177,10 @@ ALTER TABLE portfolio_media
 CREATE INDEX IF NOT EXISTS portfolio_media_block_idx
   ON portfolio_media (block_id, block_position);
 
--- Fourth image-row layout: the mirror of portrait_landscape, so a row can
--- lead with the wide image instead of the tall one.
-ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
-ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
-  CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait',
-                    'split', 'portrait_trio', 'native',
-                    'portrait_portrait', 'compare', 'stack'));
+-- The layout CHECK is re-stated once, further down, with every value it
+-- has ever grown. An earlier copy of this statement listed a subset, so
+-- re-running the migration failed the moment a row used a newer layout —
+-- these files get replayed, so each statement has to stay true forever.
 
 -- Image slots can hold a SEQUENCE of frames that loops like a GIF, and
 -- each frame carries its own crop. frame_index orders the frames within
@@ -219,3 +216,9 @@ ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
   CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait',
                     'split', 'portrait_trio', 'trio', 'native',
                     'portrait_portrait', 'compare', 'stack'));
+
+-- Whether the project page opens on its big 2:1 hero banner. A switch
+-- rather than deleting the image: turning the banner off should not
+-- throw away the picture, so it can come back without being re-picked.
+ALTER TABLE portfolio_projects
+  ADD COLUMN IF NOT EXISTS show_hero BOOLEAN NOT NULL DEFAULT true;

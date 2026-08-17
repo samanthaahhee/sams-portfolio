@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     overviewHeading: body.overviewHeading ?? null,
     overviewBody: body.overviewBody ?? null,
     visible: body.visible !== false,
+    showHero: body.showHero !== false,
     workGridTemplate: body.workGridTemplate ?? null,
     deliverables: body.deliverables ?? [],
     creativeTeam: body.creativeTeam ?? [],

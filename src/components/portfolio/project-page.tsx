@@ -455,7 +455,7 @@ export function ProjectPage({
 
       <div style={{ padding: `clamp(14px, 1.8vw, 24px) ${SIDE_PAD} 0`, display: "grid", gap: GUTTER }}>
         {/* hero */}
-        {project.coverUrl && (
+        {project.showHero && project.coverUrl && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr" }}>
             <WorkTile
               aspect="2 / 1"
