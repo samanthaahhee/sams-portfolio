@@ -2,6 +2,13 @@ import Link from "next/link";
 import { getAllPortfolioProjects } from "@/lib/db-portfolio";
 import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
 
+/* The admin must never serve a cached render: it is the surface you use
+   to change the data it displays, so a stale list reads as the backend
+   disagreeing with the live site. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+
 /* The rebuild has one content type: a project. The legacy dashboard split
  * the same idea across "Projects" and "Case studies" and carried a CV
  * section besides; all three are retired here. Their tables and API

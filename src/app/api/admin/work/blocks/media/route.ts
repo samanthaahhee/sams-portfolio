@@ -26,6 +26,8 @@ export async function POST(req: Request) {
     height: body.height ?? null,
   });
   revalidatePath("/work");
+  revalidatePath("/admin/work");
+  revalidatePath("/admin");
   if (body.projectSlug) revalidatePath(`/work/${body.projectSlug}`);
   return NextResponse.json(created);
 }
@@ -42,6 +44,8 @@ export async function PATCH(req: Request) {
   if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
   await setMediaCrop(body.id, body.focalX ?? 0.5, body.focalY ?? 0.5, body.zoom ?? 1);
   revalidatePath("/work");
+  revalidatePath("/admin/work");
+  revalidatePath("/admin");
   if (body.projectSlug) revalidatePath(`/work/${body.projectSlug}`);
   return NextResponse.json({ ok: true });
 }
@@ -53,6 +57,8 @@ export async function DELETE(req: Request) {
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
   await deletePortfolioMedia(id);
   revalidatePath("/work");
+  revalidatePath("/admin/work");
+  revalidatePath("/admin");
   if (projectSlug) revalidatePath(`/work/${projectSlug}`);
   return NextResponse.json({ ok: true });
 }

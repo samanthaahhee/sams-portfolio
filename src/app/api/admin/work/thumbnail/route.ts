@@ -26,6 +26,8 @@ export async function POST(req: Request) {
   /* The grid lives on the homepage, so that is the page to bust. */
   revalidatePath("/");
   revalidatePath("/work");
+  revalidatePath("/admin/work");
+  revalidatePath("/admin");
   if (body.projectSlug) revalidatePath(`/work/${body.projectSlug}`);
   return NextResponse.json({ ok: true });
 }

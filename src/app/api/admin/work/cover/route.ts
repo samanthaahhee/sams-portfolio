@@ -30,6 +30,8 @@ export async function POST(req: Request) {
   /* The homepage grid reads covers, so it has to be busted too. */
   revalidatePath("/");
   revalidatePath("/work");
+  revalidatePath("/admin/work");
+  revalidatePath("/admin");
   if (body.projectSlug) revalidatePath(`/work/${body.projectSlug}`);
   return NextResponse.json({ ok: true });
 }

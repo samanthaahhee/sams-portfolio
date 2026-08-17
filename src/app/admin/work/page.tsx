@@ -4,6 +4,13 @@ import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
 import { ImportPlaceholderButton } from "./_import-placeholder";
 import { ProjectGrid, type GridProject } from "./_project-grid";
 
+/* The admin must never serve a cached render: it is the surface you use
+   to change the data it displays, so a stale list reads as the backend
+   disagreeing with the live site. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+
 export default async function WorkList() {
   const projects = await getAllPortfolioProjects();
 

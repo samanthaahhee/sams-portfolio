@@ -2,6 +2,13 @@ import { notFound } from "next/navigation";
 import { getPortfolioProjectById, getProjectBlocks, getMediaLibrary } from "@/lib/db-portfolio";
 import { WorkProjectForm } from "../_form";
 
+/* The admin must never serve a cached render: it is the surface you use
+   to change the data it displays, so a stale list reads as the backend
+   disagreeing with the live site. */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+
 export default async function EditWorkProjectPage({
   params,
 }: {
