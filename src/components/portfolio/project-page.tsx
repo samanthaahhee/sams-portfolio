@@ -65,16 +65,20 @@ function Wordmark({ color }: { color: string }) {
   );
 }
 
-/** ← previous project · CLIENT | TITLE · next project → */
+/** ← back to the grid · CLIENT | TITLE · next project →
+ *
+ *  The left slot returns to the homepage rather than stepping to the
+ *  previous project, anchored to this project's own tile — you land back
+ *  where you were looking instead of at the top of the page. */
 function ProjectNav({
   color,
-  prev,
+  slug,
   next,
   title,
   client,
 }: {
   color: string;
-  prev: ProjectNeighbour;
+  slug: string;
   next: ProjectNeighbour;
   title?: string;
   client?: string;
@@ -90,11 +94,9 @@ function ProjectNav({
       }}
     >
       <span style={{ flex: 1 }}>
-        {prev && (
-          <Link href={`/work/${prev.slug}`} className="hover:opacity-70 transition-opacity" style={link}>
-            &larr; previous project
-          </Link>
-        )}
+        <Link href={`/#work-${slug}`} className="hover:opacity-70 transition-opacity" style={link}>
+          &larr; back to work
+        </Link>
       </span>
       {title && (
         <span
@@ -424,12 +426,10 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
 export function ProjectPage({
   project,
   blocks,
-  prev,
   next,
 }: {
   project: PortfolioProject;
   blocks: PortfolioBlock[];
-  prev: ProjectNeighbour;
   next: ProjectNeighbour;
 }) {
   const accent = project.accentColor || "#FF2E31";
@@ -449,7 +449,7 @@ export function ProjectPage({
         </Link>
 
         <div style={{ marginTop: "clamp(24px, 3.4vw, 46px)" }}>
-          <ProjectNav color={accent} prev={prev} next={next} title={project.title} client={project.client} />
+          <ProjectNav color={accent} slug={project.slug} next={next} title={project.title} client={project.client} />
         </div>
       </div>
 
@@ -501,7 +501,7 @@ export function ProjectPage({
         )}
 
         <div style={{ padding: "clamp(20px, 3vw, 44px) 0 clamp(8px, 1.4vw, 20px)" }}>
-          <ProjectNav color={accent} prev={prev} next={next} />
+          <ProjectNav color={accent} slug={project.slug} next={next} />
         </div>
       </div>
 

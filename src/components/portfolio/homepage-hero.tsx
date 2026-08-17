@@ -288,6 +288,7 @@ export function HomepageHero({
           title={t.client}
           tags={t.title ? [t.title] : []}
           href={`/work/${t.slug}`}
+          anchorId={`work-${t.slug}`}
         />
       ))}
     </div>

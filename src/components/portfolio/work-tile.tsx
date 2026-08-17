@@ -25,6 +25,7 @@ export function WorkTile({
   title,
   tags = [],
   href,
+  anchorId,
 }: {
   aspect?: string;
   src?: string;
@@ -32,6 +33,8 @@ export function WorkTile({
   title?: string;
   tags?: string[];
   href?: string;
+  /** Lets a project page send the reader back to this exact tile. */
+  anchorId?: string;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -344,9 +347,17 @@ export function WorkTile({
        the tile's own box near the bottom of the viewport */
     <div
       ref={hostRef}
+      id={anchorId}
       data-worktile=""
       className="group"
-      style={{ aspectRatio: aspect, position: "relative", overflow: "visible", borderRadius: 4 }}
+      style={{
+        aspectRatio: aspect,
+        position: "relative",
+        overflow: "visible",
+        borderRadius: 4,
+        /* so an anchored tile lands below the meta row, not jammed under it */
+        scrollMarginTop: "clamp(24px, 6vw, 96px)",
+      }}
     >
       {/* Rounding lives on the canvas, not the host: the host must keep
           overflow visible for the warp, so it cannot clip anything. */}

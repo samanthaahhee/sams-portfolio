@@ -63,11 +63,6 @@ export default async function WorkDeepDivePage({
   };
 
   return (
-    <ProjectPage
-      project={project}
-      blocks={blocks}
-      prev={i > -1 ? at(i - 1) : null}
-      next={i > -1 ? at(i + 1) : null}
-    />
+    <ProjectPage project={project} blocks={blocks} next={i > -1 ? at(i + 1) : null} />
   );
 }
