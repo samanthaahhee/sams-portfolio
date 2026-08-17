@@ -178,9 +178,10 @@ export function WorkProjectForm({ project, library, blocks, mode }: Props) {
               initialZoom={project.coverZoom}
               library={library ?? []}
               label="Hero image (top of the project page)"
-              hint="Drag to set the crop, slide to zoom. Cropped to 2:1 on the page."
+              hint="Drag to set the crop, slide to zoom. Cropped to 2:1 on the page. Clear it to start the page on its first section instead."
               aspect="2 / 1"
               croppable
+              clearable
             />
           </>
         )}
