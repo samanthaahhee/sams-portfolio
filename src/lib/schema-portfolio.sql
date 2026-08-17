@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS portfolio_blocks (
   order_index INTEGER NOT NULL DEFAULT 0,
   kind        TEXT    NOT NULL CHECK (kind IN ('images', 'text')),
   -- image blocks: how the row is composed
-  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split', 'portrait_trio', 'native', 'portrait_portrait', 'compare', 'stack')),
+  layout      TEXT    CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait', 'split', 'portrait_trio', 'trio', 'duo', 'native', 'portrait_portrait', 'compare', 'stack')),
   -- text blocks
   heading     TEXT,
   body        TEXT,
@@ -214,7 +214,7 @@ ALTER TABLE portfolio_media
 ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_layout_check;
 ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
   CHECK (layout IN ('single', 'portrait_landscape', 'landscape_portrait',
-                    'split', 'portrait_trio', 'trio', 'native',
+                    'split', 'portrait_trio', 'trio', 'duo', 'native',
                     'portrait_portrait', 'compare', 'stack'));
 
 -- Whether the project page opens on its big 2:1 hero banner. A switch

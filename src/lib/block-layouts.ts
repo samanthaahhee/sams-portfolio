@@ -32,6 +32,9 @@ export const ROW_LAYOUTS: Record<
      frame. The first image's proportions set the row so all three share
      a height; see rowAspect. */
   trio: { className: "grid grid-cols-1 sm:grid-cols-3", aspects: ["auto", "auto", "auto"] },
+  /* Two across, sized by the pictures — for a pair of landscape clips or
+     stills that a fixed 4:3 would crop. */
+  duo: { className: "grid grid-cols-1 sm:grid-cols-2", aspects: ["auto", "auto"] },
   portrait_portrait: {
     className: "grid grid-cols-1 sm:grid-cols-2",
     aspects: ["3 / 4", "3 / 4"],
@@ -66,7 +69,7 @@ export function compareAspect(first?: { width?: number | null; height?: number |
 }
 
 /** Layouts whose frame comes from the pictures, not a fixed ratio. */
-const IMAGE_LED = new Set<BlockLayout>(["compare", "trio"]);
+const IMAGE_LED = new Set<BlockLayout>(["compare", "trio", "duo"]);
 
 /** The frame a whole row uses, when the row takes it from its first
  *  image rather than from a fixed ratio. Null means each slot is sized

@@ -30,6 +30,7 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "split", label: "Landscape 50/50", slots: 2 },
   { value: "portrait_trio", label: "Three portraits", slots: 3 },
   { value: "trio", label: "Three across (original ratio)", slots: 3 },
+  { value: "duo", label: "Two across (original ratio)", slots: 2 },
   { value: "portrait_portrait", label: "Two portraits", slots: 2 },
   { value: "compare", label: "Before / after", slots: 2 },
   { value: "stack", label: "Layered stack", slots: 1 },
