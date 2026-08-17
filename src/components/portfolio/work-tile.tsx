@@ -101,6 +101,14 @@ export function WorkTile({
     let raf = 0;
     let lastKey = "";
     let sizedFor = "";
+    /* The topmost row repainted last frame. Everything above it is flat,
+       already correct, and does not need touching again. */
+    let paintedFrom = 0;
+    /* Bottom of the warped region last frame. Below it the flare is
+       clamped, so those pixels are the same at every scroll position and
+       survive untouched. */
+    let paintedTo = 0;
+    let fullRepaint = true;
 
     const tick = () => {
       const host = hostRef.current;
@@ -185,6 +193,7 @@ export function WorkTile({
         canvas.style.left = `${-pad}px`;
         sizedFor = sizeKey;
         lastKey = ""; // force a redraw at the new size
+        fullRepaint = true;
       }
 
       /* Redraw on any sub-pixel movement, but ONLY while the tile actually
@@ -208,7 +217,6 @@ export function WorkTile({
         return;
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, cssW, H);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
@@ -283,13 +291,31 @@ export function WorkTile({
       const step = Math.max(1 / dpr, (warpEnd - flatUntil) / 320);
       const firstWarp = Math.min(H, Math.ceil(flatUntil / step) * step);
 
+      /* Repaint only what can have changed. Above the warp the picture is
+         flat and identical frame to frame, so re-blitting it is wasted
+         work — and on a tall tile it is most of the work: a full-width
+         image 3000px high, at 2x, is a 6000px-tall canvas being cleared
+         and redrawn sixty times a second, which is what made the bend
+         stutter on a long screenshot. Scrolling either way only exposes
+         rows between the previous top-of-warp and the current one. */
+      const from = fullRepaint ? 0 : Math.max(0, Math.min(firstWarp, paintedFrom));
+      const to = fullRepaint ? H : Math.min(H, Math.max(warpEnd, paintedTo));
+      ctx.clearRect(0, from, cssW, to - from);
+
       // everything above the band is unwarped: one blit, not many rows
-      if (firstWarp > 0) drawSpan(0, firstWarp);
+      if (firstWarp > from) drawSpan(from, firstWarp);
 
       for (let y = firstWarp; y < warpEnd; y += step) {
         drawSpan(y, Math.min(y + step, warpEnd));
       }
-      if (warpEnd < H) drawSpan(warpEnd, H);
+      /* Past the viewport floor the flare is clamped, so this span is the
+         same wherever the tile sits — draw only the part just uncovered
+         and leave the rest of it standing. */
+      if (to > warpEnd) drawSpan(warpEnd, to);
+
+      paintedFrom = firstWarp;
+      paintedTo = warpEnd;
+      fullRepaint = false;
 
       // the silhouette is cut with a vector clip-path: canvas edges land on
       // pixel boundaries, this antialiases them
