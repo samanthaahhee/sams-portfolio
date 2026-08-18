@@ -6,6 +6,7 @@ import type { BlockLayout, PortfolioBlock, LibraryImage } from "@/lib/db-portfol
 import { rowAspect, slotAspect, slotCount } from "@/lib/block-layouts";
 import { LibraryPicker } from "./_library-picker";
 import { readMediaDims } from "./_media-dims";
+import { uploadFile } from "./_upload";
 import { MediaBox } from "./_media-preview";
 import { LayoutPreview } from "./_layout-preview";
 
@@ -36,15 +37,6 @@ const LAYOUTS: { value: BlockLayout; label: string; slots: number }[] = [
   { value: "stack", label: "Layered stack", slots: 1 },
   { value: "native", label: "Original size / GIF", slots: 1 },
 ];
-
-async function uploadToBlob(file: File): Promise<string> {
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-  const json = (await res.json()) as { url?: string; error?: string };
-  if (!res.ok || !json.url) throw new Error(json.error ?? "Upload failed");
-  return json.url;
-}
 
 export function BlocksEditor({
   projectId,
@@ -138,7 +130,7 @@ export function BlocksEditor({
     setBusy(true);
     setError(null);
     try {
-      const [url, dims] = await Promise.all([uploadToBlob(file), readMediaDims(file)]);
+      const [url, dims] = await Promise.all([uploadFile(file), readMediaDims(file)]);
       await attach(blockId, position, url, dims.width, dims.height);
     } catch (e) {
       fail(e);

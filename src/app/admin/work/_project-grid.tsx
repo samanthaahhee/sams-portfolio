@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MediaBox } from "./_media-preview";
@@ -50,6 +50,22 @@ export function ProjectGrid({
   };
 
   const [items, setItems] = useState<Item[]>(() => build(projects, aboutAfterRows));
+  /* What to save. Reading `items` inside commit captured the array from
+     the render the handler was created in — the order BEFORE the move —
+     so every drag saved the old arrangement and the refresh put the tile
+     straight back. A ref always holds the current one. */
+  const itemsRef = useRef(items);
+  /* Kept in step after any render — including the props-sync below, which
+     may not go through apply(). Writing a ref during render is not
+     allowed, so the mirror happens here. */
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+  /** Only from event handlers, where touching a ref is fine. */
+  const apply = (next: Item[]) => {
+    itemsRef.current = next;
+    setItems(next);
+  };
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -67,12 +83,10 @@ export function ProjectGrid({
   /** Reorder under the cursor. Nothing is saved until the drag ends. */
   function hoverOver(index: number) {
     if (dragIndex === null || dragIndex === index) return;
-    setItems((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(dragIndex, 1);
-      next.splice(index, 0, moved);
-      return next;
-    });
+    const next = [...itemsRef.current];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(index, 0, moved);
+    apply(next);
     setDragIndex(index);
   }
 
@@ -80,12 +94,13 @@ export function ProjectGrid({
     setDragIndex(null);
     setSaving(true);
     setError(null);
-    const ids = items
+    const current = itemsRef.current;
+    const ids = current
       .filter((i): i is Extract<Item, { kind: "project" }> => i.kind === "project")
       .map((i) => i.project.id);
     /* The panel spans a whole row, so its slot is however many complete
        two-up rows of work sit above it. */
-    const rows = Math.round(items.findIndex((i) => i.kind === "about") / 2);
+    const rows = Math.round(current.findIndex((i) => i.kind === "about") / 2);
     try {
       const [orderRes, aboutRes] = await Promise.all([
         fetch("/api/admin/work/order", {
@@ -103,13 +118,13 @@ export function ProjectGrid({
       ]);
       if (!orderRes.ok || !aboutRes.ok) {
         setError("Could not save the new order");
-        setItems(build(projects, aboutAfterRows));
+        apply(build(projects, aboutAfterRows));
         return;
       }
       startTransition(() => router.refresh());
     } catch {
       setError("Could not save the new order");
-      setItems(build(projects, aboutAfterRows));
+      apply(build(projects, aboutAfterRows));
     } finally {
       setSaving(false);
     }
@@ -118,14 +133,11 @@ export function ProjectGrid({
   function nudge(index: number, dir: -1 | 1) {
     const to = index + dir;
     if (to < 0 || to >= items.length) return;
-    setItems((prev) => {
-      const next = [...prev];
-      [next[index], next[to]] = [next[to], next[index]];
-      return next;
-    });
+    const next = [...itemsRef.current];
+    [next[index], next[to]] = [next[to], next[index]];
+    apply(next);
     setDragIndex(null);
-    // commit reads state on the next tick, after React has applied it
-    setTimeout(commit, 0);
+    commit();
   }
 
   const dragProps = (index: number) => ({

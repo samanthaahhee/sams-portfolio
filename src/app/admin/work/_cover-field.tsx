@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { LibraryImage } from "@/lib/db-portfolio";
 import { LibraryPicker } from "./_library-picker";
 import { readMediaDims } from "./_media-dims";
+import { uploadFile } from "./_upload";
 import { MediaBox } from "./_media-preview";
 
 /** One image field — the hero cover, or the homepage thumbnail with its
@@ -114,12 +115,8 @@ export function CoverField({
     setError(null);
     try {
       const dims = await readMediaDims(file);
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const json = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !json.url) throw new Error(json.error ?? "Upload failed");
-      await save(json.url, dims.width, dims.height);
+      const url = await uploadFile(file);
+      await save(url, dims.width, dims.height);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed");
       setBusy(false);
