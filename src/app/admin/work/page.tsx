@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllPortfolioProjects } from "@/lib/db-portfolio";
+import { getAboutSection, getAllPortfolioProjects } from "@/lib/db-portfolio";
 import { PLACEHOLDER_PROJECTS } from "@/lib/portfolio-placeholders";
 import { ImportPlaceholderButton } from "./_import-placeholder";
 import { ProjectGrid, type GridProject } from "./_project-grid";
@@ -12,7 +12,7 @@ export const revalidate = 0;
 
 
 export default async function WorkList() {
-  const projects = await getAllPortfolioProjects();
+  const [projects, about] = await Promise.all([getAllPortfolioProjects(), getAboutSection()]);
 
   /* Fixtures with no database row yet. They render on the site from code,
      but there is nothing to edit until a row exists — so surface them here
@@ -98,7 +98,7 @@ export default async function WorkList() {
         </section>
       )}
 
-      <ProjectGrid projects={projects.map(toTile)} />
+      <ProjectGrid projects={projects.map(toTile)} aboutAfterRows={about.afterRows} />
     </div>
   );
 }

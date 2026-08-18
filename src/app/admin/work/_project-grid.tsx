@@ -20,191 +20,281 @@ export type GridProject = {
   zoom: number;
 };
 
-/* The project list as tiles rather than rows — for a portfolio, the
- * picture is the identifier, and a column of text made you open pages to
- * find the one you meant.
+/* One entry in the grid. The about panel sits in the same list as the
+   projects because on the homepage it does too — it occupies a row in
+   the flow, so ordering it separately from the work around it was always
+   going to feel disconnected. */
+type Item = { kind: "project"; project: GridProject } | { kind: "about" };
+
+/* The homepage as an editable board.
  *
- * Each tile is the homepage's own crop at the homepage's own 4:3, so
- * this doubles as a check on how the grid currently reads. Drag to
- * reorder, or use the arrows; both write through the same endpoint the
- * row list used. */
-export function ProjectGrid({ projects }: { projects: GridProject[] }) {
+ * Two columns because the homepage is two-up, so what you drag is what
+ * you get. Tiles reorder live under the cursor rather than only on drop,
+ * which is what "drag into place" needs to feel like — the previous
+ * version showed no sign of where a tile would land until you released
+ * it, and the anchor inside each tile hijacked the drag as a link drag. */
+export function ProjectGrid({
+  projects,
+  aboutAfterRows,
+}: {
+  projects: GridProject[];
+  aboutAfterRows: number;
+}) {
   const router = useRouter();
-  const [order, setOrder] = useState(projects);
-  const [dragId, setDragId] = useState<number | null>(null);
-  const [overId, setOverId] = useState<number | null>(null);
+
+  const build = (list: GridProject[], rows: number): Item[] => {
+    const items: Item[] = list.map((project) => ({ kind: "project", project }));
+    const at = Math.max(0, Math.min(rows * 2, items.length));
+    items.splice(at, 0, { kind: "about" });
+    return items;
+  };
+
+  const [items, setItems] = useState<Item[]>(() => build(projects, aboutAfterRows));
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [, startTransition] = useTransition();
 
-  /* Adjust to a fresh server list during render rather than in an effect —
-     an effect here would render the stale order first, then re-render. */
-  const [seen, setSeen] = useState(projects);
-  if (seen !== projects) {
-    setSeen(projects);
-    setOrder(projects);
+  /* Adjust to a fresh server list during render rather than in an effect. */
+  const [seen, setSeen] = useState({ projects, aboutAfterRows });
+  if (seen.projects !== projects || seen.aboutAfterRows !== aboutAfterRows) {
+    setSeen({ projects, aboutAfterRows });
+    setItems(build(projects, aboutAfterRows));
   }
 
-  async function persist(next: GridProject[]) {
+  const aboutIndex = items.findIndex((i) => i.kind === "about");
+
+  /** Reorder under the cursor. Nothing is saved until the drag ends. */
+  function hoverOver(index: number) {
+    if (dragIndex === null || dragIndex === index) return;
+    setItems((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(index, 0, moved);
+      return next;
+    });
+    setDragIndex(index);
+  }
+
+  async function commit() {
+    setDragIndex(null);
     setSaving(true);
     setError(null);
-    const previous = order;
-    setOrder(next);
+    const ids = items
+      .filter((i): i is Extract<Item, { kind: "project" }> => i.kind === "project")
+      .map((i) => i.project.id);
+    /* The panel spans a whole row, so its slot is however many complete
+       two-up rows of work sit above it. */
+    const rows = Math.round(items.findIndex((i) => i.kind === "about") / 2);
     try {
-      const res = await fetch("/api/admin/work/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: next.map((p) => p.id) }),
-      });
-      if (!res.ok) {
-        setOrder(previous);
-        setError("Reorder failed");
+      const [orderRes, aboutRes] = await Promise.all([
+        fetch("/api/admin/work/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        }),
+        rows === aboutAfterRows
+          ? Promise.resolve(new Response(null, { status: 200 }))
+          : fetch("/api/admin/homepage", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ afterRows: rows }),
+            }),
+      ]);
+      if (!orderRes.ok || !aboutRes.ok) {
+        setError("Could not save the new order");
+        setItems(build(projects, aboutAfterRows));
         return;
       }
       startTransition(() => router.refresh());
     } catch {
-      setOrder(previous);
-      setError("Reorder failed");
+      setError("Could not save the new order");
+      setItems(build(projects, aboutAfterRows));
     } finally {
       setSaving(false);
     }
   }
 
-  function move(id: number, dir: -1 | 1) {
-    const i = order.findIndex((p) => p.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= order.length) return;
-    const next = [...order];
-    [next[i], next[j]] = [next[j], next[i]];
-    persist(next);
+  function nudge(index: number, dir: -1 | 1) {
+    const to = index + dir;
+    if (to < 0 || to >= items.length) return;
+    setItems((prev) => {
+      const next = [...prev];
+      [next[index], next[to]] = [next[to], next[index]];
+      return next;
+    });
+    setDragIndex(null);
+    // commit reads state on the next tick, after React has applied it
+    setTimeout(commit, 0);
   }
 
-  function drop(targetId: number) {
-    if (dragId === null || dragId === targetId) return;
-    const from = order.findIndex((p) => p.id === dragId);
-    const to = order.findIndex((p) => p.id === targetId);
-    if (from < 0 || to < 0) return;
-    const next = [...order];
-    const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
-    setDragId(null);
-    setOverId(null);
-    persist(next);
-  }
+  const dragProps = (index: number) => ({
+    draggable: true,
+    onDragStart: () => setDragIndex(index),
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      hoverOver(index);
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      commit();
+    },
+    onDragEnd: () => commit(),
+    style: { opacity: dragIndex === index ? 0.35 : 1, cursor: "grab" as const },
+  });
 
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-4 flex-wrap">
         <p className="font-mono text-[color:var(--meta)]">
-          Projects · {String(order.length).padStart(2, "0")}
+          Homepage grid · {projects.length} projects
           {saving && " · saving…"}
         </p>
-        <p className="font-mono text-[color:var(--meta)] text-[10px] hidden md:block">
-          Drag a tile to reorder · ← → for touch
+        <p className="font-mono text-[color:var(--meta)] text-[10px]">
+          Drag anything into place · ↑ ↓ also work
         </p>
       </div>
 
       {error && <p className="font-mono text-red-700 bg-red-50 px-3 py-2 rounded text-[11px]">{error}</p>}
 
-      <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {order.map((p, i) => (
-          <li
-            key={p.id}
-            draggable
-            onDragStart={() => setDragId(p.id)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setOverId(p.id);
-            }}
-            onDragLeave={() => setOverId((v) => (v === p.id ? null : v))}
-            onDrop={() => drop(p.id)}
-            onDragEnd={() => {
-              setDragId(null);
-              setOverId(null);
-            }}
-            className="rounded-sm border transition-colors"
-            style={{
-              borderColor: overId === p.id ? "var(--ink)" : "var(--rule)",
-              opacity: dragId === p.id ? 0.4 : 1,
-            }}
-          >
-            <Link href={`/admin/work/${p.id}`} className="block group">
-              <div className="aspect-[4/3] overflow-hidden rounded-t-sm bg-[color:var(--paper-soft)] grid place-items-center">
-                {p.src ? (
-                  <MediaBox
-                    url={p.src}
-                    draggable={false}
-                    className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
-                    style={{
-                      objectPosition: `${p.focalX * 100}% ${p.focalY * 100}%`,
-                      transform: p.zoom > 1 ? `scale(${p.zoom})` : undefined,
-                      transformOrigin: `${p.focalX * 100}% ${p.focalY * 100}%`,
-                    }}
-                  />
-                ) : (
-                  <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
-                    no image
-                  </span>
-                )}
-              </div>
-
-              <div className="p-3 space-y-1">
-                <p className="font-mono text-[10px] text-[color:var(--meta)] truncate flex items-center gap-2">
-                  {p.accentColor && (
-                    <span
-                      aria-hidden
-                      className="h-2.5 w-2.5 rounded-full border shrink-0"
-                      style={{ background: p.accentColor, borderColor: "var(--rule)" }}
-                    />
-                  )}
-                  <span className="truncate">{p.client || "—"}</span>
-                </p>
-                <p className="truncate text-[13px] flex items-center gap-2">
-                  {p.title}
-                  {!p.visible && (
-                    <span
-                      className="font-mono uppercase tracking-[0.14em] text-[9px] px-1.5 py-0.5 rounded-full border shrink-0"
-                      style={{ borderColor: "var(--rule)", color: "var(--meta)" }}
-                    >
-                      Hidden
-                    </span>
-                  )}
-                </p>
-              </div>
-            </Link>
-
-            <div className="px-3 pb-3 flex items-center justify-between gap-2">
-              <a
-                href={`/work/${p.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)] hover:text-[color:var(--ink)]"
-              >
-                View ↗
-              </a>
+      {/* Two columns, as the homepage is — the board is the page. */}
+      <ul className="grid grid-cols-2 gap-4">
+        {items.map((item, index) =>
+          item.kind === "about" ? (
+            <li
+              key="about"
+              {...dragProps(index)}
+              className="col-span-2 rounded-sm border border-dashed p-4 flex items-center justify-between gap-4 flex-wrap"
+              style={{ ...dragProps(index).style, borderColor: "var(--rule)", background: "#FCF9F9" }}
+            >
+              <span>
+                <span className="font-mono uppercase tracking-[0.14em] text-[10px] text-[color:var(--meta)] block">
+                  About panel
+                </span>
+                <span className="font-mono text-[11px] text-[color:var(--meta)]">
+                  {aboutIndex === 0
+                    ? "above all projects"
+                    : `after ${Math.round(aboutIndex / 2)} row${Math.round(aboutIndex / 2) === 1 ? "" : "s"}`}
+                  {" · "}
+                  <Link href="/admin/homepage" className="underline hover:text-[color:var(--ink)]">
+                    edit its copy
+                  </Link>
+                </span>
+              </span>
               <span className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => move(p.id, -1)}
-                  disabled={i === 0 || saving}
-                  aria-label="Move earlier"
+                  onClick={() => nudge(index, -1)}
+                  disabled={index === 0 || saving}
+                  aria-label="Move up"
                   className="font-mono text-[11px] w-6 h-6 rounded-full border border-[color:var(--rule)] disabled:opacity-30 leading-none"
                 >
-                  ←
+                  ↑
                 </button>
                 <button
                   type="button"
-                  onClick={() => move(p.id, 1)}
-                  disabled={i === order.length - 1 || saving}
-                  aria-label="Move later"
+                  onClick={() => nudge(index, 1)}
+                  disabled={index === items.length - 1 || saving}
+                  aria-label="Move down"
                   className="font-mono text-[11px] w-6 h-6 rounded-full border border-[color:var(--rule)] disabled:opacity-30 leading-none"
                 >
-                  →
+                  ↓
                 </button>
               </span>
-            </div>
-          </li>
-        ))}
+            </li>
+          ) : (
+            <li
+              key={item.project.id}
+              {...dragProps(index)}
+              className="rounded-sm border transition-colors"
+              style={{ ...dragProps(index).style, borderColor: "var(--rule)" }}
+            >
+              {/* draggable={false} on the anchor: a link is draggable by
+                  default, so grabbing a tile started a link drag instead
+                  of a reorder. */}
+              <Link
+                href={`/admin/work/${item.project.id}`}
+                draggable={false}
+                className="block group"
+              >
+                <div className="aspect-[4/3] overflow-hidden rounded-t-sm bg-[color:var(--paper-soft)] grid place-items-center">
+                  {item.project.src ? (
+                    <MediaBox
+                      url={item.project.src}
+                      draggable={false}
+                      className="w-full h-full object-cover group-hover:opacity-80 transition-opacity"
+                      style={{
+                        objectPosition: `${item.project.focalX * 100}% ${item.project.focalY * 100}%`,
+                        transform: item.project.zoom > 1 ? `scale(${item.project.zoom})` : undefined,
+                        transformOrigin: `${item.project.focalX * 100}% ${item.project.focalY * 100}%`,
+                      }}
+                    />
+                  ) : (
+                    <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)]">
+                      no image
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-3 space-y-1">
+                  <p className="font-mono text-[10px] text-[color:var(--meta)] truncate flex items-center gap-2">
+                    {item.project.accentColor && (
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-2.5 rounded-full border shrink-0"
+                        style={{ background: item.project.accentColor, borderColor: "var(--rule)" }}
+                      />
+                    )}
+                    <span className="truncate">{item.project.client || "—"}</span>
+                  </p>
+                  <p className="truncate text-[13px] flex items-center gap-2">
+                    {item.project.title}
+                    {!item.project.visible && (
+                      <span
+                        className="font-mono uppercase tracking-[0.14em] text-[9px] px-1.5 py-0.5 rounded-full border shrink-0"
+                        style={{ borderColor: "var(--rule)", color: "var(--meta)" }}
+                      >
+                        Hidden
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </Link>
+
+              <div className="px-3 pb-3 flex items-center justify-between gap-2">
+                <a
+                  href={`/work/${item.project.slug}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  draggable={false}
+                  className="font-mono text-[9px] uppercase tracking-[0.14em] text-[color:var(--meta)] hover:text-[color:var(--ink)]"
+                >
+                  View ↗
+                </a>
+                <span className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => nudge(index, -1)}
+                    disabled={index === 0 || saving}
+                    aria-label="Move earlier"
+                    className="font-mono text-[11px] w-6 h-6 rounded-full border border-[color:var(--rule)] disabled:opacity-30 leading-none"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => nudge(index, 1)}
+                    disabled={index === items.length - 1 || saving}
+                    aria-label="Move later"
+                    className="font-mono text-[11px] w-6 h-6 rounded-full border border-[color:var(--rule)] disabled:opacity-30 leading-none"
+                  >
+                    ↓
+                  </button>
+                </span>
+              </div>
+            </li>
+          ),
+        )}
       </ul>
     </section>
   );
