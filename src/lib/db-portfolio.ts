@@ -762,16 +762,28 @@ export type PortfolioBlock =
       orderIndex: number;
       heading: string | null;
       body: string | null;
+    }
+  | {
+      /** An embedded film — a URL rather than an uploaded file, for
+       *  anything hosted on YouTube. Self-hosted clips are ordinary
+       *  media in an images block. */
+      kind: "embed";
+      id: number;
+      projectId: number;
+      orderIndex: number;
+      url: string | null;
+      caption: string | null;
     };
 
 type BlockRow = {
   id: number;
   project_id: number;
   order_index: number;
-  kind: "images" | "text";
+  kind: "images" | "text" | "embed";
   layout: BlockLayout | null;
   heading: string | null;
   body: string | null;
+  embed_url: string | null;
 };
 
 /** Blocks for a project, each image block carrying its media in order. */
@@ -779,7 +791,7 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
   try {
     const [{ rows: blockRows }, { rows: mediaRows }] = await Promise.all([
       sql<BlockRow>`
-        SELECT id, project_id, order_index, kind, layout, heading, body
+        SELECT id, project_id, order_index, kind, layout, heading, body, embed_url
         FROM   portfolio_blocks
         WHERE  project_id = ${projectId}
         ORDER  BY order_index ASC, id ASC
@@ -801,8 +813,18 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
       byBlock.set(m.block_id, slots);
     }
 
-    return blockRows.map((b) =>
-      b.kind === "text"
+    return blockRows.map((b): PortfolioBlock => {
+      if (b.kind === "embed") {
+        return {
+          kind: "embed" as const,
+          id: b.id,
+          projectId: b.project_id,
+          orderIndex: b.order_index,
+          url: b.embed_url,
+          caption: b.heading,
+        };
+      }
+      return b.kind === "text"
         ? {
             kind: "text" as const,
             id: b.id,
@@ -818,8 +840,8 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
             orderIndex: b.order_index,
             layout: b.layout ?? "single",
             slots: byBlock.get(b.id) ?? [],
-          },
-    );
+          };
+    });
   } catch {
     return [];
   }
@@ -827,7 +849,7 @@ export async function getProjectBlocks(projectId: number): Promise<PortfolioBloc
 
 export async function createBlock(
   projectId: number,
-  kind: "images" | "text",
+  kind: "images" | "text" | "embed",
   layout: BlockLayout | null = null,
 ): Promise<number> {
   const { rows } = await sql<{ id: number }>`
@@ -843,13 +865,19 @@ export async function createBlock(
 
 export async function updateBlock(
   id: number,
-  patch: { layout?: BlockLayout | null; heading?: string | null; body?: string | null },
+  patch: {
+    layout?: BlockLayout | null;
+    heading?: string | null;
+    body?: string | null;
+    embedUrl?: string | null;
+  },
 ) {
   await sql`
     UPDATE portfolio_blocks SET
-      layout  = COALESCE(${patch.layout ?? null}, layout),
-      heading = ${patch.heading ?? null},
-      body    = ${patch.body ?? null},
+      layout    = COALESCE(${patch.layout ?? null}, layout),
+      heading   = ${patch.heading ?? null},
+      body      = ${patch.body ?? null},
+      embed_url = ${patch.embedUrl ?? null},
       updated_at = NOW()
     WHERE id = ${id}
   `;

@@ -11,6 +11,7 @@ import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
 import { ROW_LAYOUTS, compareAspect, rowAspect } from "@/lib/block-layouts";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
+import { YouTubeEmbed } from "@/components/youtube-embed";
 import { ImageStack } from "@/components/image-stack";
 
 /* ── Project page ──────────────────────────────────────────────────────
@@ -485,7 +486,19 @@ export function ProjectPage({
 
         {/* the composed stream */}
         {blocks.map((block) =>
-          block.kind === "text" ? (
+          block.kind === "embed" ? (
+            block.url ? (
+              <motion.div
+                key={block.id}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={fadeUp}
+              >
+                <YouTubeEmbed url={block.url} caption={block.caption ?? undefined} />
+              </motion.div>
+            ) : null
+          ) : block.kind === "text" ? (
             <motion.div
               key={block.id}
               initial="hidden"

@@ -12,7 +12,7 @@
  *                       pair, which is a slider rather than two images
  *   3  -> portrait_trio (three across)
  *   4+ -> one native block each, so nothing is hidden
- * 'video' entries are skipped — the block stream has no video row.
+ * 'video' entries become embed blocks, holding the YouTube link.
  * Captions are dropped, as agreed.
  */
 import { sql } from "@vercel/postgres";
@@ -28,12 +28,20 @@ function urlsOf(e: Visual): string[] {
   return pair;
 }
 
-type PlannedBlock = { layout: string; urls: string[] } | { text: { heading: string; body: string } };
+type PlannedBlock =
+  | { layout: string; urls: string[] }
+  | { text: { heading: string; body: string } }
+  | { embed: string };
 
 function blocksFromVisuals(visuals: Visual[]): PlannedBlock[] {
   const out: PlannedBlock[] = [];
   for (const e of visuals) {
-    if (e.kind === "video") continue;
+    /* A film lives on YouTube, so it crosses as a link rather than a
+       file. Skipping these is what lost dog-park's fundraiser video. */
+    if (e.kind === "video") {
+      if (typeof e.url === "string" && e.url) out.push({ embed: e.url });
+      continue;
+    }
     const urls = urlsOf(e);
     if (urls.length === 0) continue;
     /* A legacy 'compare' is a before/after slider, not two images sitting
@@ -67,7 +75,12 @@ function interleave(images: PlannedBlock[], texts: PlannedBlock[]): PlannedBlock
 async function insertBlocks(projectId: number, planned: PlannedBlock[]) {
   let order = 0;
   for (const b of planned) {
-    if ("text" in b) {
+    if ("embed" in b) {
+      await sql`
+        INSERT INTO portfolio_blocks (project_id, kind, embed_url, order_index)
+        VALUES (${projectId}, 'embed', ${b.embed}, ${order})
+      `;
+    } else if ("text" in b) {
       await sql`
         INSERT INTO portfolio_blocks (project_id, kind, heading, body, order_index)
         VALUES (${projectId}, 'text', ${b.text.heading}, ${b.text.body}, ${order})

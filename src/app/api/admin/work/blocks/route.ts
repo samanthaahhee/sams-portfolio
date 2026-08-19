@@ -21,30 +21,36 @@ function bust(slug?: string | null) {
   if (slug) revalidatePath(`/work/${slug}`);
 }
 
-/** Create a block. Body: { projectId, kind: 'images'|'text', layout?, projectSlug? } */
+/** Create a block. Body: { projectId, kind: 'images'|'text'|'embed', layout?, projectSlug? } */
 export async function POST(req: Request) {
   const body = (await req.json()) as {
     projectId?: number;
-    kind?: "images" | "text";
+    kind?: "images" | "text" | "embed";
     layout?: BlockLayout;
     projectSlug?: string;
   };
-  if (!body.projectId || (body.kind !== "images" && body.kind !== "text")) {
-    return NextResponse.json({ error: "projectId and kind ('images'|'text') are required" }, { status: 400 });
+  const KINDS = ["images", "text", "embed"] as const;
+  if (!body.projectId || !KINDS.includes(body.kind as (typeof KINDS)[number])) {
+    return NextResponse.json(
+      { error: "projectId and kind ('images'|'text'|'embed') are required" },
+      { status: 400 },
+    );
   }
   const layout = body.kind === "images" ? (LAYOUTS.includes(body.layout as BlockLayout) ? body.layout! : "single") : null;
-  const id = await createBlock(body.projectId, body.kind, layout);
+  const id = await createBlock(body.projectId, body.kind!, layout);
   bust(body.projectSlug);
   return NextResponse.json({ id });
 }
 
-/** Patch a block's layout or copy. Body: { id, layout?, heading?, body?, projectSlug? } */
+/** Patch a block's layout, copy or embed link.
+ *  Body: { id, layout?, heading?, body?, embedUrl?, projectSlug? } */
 export async function PATCH(req: Request) {
   const payload = (await req.json()) as {
     id?: number;
     layout?: BlockLayout;
     heading?: string | null;
     body?: string | null;
+    embedUrl?: string | null;
     projectSlug?: string;
   };
   if (!payload.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
@@ -52,6 +58,7 @@ export async function PATCH(req: Request) {
     layout: LAYOUTS.includes(payload.layout as BlockLayout) ? payload.layout : undefined,
     heading: payload.heading ?? null,
     body: payload.body ?? null,
+    embedUrl: payload.embedUrl ?? null,
   });
   bust(payload.projectSlug);
   return NextResponse.json({ ok: true });

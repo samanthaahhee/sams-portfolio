@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type React from "react";
+import { MediaEl } from "@/components/media-el";
 
 /** Shared by both corners so they can never drift apart. */
 const pill: React.CSSProperties = {
@@ -88,10 +89,8 @@ export function BeforeAfterSlider({
             layout is pixel-identical and the two images can never
             drift relative to each other. */}
         <div className="absolute inset-0 pointer-events-none">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={after}
-            alt="After"
+          <MediaEl
+            url={after}
             draggable={false}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: "center" }}
@@ -104,10 +103,8 @@ export function BeforeAfterSlider({
           className="absolute inset-0 pointer-events-none"
           style={{ clipPath: `inset(0 ${100 - percent}% 0 0)` }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={before}
-            alt="Before"
+          <MediaEl
+            url={before}
             draggable={false}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: "center" }}

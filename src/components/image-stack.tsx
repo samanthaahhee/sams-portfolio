@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MediaEl } from "@/components/media-el";
 import { motion } from "motion/react";
 
 /**
@@ -57,12 +58,8 @@ export function ImageStack({
               transition={{ duration: 0.8, ease: [0.2, 0.8, 0.2, 1] }}
               style={{ background: "transparent" }}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={src}
-                alt=""
-                loading="lazy"
-                decoding="async"
+              <MediaEl
+                url={src}
                 draggable={false}
                 className="absolute inset-0 w-full h-full object-cover"
               />

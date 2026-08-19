@@ -1,6 +1,7 @@
 "use client";
 
 import type { PortfolioBlock } from "@/lib/db-portfolio";
+import { extractYouTubeId } from "@/components/youtube-embed";
 import { ROW_LAYOUTS, rowAspect } from "@/lib/block-layouts";
 import { MediaBox } from "./_media-preview";
 
@@ -95,6 +96,31 @@ export function LayoutPreview({
                   {(block.body ?? "").slice(0, 240) || "—"}
                   {(block.body ?? "").length > 240 ? "…" : ""}
                 </p>
+              </div>
+            );
+          }
+
+          if (block.kind === "embed") {
+            const id = block.url ? extractYouTubeId(block.url) : null;
+            return (
+              <div key={block.id} className="space-y-1">
+                <div
+                  className="rounded-sm overflow-hidden grid place-items-center"
+                  style={{ aspectRatio: "16 / 9", background: "#efefef" }}
+                >
+                  {id ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="font-mono text-[10px] text-[color:var(--meta)]">
+                      Video embed — no link yet
+                    </span>
+                  )}
+                </div>
               </div>
             );
           }

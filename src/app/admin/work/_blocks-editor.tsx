@@ -9,6 +9,7 @@ import { readMediaDims } from "./_media-dims";
 import { uploadFile } from "./_upload";
 import { MediaBox } from "./_media-preview";
 import { LayoutPreview } from "./_layout-preview";
+import { extractYouTubeId } from "@/components/youtube-embed";
 
 /* ── Project-page block editor ─────────────────────────────────────────
    The project page body is an ordered stream, so paragraphs can be
@@ -66,7 +67,7 @@ export function BlocksEditor({
     setError(e instanceof Error ? e.message : "Something went wrong");
   }
 
-  async function addBlock(kind: "images" | "text", layout?: BlockLayout) {
+  async function addBlock(kind: "images" | "text" | "embed", layout?: BlockLayout) {
     setBusy(true);
     setError(null);
     try {
@@ -81,7 +82,9 @@ export function BlocksEditor({
         ...prev,
         kind === "text"
           ? { kind: "text", id: json.id!, projectId, orderIndex: prev.length, heading: null, body: null }
-          : { kind: "images", id: json.id!, projectId, orderIndex: prev.length, layout: layout ?? "single", slots: [] },
+          : kind === "embed"
+            ? { kind: "embed", id: json.id!, projectId, orderIndex: prev.length, url: null, caption: null }
+            : { kind: "images", id: json.id!, projectId, orderIndex: prev.length, layout: layout ?? "single", slots: [] },
       ]);
     } catch (e) {
       fail(e);
@@ -96,7 +99,20 @@ export function BlocksEditor({
     setBlocks((prev) => prev.map((b) => (b.id === id && b.kind === "text" ? { ...b, ...patch } : b)));
   }
 
-  async function patch(id: number, patchBody: { layout?: BlockLayout; heading?: string | null; body?: string | null }) {
+  /** Local edit for an embed block; persisted on blur, like the text one. */
+  function setEmbed(id: number, patchEdit: { url?: string | null; caption?: string | null }) {
+    setBlocks((prev) => prev.map((b) => (b.id === id && b.kind === "embed" ? { ...b, ...patchEdit } : b)));
+  }
+
+  async function patch(
+    id: number,
+    patchBody: {
+      layout?: BlockLayout;
+      heading?: string | null;
+      body?: string | null;
+      embedUrl?: string | null;
+    },
+  ) {
     const res = await fetch("/api/admin/work/blocks", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -275,7 +291,12 @@ export function BlocksEditor({
           <li key={block.id} className="border border-[color:var(--rule)] rounded-sm p-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
               <span className="font-mono text-[color:var(--meta)] text-[11px] uppercase tracking-[0.14em]">
-                {i + 1}. {block.kind === "text" ? "Text" : LAYOUTS.find((l) => l.value === block.layout)?.label}
+                {i + 1}.{" "}
+                {block.kind === "text"
+                  ? "Text"
+                  : block.kind === "embed"
+                    ? "Video embed"
+                    : LAYOUTS.find((l) => l.value === block.layout)?.label}
               </span>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="font-mono text-[11px] disabled:opacity-30">
@@ -299,7 +320,38 @@ export function BlocksEditor({
               </div>
             </div>
 
-            {block.kind === "text" ? (
+            {block.kind === "embed" ? (
+              <div className="space-y-2">
+                <input
+                  value={block.url ?? ""}
+                  placeholder="https://www.youtube.com/watch?v=…  or  https://youtu.be/…"
+                  onChange={(e) => setEmbed(block.id, { url: e.target.value || null })}
+                  onBlur={() => patch(block.id, { embedUrl: block.url, heading: block.caption })}
+                  className={fieldInput}
+                />
+                <input
+                  value={block.caption ?? ""}
+                  placeholder="Caption (optional)"
+                  onChange={(e) => setEmbed(block.id, { caption: e.target.value || null })}
+                  onBlur={() => patch(block.id, { embedUrl: block.url, heading: block.caption })}
+                  className={fieldInput}
+                />
+                {block.url && !extractYouTubeId(block.url) ? (
+                  <p className="font-mono text-[10px] text-red-700">
+                    Couldn&rsquo;t read a YouTube video ID from that link.
+                  </p>
+                ) : block.url ? (
+                  <div style={{ aspectRatio: "16 / 9", maxWidth: 360 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`https://i.ytimg.com/vi/${extractYouTubeId(block.url)}/hqdefault.jpg`}
+                      alt=""
+                      className="w-full h-full object-cover rounded-sm"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : block.kind === "text" ? (
               <div className="space-y-2">
                 <input
                   value={block.heading ?? ""}
@@ -435,6 +487,7 @@ export function BlocksEditor({
           aria-label="Section type to add"
         >
           <option value="text">Text paragraph</option>
+          <option value="embed">Video embed (YouTube)</option>
           <optgroup label="Image row">
             {LAYOUTS.map((l) => (
               <option key={l.value} value={l.value}>
@@ -447,8 +500,8 @@ export function BlocksEditor({
           type="button"
           disabled={busy}
           onClick={() =>
-            pending === "text"
-              ? addBlock("text")
+            pending === "text" || pending === "embed"
+              ? addBlock(pending)
               : addBlock("images", pending as BlockLayout)
           }
           className="font-mono uppercase tracking-[0.14em] text-[10px] px-4 py-2 rounded-full disabled:opacity-50"

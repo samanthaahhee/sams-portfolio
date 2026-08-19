@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BAND_FRACTION, FLARE_CURVE, MASK_POINTS, MAX_FLARE, MAX_SHEAR } from "./warp";
+import { MediaEl } from "@/components/media-el";
+import { mediaTypeFor } from "@/lib/db-portfolio";
 
 const MONO = "var(--font-dm-mono)";
 
@@ -11,22 +13,7 @@ export const FRAME_MS = 700;
 
 export type TileFrame = { url: string; focalX?: number; focalY?: number; zoom?: number };
 
-/** A work tile whose image bends through the viewport's bottom band.
- *
- *  `frames` may hold more than one image, in which case the tile loops
- *  through them like a GIF. Each frame carries its own focal point: the
- *  image is always cover-cropped to the slot, and focalX/focalY (0..1)
- *  choose which part survives the crop instead of always taking the
- *  centre. Pass `src` for the common single-still case. */
-export function WorkTile({
-  aspect = "4 / 3",
-  src,
-  frames,
-  title,
-  tags = [],
-  href,
-  anchorId,
-}: {
+export type TileProps = {
   aspect?: string;
   src?: string;
   frames?: TileFrame[];
@@ -35,7 +22,72 @@ export function WorkTile({
   href?: string;
   /** Lets a project page send the reader back to this exact tile. */
   anchorId?: string;
-}) {
+};
+
+/** A work tile whose image bends through the viewport's bottom band.
+ *
+ *  `frames` may hold more than one image, in which case the tile loops
+ *  through them like a GIF. Each frame carries its own focal point: the
+ *  image is always cover-cropped to the slot, and focalX/focalY (0..1)
+ *  choose which part survives the crop instead of always taking the
+ *  centre. Pass `src` for the common single-still case.
+ *
+ *  Motion media never reaches the canvas: drawImage paints only the
+ *  first frame of a GIF and nothing at all from a video URL handed to
+ *  an Image(), so a clip used as a cover or a thumbnail would have come
+ *  out frozen or blank. Those tiles render as a plain element with the
+ *  same cover crop, forfeiting only the warp — the trade animation has
+ *  always cost here. */
+export function WorkTile(props: TileProps) {
+  const first = props.frames?.[0]?.url ?? props.src;
+  if (first && mediaTypeFor(first) !== "image") return <MotionTile {...props} />;
+  return <CanvasTile {...props} />;
+}
+
+/** The motion path: no canvas, no warp, same box and same crop. */
+function MotionTile({
+  aspect = "4 / 3",
+  src,
+  frames,
+  title,
+  tags = [],
+  href,
+  anchorId,
+}: TileProps) {
+  const f = frames?.[0] ?? (src ? { url: src } : null);
+  if (!f) return null;
+  const zoom = f.zoom ?? 1;
+  return (
+    <div
+      id={anchorId}
+      data-worktile=""
+      className="group relative overflow-hidden"
+      style={{ aspectRatio: aspect, borderRadius: 4, scrollMarginTop: "clamp(24px, 6vw, 96px)" }}
+    >
+      <MediaEl
+        url={f.url}
+        className="absolute inset-0 w-full h-full transition-[border-radius] duration-300 ease-out group-hover:rounded-2xl"
+        style={{
+          objectFit: "cover",
+          objectPosition: `${(f.focalX ?? 0.5) * 100}% ${(f.focalY ?? 0.5) * 100}%`,
+          transform: zoom > 1 ? `scale(${zoom})` : undefined,
+          transformOrigin: `${(f.focalX ?? 0.5) * 100}% ${(f.focalY ?? 0.5) * 100}%`,
+        }}
+      />
+      <TileOverlay title={title} tags={tags} href={href} />
+    </div>
+  );
+}
+
+function CanvasTile({
+  aspect = "4 / 3",
+  src,
+  frames,
+  title,
+  tags = [],
+  href,
+  anchorId,
+}: TileProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imgsRef = useRef<HTMLImageElement[]>([]);
@@ -367,6 +419,16 @@ export function WorkTile({
         style={{ position: "absolute", top: 0, display: "block" }}
       />
 
+      <TileOverlay title={title} tags={tags} href={href} />
+    </div>
+  );
+}
+
+/** Hover furniture shared by both tile paths: the name and tag pills, the
+ *  corner glyph, and the link that covers the whole tile. */
+function TileOverlay({ title, tags = [], href }: { title?: string; tags?: string[]; href?: string }) {
+  return (
+    <>
       {(title || tags.length > 0) && (
         <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="absolute left-4 top-4 flex flex-wrap items-center gap-2">
@@ -390,9 +452,10 @@ export function WorkTile({
       {href && (
         <Link href={href} aria-label={title} className="absolute inset-0" style={{ borderRadius: "inherit" }} />
       )}
-    </div>
+    </>
   );
 }
+
 /** Overlay pill. The first (the project name) is solid white; tags sit on
  *  a frosted panel so they stay legible over any image. */
 function Pill({ label, solid = false }: { label: string; solid?: boolean }) {

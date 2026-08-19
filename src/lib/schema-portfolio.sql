@@ -222,3 +222,13 @@ ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_layout_check
 -- throw away the picture, so it can come back without being re-picked.
 ALTER TABLE portfolio_projects
   ADD COLUMN IF NOT EXISTS show_hero BOOLEAN NOT NULL DEFAULT true;
+
+-- A third kind of block: an embedded video, held as a URL rather than a
+-- file. The legacy pages carried YouTube links in their visuals array
+-- and the block migration only understood pictures, so dog-park's
+-- fundraiser film was silently dropped on the way across.
+ALTER TABLE portfolio_blocks
+  ADD COLUMN IF NOT EXISTS embed_url TEXT;
+ALTER TABLE portfolio_blocks DROP CONSTRAINT IF EXISTS portfolio_blocks_kind_check;
+ALTER TABLE portfolio_blocks ADD CONSTRAINT portfolio_blocks_kind_check
+  CHECK (kind IN ('images', 'text', 'embed'));
