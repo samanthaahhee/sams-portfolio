@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { CopyEmail } from "@/components/contact-button";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { BendingPanel } from "./bending-panel";
@@ -425,13 +425,11 @@ export function HomepageHero({
           {/* holds the intro row open across the second column */}
           <div className="hidden md:block" aria-hidden />
 
-          <Link
-            href={about.linkHref}
-            className="hover:opacity-70 transition-opacity self-start"
+          <CopyEmail
+            email={about.email}
+            className="self-start"
             style={{ color: RED, fontSize: "clamp(0.9rem, 1.15vw, 1rem)", fontWeight: 500 }}
-          >
-            {about.linkLabel}
-          </Link>
+          />
 
           {/* Two mono rails, both flush to the panel's right padding so the
               right inset reads the same as the left. */}

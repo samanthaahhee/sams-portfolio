@@ -29,8 +29,7 @@ export function AboutForm({ initial, totalRows }: { initial: AboutSection; total
   const [intro, setIntro] = useState(initial.intro);
   const [fieldsRaw, setFieldsRaw] = useState(initial.fields.join(", "));
   const [servicesRaw, setServicesRaw] = useState(initial.services.join(", "));
-  const [linkLabel, setLinkLabel] = useState(initial.linkLabel);
-  const [linkHref, setLinkHref] = useState(initial.linkHref);
+  const [email, setEmail] = useState(initial.email);
   const [afterRows, setAfterRows] = useState(initial.afterRows);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -49,8 +48,7 @@ export function AboutForm({ initial, totalRows }: { initial: AboutSection; total
         intro,
         fields: split(fieldsRaw),
         services: split(servicesRaw),
-        linkLabel,
-        linkHref,
+        email,
         afterRows,
       }),
     });
@@ -118,14 +116,14 @@ export function AboutForm({ initial, totalRows }: { initial: AboutSection; total
         </Field>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Field label="Link label">
-          <input value={linkLabel} onChange={(e) => setLinkLabel(e.target.value)} className={fieldInput} />
-        </Field>
-        <Field label="Link goes to">
-          <input value={linkHref} onChange={(e) => setLinkHref(e.target.value)} className={fieldInput} />
-        </Field>
-      </div>
+      <Field label="Contact email — shown in the panel, copies when clicked">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={fieldInput}
+        />
+      </Field>
 
       {error && <p className="font-mono text-red-700 bg-red-50 px-3 py-2 rounded">{error}</p>}
 

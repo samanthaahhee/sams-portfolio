@@ -3,6 +3,7 @@
  * `db.ts`, which still serves the live legacy site. See
  * schema-portfolio.sql for table shapes. */
 import { sql } from "@vercel/postgres";
+import { SITE_EMAIL } from "./site";
 
 export type MediaType = "image" | "gif" | "mp4";
 
@@ -1111,8 +1112,9 @@ export type AboutSection = {
   intro: string;
   fields: string[];
   services: string[];
-  linkLabel: string;
-  linkHref: string;
+  /** Shown in the panel and copied when clicked, in place of the old
+   *  "let's work together" link out to a contact page. */
+  email: string;
   /** How many two-up work rows come before the panel. */
   afterRows: number;
 };
@@ -1130,8 +1132,7 @@ export const ABOUT_DEFAULTS: AboutSection = {
     "Brand Experience",
     "Illustration",
   ],
-  linkLabel: "Lets work together →",
-  linkHref: "/contact",
+  email: SITE_EMAIL,
   afterRows: 2,
 };
 
@@ -1146,8 +1147,7 @@ export async function getAboutSection(): Promise<AboutSection> {
     intro: s.about_intro?.trim() || ABOUT_DEFAULTS.intro,
     fields: s.about_fields ? splitList(s.about_fields) : ABOUT_DEFAULTS.fields,
     services: s.about_services ? splitList(s.about_services) : ABOUT_DEFAULTS.services,
-    linkLabel: s.about_link_label?.trim() || ABOUT_DEFAULTS.linkLabel,
-    linkHref: s.about_link_href?.trim() || ABOUT_DEFAULTS.linkHref,
+    email: s.about_email?.trim() || ABOUT_DEFAULTS.email,
     afterRows: Number.isFinite(Number(s.about_after_rows))
       ? Math.max(0, Math.round(Number(s.about_after_rows)))
       : ABOUT_DEFAULTS.afterRows,
@@ -1159,8 +1159,7 @@ export async function setAboutSection(a: AboutSection) {
     setPortfolioSetting("about_intro", a.intro),
     setPortfolioSetting("about_fields", a.fields.join(", ")),
     setPortfolioSetting("about_services", a.services.join(", ")),
-    setPortfolioSetting("about_link_label", a.linkLabel),
-    setPortfolioSetting("about_link_href", a.linkHref),
+    setPortfolioSetting("about_email", a.email),
     setPortfolioSetting("about_after_rows", String(a.afterRows)),
   ]);
 }

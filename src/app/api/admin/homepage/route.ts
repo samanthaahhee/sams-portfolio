@@ -14,8 +14,7 @@ export async function POST(req: Request) {
     intro: b.intro ?? current.intro,
     fields: Array.isArray(b.fields) ? b.fields : current.fields,
     services: Array.isArray(b.services) ? b.services : current.services,
-    linkLabel: b.linkLabel ?? current.linkLabel,
-    linkHref: b.linkHref ?? current.linkHref,
+    email: b.email ?? current.email,
     afterRows:
       b.afterRows === undefined
         ? current.afterRows

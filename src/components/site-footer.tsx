@@ -1,6 +1,5 @@
 import { CopyEmailButton } from "./copy-email-button";
-
-const EMAIL = "samantha.ahhee@gmail.com";
+import { SITE_EMAIL as EMAIL } from "@/lib/site";
 
 export function SiteFooter() {
   return (
