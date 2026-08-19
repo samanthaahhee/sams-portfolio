@@ -1,6 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type React from "react";
+
+/** Shared by both corners so they can never drift apart. */
+const pill: React.CSSProperties = {
+  position: "absolute",
+  top: 12,
+  fontSize: 20,
+  lineHeight: 1,
+  letterSpacing: "0.14em",
+  textTransform: "uppercase",
+  padding: "10px 18px",
+  borderRadius: 999,
+  background: "#fff",
+  pointerEvents: "none",
+};
 
 /**
  * Drag-divider before/after image comparison.
@@ -14,12 +29,17 @@ export function BeforeAfterSlider({
   after,
   caption,
   aspect = "16 / 10",
+  color,
 }: {
   before: string;
   after: string;
   caption?: string;
   aspect?: string;
+  /** The project's accent, so the corner labels match its headings.
+   *  Falls back to the page ink where no project supplies one. */
+  color?: string;
 }) {
+  const label = color ?? "var(--ink)";
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const [percent, setPercent] = useState(50);
@@ -109,29 +129,12 @@ export function BeforeAfterSlider({
           </div>
         </div>
 
-        {/* Corner labels */}
-        <span
-          className="absolute top-2 left-2 font-mono uppercase tracking-[0.14em] px-2 py-1 rounded-full pointer-events-none"
-          style={{
-            fontSize: "10px",
-            background: "rgba(255, 255, 255, 0.7)",
-            color: "var(--ink)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          Before
-        </span>
-        <span
-          className="absolute top-2 right-2 font-mono uppercase tracking-[0.14em] px-2 py-1 rounded-full pointer-events-none"
-          style={{
-            fontSize: "10px",
-            background: "rgba(255, 255, 255, 0.7)",
-            color: "var(--ink)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          After
-        </span>
+        {/* Corner labels — sized to read at arm's length on a phone, so
+            solid white rather than a translucent blur: at this size the
+            frosted panel showed too much of the image through it. */}
+        <span className="font-mono" style={{ ...pill, left: 12, color: label }}>Before</span>
+        <span className="font-mono" style={{ ...pill, right: 12, color: label }}>After</span>
+
       </div>
       {caption && (
         <figcaption className="font-mono text-[color:var(--meta)]">{caption}</figcaption>

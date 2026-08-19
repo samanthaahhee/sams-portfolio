@@ -371,7 +371,7 @@ function isAnimated(m?: PortfolioMedia) {
   return isMotionMedia(m);
 }
 
-function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }> }) {
+function ImageRow({ block, accent }: { block: Extract<PortfolioBlock, { kind: "images" }>; accent: string }) {
   if (block.layout === "native") {
     return <NativeImage frames={block.slots[0] ?? []} />;
   }
@@ -387,7 +387,7 @@ function ImageRow({ block }: { block: Extract<PortfolioBlock, { kind: "images" }
     }
     /* The frame is the BEFORE image's own shape, so it is shown whole and
        the after is cropped to meet it. */
-    return <BeforeAfterSlider before={first.url} after={after} aspect={compareAspect(first)} />;
+    return <BeforeAfterSlider before={first.url} after={after} aspect={compareAspect(first)} color={accent} />;
   }
 
   if (block.layout === "stack") {
@@ -496,7 +496,7 @@ export function ProjectPage({
               <TextPanel color={accent} heading={block.heading} body={block.body} />
             </motion.div>
           ) : (
-            <ImageRow key={block.id} block={block} />
+            <ImageRow key={block.id} block={block} accent={accent} />
           ),
         )}
 
