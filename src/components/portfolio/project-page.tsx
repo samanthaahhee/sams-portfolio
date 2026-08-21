@@ -9,7 +9,7 @@ import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
-import { ROW_LAYOUTS, compareAspect, rowAspect } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, aspectRatioNumber, compareAspect, rowAspect } from "@/lib/block-layouts";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { ImageStack } from "@/components/image-stack";
@@ -326,7 +326,15 @@ function NativeImage({ frames }: { frames: PortfolioMedia[] }) {
  *  cover crop, focal point and zoom keeps the frame identical to its
  *  neighbours and keeps the animation. It forfeits only the scroll warp,
  *  which is the trade animation always costs. */
-function CroppedMotion({ media, aspect }: { media: PortfolioMedia; aspect: string }) {
+function CroppedMotion({
+  media,
+  aspect,
+  cap,
+}: {
+  media: PortfolioMedia;
+  aspect: string;
+  cap?: React.CSSProperties | null;
+}) {
   const style: React.CSSProperties = {
     display: "block",
     width: "100%",
@@ -344,7 +352,15 @@ function CroppedMotion({ media, aspect }: { media: PortfolioMedia; aspect: strin
       /* muted + playsInline are what let a browser autoplay at all, and
          a silent looping clip is the point here — it stands in for a GIF
          at a fraction of the weight. */
-      <video src={media.url} autoPlay loop muted playsInline style={style} />
+      <video
+        src={media.url}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className={cap ? "stack-cap" : undefined}
+        style={{ ...style, ...cap }}
+      />
     );
   }
 
@@ -353,17 +369,8 @@ function CroppedMotion({ media, aspect }: { media: PortfolioMedia; aspect: strin
     <img
       src={media.url}
       alt=""
-      style={{
-        display: "block",
-        width: "100%",
-        height: "100%",
-        aspectRatio: aspect,
-        objectFit: "cover",
-        objectPosition: `${media.focalX * 100}% ${media.focalY * 100}%`,
-        transform: media.zoom > 1 ? `scale(${media.zoom})` : undefined,
-        transformOrigin: `${media.focalX * 100}% ${media.focalY * 100}%`,
-        borderRadius: 4,
-      }}
+      className={cap ? "stack-cap" : undefined}
+      style={{ ...style, ...cap }}
     />
   );
 }
@@ -401,16 +408,24 @@ function ImageRow({ block, accent }: { block: Extract<PortfolioBlock, { kind: "i
   const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
   /* Rows whose frame comes from the pictures rather than a fixed ratio. */
   const shared = rowAspect(block.layout, block.slots[0]?.[0]);
+  /* Multi-up rows stack below `sm`, and a portrait frame that was a third
+     of a row then fills the column — see .stack-cap in globals.css. */
+  const stacks = aspects.length > 1;
   return (
     <div className={className} style={{ gap: GUTTER }}>
       {aspects.map((a, i) => {
         const frame = shared ?? a;
         const first = block.slots[i]?.[0];
-        if (isAnimated(first)) return <CroppedMotion key={i} media={first!} aspect={frame} />;
+        const cap = stacks ? capFor(frame) : null;
+        if (isAnimated(first)) {
+          return <CroppedMotion key={i} media={first!} aspect={frame} cap={cap} />;
+        }
         return (
           <WorkTile
             key={i}
             aspect={frame}
+            className={cap ? "stack-cap" : undefined}
+            style={cap ?? undefined}
             frames={(block.slots[i] ?? []).map((m) => ({
               url: m.url,
               focalX: m.focalX,
@@ -422,6 +437,16 @@ function ImageRow({ block, accent }: { block: Extract<PortfolioBlock, { kind: "i
       })}
     </div>
   );
+}
+
+/** The height cap a stacked slot gets, or null when it needs none.
+ *
+ *  Only portrait frames qualify: a landscape frame at full column width
+ *  is already short enough to sit inside the fold, and capping it would
+ *  shrink it for no reason. */
+function capFor(aspect: string): React.CSSProperties | null {
+  const ar = aspectRatioNumber(aspect);
+  return ar && ar < 1 ? ({ "--ar": ar } as React.CSSProperties) : null;
 }
 
 export function ProjectPage({

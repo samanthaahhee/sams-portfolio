@@ -22,6 +22,11 @@ export type TileProps = {
   href?: string;
   /** Lets a project page send the reader back to this exact tile. */
   anchorId?: string;
+  /** Sizing the caller puts on the tile's own box — used to cap a
+   *  portrait frame's height once a multi-up row has stacked. It lands on
+   *  the host element, so the warp still measures the real width. */
+  className?: string;
+  style?: React.CSSProperties;
 };
 
 /** A work tile whose image bends through the viewport's bottom band.
@@ -53,6 +58,8 @@ function MotionTile({
   tags = [],
   href,
   anchorId,
+  className,
+  style,
 }: TileProps) {
   const f = frames?.[0] ?? (src ? { url: src } : null);
   if (!f) return null;
@@ -61,8 +68,8 @@ function MotionTile({
     <div
       id={anchorId}
       data-worktile=""
-      className="group relative overflow-hidden"
-      style={{ aspectRatio: aspect, borderRadius: 4, scrollMarginTop: "clamp(24px, 6vw, 96px)" }}
+      className={`group relative overflow-hidden${className ? ` ${className}` : ""}`}
+      style={{ aspectRatio: aspect, borderRadius: 4, scrollMarginTop: "clamp(24px, 6vw, 96px)", ...style }}
     >
       <MediaEl
         url={f.url}
@@ -87,6 +94,8 @@ function CanvasTile({
   tags = [],
   href,
   anchorId,
+  className,
+  style,
 }: TileProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -401,7 +410,7 @@ function CanvasTile({
       ref={hostRef}
       id={anchorId}
       data-worktile=""
-      className="group"
+      className={`group${className ? ` ${className}` : ""}`}
       style={{
         aspectRatio: aspect,
         position: "relative",
@@ -409,6 +418,7 @@ function CanvasTile({
         borderRadius: 4,
         /* so an anchored tile lands below the meta row, not jammed under it */
         scrollMarginTop: "clamp(24px, 6vw, 96px)",
+        ...style,
       }}
     >
       {/* Rounding lives on the canvas, not the host: the host must keep

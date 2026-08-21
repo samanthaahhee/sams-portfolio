@@ -142,7 +142,13 @@ html {
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* `clip`, not `hidden`. The warped work tiles paint a canvas wider than
+     their own box on purpose, so the page is always a little wider than
+     the viewport. `hidden` leaves that width scrollable — no scrollbar,
+     but a phone still pans sideways onto empty paper. `clip` removes the
+     scrollport on that axis entirely, and unlike `hidden` it does not
+     turn the root into a scroll container, so sticky keeps working. */
+  overflow-x: clip;
 }
 
 body {
@@ -607,5 +613,29 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .testimonial-track {
     scroll-behavior: auto;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Collapsed image rows on mobile
+
+   A trio row is three portrait frames side by side on a wide screen, and
+   at that size a phone-screen recording is a third of the row. Below the
+   `sm` breakpoint the grid stacks, and each of those frames inflates to
+   the full column: a 563×1000 clip becomes a 343×609 slab, so one row of
+   three costs nearly three screens of scrolling and every asset reads as
+   a page of its own rather than as one of a set.
+
+   Capping the height and letting the width follow keeps the sequence
+   legible without letting any single frame own the viewport. Only
+   portrait frames are capped — the landscape banners in the same rows
+   already sit well inside the fold. `--ar` is the frame's own width÷height,
+   set inline by whatever renders the slot.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .stack-cap {
+    max-width: min(100%, calc(60vh * var(--ar)));
+    max-width: min(100%, calc(60svh * var(--ar)));
+    margin-inline: auto;
   }
 }

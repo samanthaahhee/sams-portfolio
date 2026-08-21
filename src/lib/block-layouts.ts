@@ -86,3 +86,13 @@ export function slotAspect(layout: BlockLayout, slot: number): string | null {
   const a = ROW_LAYOUTS[layout]?.aspects[slot];
   return !a || a === "auto" ? null : a;
 }
+
+/** A CSS aspect-ratio string ("563 / 1000", "3 / 4") as width÷height.
+ *
+ *  Returns null for "auto" or anything it cannot read, so callers can
+ *  tell "no ratio" apart from a genuine 0. */
+export function aspectRatioNumber(aspect?: string | null): number | null {
+  if (!aspect) return null;
+  const [w, h] = aspect.split("/").map((n) => Number(n.trim()));
+  return Number.isFinite(w) && Number.isFinite(h) && h > 0 ? w / h : null;
+}
