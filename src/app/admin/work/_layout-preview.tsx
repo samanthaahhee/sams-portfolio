@@ -2,7 +2,7 @@
 
 import type { PortfolioBlock } from "@/lib/db-portfolio";
 import { extractYouTubeId } from "@/components/youtube-embed";
-import { ROW_LAYOUTS, rowAspect } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, rowAspect, rowColumns } from "@/lib/block-layouts";
 import { MediaBox } from "./_media-preview";
 
 /* A true-to-the-page preview of the composed rows.
@@ -127,10 +127,13 @@ export function LayoutPreview({
 
           const layout = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
           const frames = (slot: number) => block.slots[slot]?.[0];
+          /* Same call the page makes, so the preview shows the columns the
+             row will actually keep rather than the table's default. */
+          const columns = rowColumns(block.layout, rowAspect(block.layout, block.slots[0]?.[0]));
 
           return (
             <div key={block.id} className="space-y-1">
-              <div className={layout.className} style={{ gap: 12 }}>
+              <div className={columns.className} style={{ gap: 12 }}>
                 {layout.aspects.map((a, i) => (
                   <Slot
                     key={i}

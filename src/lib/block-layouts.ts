@@ -12,7 +12,16 @@ import type { BlockLayout } from "./db-portfolio";
  * height, whatever the viewport width. */
 export const ROW_LAYOUTS: Record<
   BlockLayout,
-  { className: string; aspects: readonly string[] }
+  {
+    className: string;
+    aspects: readonly string[];
+    /** The column class for a row that keeps its columns on a phone. */
+    holdClassName?: string;
+    /** When a multi-up row refuses to stack below `sm`:
+     *  "always" for a row of fixed portrait frames, "portrait" for an
+     *  image-led row that holds only if its pictures are portrait. */
+    holdsColumns?: "always" | "portrait";
+  }
 > = {
   single: { className: "grid grid-cols-1", aspects: ["2 / 1"] },
   portrait_landscape: {
@@ -24,14 +33,29 @@ export const ROW_LAYOUTS: Record<
     aspects: ["3 / 2", "3 / 4"],
   },
   split: { className: "grid grid-cols-1 md:grid-cols-2", aspects: ["4 / 3", "4 / 3"] },
+  /* A trio is composed as a row — three phone screens, three states of
+     one idea — and stacking it on a phone breaks the comparison the row
+     exists to make, at a cost of three screens of scrolling to say what
+     one screen said. A portrait trio keeps its columns: a third of a
+     phone's width is still a phone-shaped frame. */
   portrait_trio: {
     className: "grid grid-cols-1 sm:grid-cols-3",
+    holdClassName: "grid grid-cols-3",
     aspects: ["3 / 4", "3 / 4", "3 / 4"],
+    holdsColumns: "always",
   },
   /* Three across, sized by the pictures rather than a fixed portrait
      frame. The first image's proportions set the row so all three share
-     a height; see rowAspect. */
-  trio: { className: "grid grid-cols-1 sm:grid-cols-3", aspects: ["auto", "auto", "auto"] },
+     a height; see rowAspect.
+     Whether it holds its columns on a phone depends on those pictures:
+     portrait frames survive at a third of the width, landscape ones do
+     not — a 300×250 banner lands at 108×90 and reads as nothing. */
+  trio: {
+    className: "grid grid-cols-1 sm:grid-cols-3",
+    holdClassName: "grid grid-cols-3",
+    aspects: ["auto", "auto", "auto"],
+    holdsColumns: "portrait",
+  },
   /* Two across, sized by the pictures — for a pair of landscape clips or
      stills that a fixed 4:3 would crop. */
   duo: { className: "grid grid-cols-1 sm:grid-cols-2", aspects: ["auto", "auto"] },
@@ -95,4 +119,21 @@ export function aspectRatioNumber(aspect?: string | null): number | null {
   if (!aspect) return null;
   const [w, h] = aspect.split("/").map((n) => Number(n.trim()));
   return Number.isFinite(w) && Number.isFinite(h) && h > 0 ? w / h : null;
+}
+
+/** How a row lays out, once its pictures are known.
+ *
+ *  `holds` is true when the row keeps its columns on a phone instead of
+ *  stacking, which decides both the column class and whether a portrait
+ *  frame needs the stacked-height cap. */
+export function rowColumns(
+  layout: BlockLayout,
+  frameAspect?: string | null,
+): { className: string; holds: boolean } {
+  const row = ROW_LAYOUTS[layout] ?? ROW_LAYOUTS.single;
+  const ar = aspectRatioNumber(frameAspect ?? row.aspects[0]);
+  const holds =
+    row.holdsColumns === "always" ||
+    (row.holdsColumns === "portrait" && ar !== null && ar < 1);
+  return { className: (holds && row.holdClassName) || row.className, holds };
 }

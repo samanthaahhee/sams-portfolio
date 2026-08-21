@@ -9,7 +9,7 @@ import { BendingPanel } from "./bending-panel";
 import { SiteFooter } from "./site-footer";
 import { FRAME_MS, WorkTile } from "./work-tile";
 import { META_STYLE, MetaRowContent } from "./site-meta";
-import { ROW_LAYOUTS, aspectRatioNumber, compareAspect, rowAspect } from "@/lib/block-layouts";
+import { ROW_LAYOUTS, aspectRatioNumber, compareAspect, rowAspect, rowColumns } from "@/lib/block-layouts";
 import { BeforeAfterSlider } from "@/components/before-after-slider";
 import { YouTubeEmbed } from "@/components/youtube-embed";
 import { ImageStack } from "@/components/image-stack";
@@ -405,18 +405,27 @@ function ImageRow({ block, accent }: { block: Extract<PortfolioBlock, { kind: "i
     }
     return <ImageStack images={images} />;
   }
-  const { className, aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
+  const { aspects } = ROW_LAYOUTS[block.layout] ?? ROW_LAYOUTS.single;
   /* Rows whose frame comes from the pictures rather than a fixed ratio. */
   const shared = rowAspect(block.layout, block.slots[0]?.[0]);
-  /* Multi-up rows stack below `sm`, and a portrait frame that was a third
-     of a row then fills the column — see .stack-cap in globals.css. */
-  const stacks = aspects.length > 1;
+  /* Whether this row keeps its columns on a phone depends on the shape of
+     the pictures in it, so it can only be settled here. */
+  const { className, holds } = rowColumns(block.layout, shared);
+  /* Rows that do collapse to one column need a portrait frame capped, or
+     it fills the column — see .stack-cap in globals.css. A row that stays
+     side by side never gets that big, so it needs no cap. */
+  const collapses = aspects.length > 1 && !holds;
+  /* A row holding three columns on a phone is dividing ~343px between
+     them, so the gutter comes straight off the pictures. Same 2.6vw as
+     everywhere else, just allowed to close further before it bottoms
+     out; by ~615px wide the two are identical again. */
+  const gap = holds ? "clamp(8px, 2.6vw, 44px)" : GUTTER;
   return (
-    <div className={className} style={{ gap: GUTTER }}>
+    <div className={className} style={{ gap }}>
       {aspects.map((a, i) => {
         const frame = shared ?? a;
         const first = block.slots[i]?.[0];
-        const cap = stacks ? capFor(frame) : null;
+        const cap = collapses ? capFor(frame) : null;
         if (isAnimated(first)) {
           return <CroppedMotion key={i} media={first!} aspect={frame} cap={cap} />;
         }
