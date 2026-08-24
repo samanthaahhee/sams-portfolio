@@ -2,12 +2,12 @@
    the homepage and a project page read as the same site. Only the colour
    changes: project pages tint it with their accent. */
 
+/* The two titles sit either side of the year, which is the same pair the
+   page title carries: visual comms designer and art director. */
 export const META = {
   role: "VISUAL COMMS DESIGNER",
   year: "2026",
-  /* Lowercase deliberately, unlike its neighbours: an address set in caps
-     reads as shouting and is harder to transcribe. */
-  handle: "samantha.ahhee@gmail.com",
+  secondRole: "ART DIRECTOR",
 };
 
 /* Three equal-weighted tracks rather than space-between: the outer labels
@@ -47,11 +47,11 @@ export function MetaRowContent({ onReplayIntro }: { onReplayIntro?: () => void }
           other two hidden it would otherwise slide into the first track
           and sit a quarter of the way across. */}
       <span style={{ gridColumn: 2, textAlign: "center" }}>{META.year}</span>
-      {/* Role and address are dropped on the narrowest screens: at 375px
-          the three labels collide, and the year alone reads as intended
+      {/* Both titles are dropped on the narrowest screens: at 375px the
+          three labels collide, and the year alone reads as intended
           because the grid's outer tracks still hold it centred. */}
       <span className="hidden sm:block" style={{ textAlign: "right" }}>
-        {META.handle}
+        {META.secondRole}
       </span>
     </>
   );
