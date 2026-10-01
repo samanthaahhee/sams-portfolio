@@ -5,11 +5,10 @@ import { useState } from "react";
 
 const LINKS = [
   { key: "work", href: "/work", label: "Work" },
-  { key: "about", href: "/about", label: "About me" },
   { key: "contact", href: "/contact", label: "Contact" },
 ] as const;
 
-export function PortfolioNav({ active }: { active?: "work" | "about" | "contact" }) {
+export function PortfolioNav({ active }: { active?: "work" | "contact" }) {
   const [open, setOpen] = useState(false);
 
   return (

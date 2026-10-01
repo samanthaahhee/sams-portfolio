@@ -55,7 +55,6 @@ export async function POST(req: Request) {
     position,
   );
 
-  revalidatePath("/about", "page");
   revalidatePath("/admin/experience", "layout");
   return NextResponse.json({ ok: true });
 }
@@ -66,7 +65,6 @@ export async function DELETE(req: Request) {
   if (!slug)
     return NextResponse.json({ error: "Missing slug" }, { status: 400 });
   await deleteExperience(slug);
-  revalidatePath("/about", "page");
   revalidatePath("/admin/experience", "layout");
   return NextResponse.json({ ok: true });
 }

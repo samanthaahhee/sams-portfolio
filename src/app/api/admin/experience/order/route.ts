@@ -12,7 +12,6 @@ export async function POST(req: Request) {
     );
   }
   await setExperienceOrder(slugs);
-  revalidatePath("/about", "page");
   revalidatePath("/admin/experience", "layout");
   return NextResponse.json({ ok: true, count: slugs.length });
 }
